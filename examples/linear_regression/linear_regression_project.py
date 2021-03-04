@@ -48,16 +48,16 @@ def setup_project():
     print(f'\t{project}')
     print('orgs', project.organizations)
 
+    x_schema = [{"name":"x_1", "schema_type":"numeric"}, {"name":"x_2", "schema_type":"numeric"}, {"name":"x_3", "schema_type":"numeric"}]
+    y_schema = [{"name":"y", "schema_type":"numeric"}]
     org_dv = {
-        project.organizations[0].name: 's3://cape-worker/x_data_120000_instances_10_features.csv',
-        project.organizations[1].name: 's3://cape-worker/y_data_120000_instances.csv',
+        project.organizations[0].name: {'uri': 's3://cape-worker/x_data_cape_demo.csv', 'schema': x_schema},
+        project.organizations[1].name: {'uri': 's3://cape-worker/y_data_cape_demo.csv', 'schema': y_schema),
     }
-
-    df = pd.DataFrame({"x": [1.0, 2.0], "y": [1.0, 2.0]})
 
     for org in project.organizations:
         try:
-            print(project.create_dataview(name=f"{org.name}-data", owner_id=org.id, uri=org_dv[org.name], schema=df.dtypes))
+            print(project.create_dataview(name=f"{org.name}-data", owner_id=org.id, uri=org_dv[org.name]['uri'], schema=org_dv[org.name]['schema']))
         except KeyError:
             continue
 
@@ -76,8 +76,8 @@ def make_job():
         print(f'\t{dv}')
 
     job = VerticallyPartitionedLinearRegression(
-        x_train_dataview=project.dataviews[0]['col1'],
-        y_train_dataview=project.dataviews[1]['col1'],
+        x_train_dataview=project.dataviews[0]['x_1'],
+        y_train_dataview=project.dataviews[1]['y'],
     )
 
     job = project.submit_job(job, timeout=60)
