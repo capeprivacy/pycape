@@ -112,7 +112,7 @@ def make_job():
         y_train_dataview=project.dataviews[1]["y"],
     )
 
-    job = project.submit_job(job, timeout=60)
+    job = project.submit_job(job, timeout=120)
     for o in project.organizations:
         job.approve(org_id=o.id)
 
