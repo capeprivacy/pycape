@@ -24,6 +24,11 @@ parser.add_argument(
     help="Skips projects setup i.e. adding dataviews",
 )
 parser.add_argument(
+    "--skip-approval",
+    action="store_true",
+    help="Skips auto-approving the jobs",
+)
+parser.add_argument(
     "--show-projects", action="store_true", help="Prints projects you are in exits"
 )
 args = parser.parse_args()
@@ -114,8 +119,9 @@ def make_job():
     )
 
     job = project.submit_job(job, timeout=120)
-    for o in project.organizations:
-        job.approve(org_id=o.id)
+    if not args.skip_approval:
+        for o in project.organizations:
+            job.approve(org_id=o.id)
 
     print(f"\nSubmitted job {job} to run")
 
