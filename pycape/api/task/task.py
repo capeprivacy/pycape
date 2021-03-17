@@ -17,7 +17,7 @@ class Task(ABC):
     def __init__(self, model_location: str = None, **kwargs):
         for k, v in kwargs.items():
             self.__dict__[k] = v
-        print("see model_", model_location)
+
         self.model_location = model_location
 
     def __repr__(self):
@@ -25,7 +25,6 @@ class Task(ABC):
 
     @property
     def model_location(self):
-        print("in get")
         return self.__model_location
 
     @model_location.setter
