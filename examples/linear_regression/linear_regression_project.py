@@ -110,6 +110,7 @@ def make_job():
     job = VerticallyPartitionedLinearRegression(
         x_train_dataview=project.dataviews[0]["x_1"],
         y_train_dataview=project.dataviews[1]["y"],
+        model_location="s3://cape-worker",
     )
 
     job = project.submit_job(job, timeout=120)
