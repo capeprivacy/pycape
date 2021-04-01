@@ -17,6 +17,7 @@ class Requester:
         id
         name
         location
+        development
         owner {
             ... on Organization {
                 id
@@ -204,6 +205,7 @@ class Requester:
         owner_id: Optional[str],
         owner_label: Optional[str],
         schema: list,
+        development: bool = False,
     ) -> Optional[dict]:
         return self._gql_req(
             query=f"""
@@ -224,6 +226,7 @@ class Requester:
                     "owner_id": owner_id,
                     "owner_label": owner_label,
                     "schema": schema,
+                    "development": development,
                 },
             },
         ).get("addDataView")

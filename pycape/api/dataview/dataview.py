@@ -1,6 +1,8 @@
 import json
 from abc import ABC
+from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Union
 from urllib.error import HTTPError
 
@@ -23,6 +25,7 @@ class DataView(ABC):
         location (str): URI of `DataView`.
         owner (dict): Dictionary of fields related to the `DataView` owner.
         user_id (str): User ID of requester.
+        development (bool): Whether this dataview is in development mode or not.
     """
 
     def __init__(
@@ -33,14 +36,16 @@ class DataView(ABC):
         schema: Union[pd.Series, List, None] = None,
         owner: dict = None,
         user_id: str = None,
+        development: Optional[bool] = None,
     ):
-        self.id: str = id
-        self.name: str = name
-        self.location: str = location
+        self.id: Optional[str] = id
+        self.name: Optional[str] = name
+        self.location: Optional[str] = location
         self._schema: Union[pd.Series, List, None] = schema
-        self._user_id: str = user_id
-        self._owner: dict = owner
+        self._user_id: Optional[str] = user_id
+        self._owner: Optional[Dict] = owner
         self._cols = None
+        self.development = development
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name}, location={self.location})"
@@ -53,7 +58,7 @@ class DataView(ABC):
         return self
 
     @property
-    def schema(self) -> dict:
+    def schema(self) -> Optional[Dict[str, str]]:
         """
         Return schema as a dict of column names as keys, and values as key data types
         """

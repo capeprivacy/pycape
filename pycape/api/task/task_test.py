@@ -2,8 +2,8 @@ import contextlib
 
 import pytest
 
-from ..dataview.dataview import DataView
 from ...exceptions import StorageSchemeException
+from ..dataview.dataview import DataView
 from .task import Task
 from .vertical_linear_regression_task import VerticallyPartitionedLinearRegression
 

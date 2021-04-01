@@ -138,6 +138,7 @@ class Project(ABC):
         owner_id: Optional[str] = None,
         owner_label: Optional[str] = None,
         schema: Union[pd.Series, List, None] = None,
+        development: bool = False,
     ) -> DataView:
         """
         Creates a `DataView` in Cape Cloud. Returns created `Dataview`
@@ -153,6 +154,7 @@ class Project(ABC):
                     integer
                     number
                     datetime
+            development: Whether the created dataview is in development mode or not.
         Returns:
             A `DataView` instance.
         """
@@ -173,6 +175,7 @@ class Project(ABC):
             owner_id=owner_id,
             owner_label=owner_label,
             schema=parse_schema,
+            development=development,
         )
         data_view = DataView(user_id=self._user_id, **data_view_dict)
 

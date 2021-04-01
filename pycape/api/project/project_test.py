@@ -31,7 +31,7 @@ class TestProject:
 
     @responses.activate
     @pytest.mark.parametrize(
-        "json,dvs,uri_type,schema,exception",
+        "json,dvs,uri_type,schema,development,exception",
         [
             (
                 {
@@ -40,12 +40,31 @@ class TestProject:
                             "id": "abc123",
                             "name": "my-data",
                             "location": "http://my-data.csv",
+                            "development": False,
                         }
                     }
                 },
                 [],
                 "http",
                 None,
+                False,
+                notraising(),
+            ),
+            (
+                {
+                    "data": {
+                        "addDataView": {
+                            "id": "abc123",
+                            "name": "my-data",
+                            "location": "http://my-data.csv",
+                            "development": True,
+                        }
+                    }
+                },
+                [],
+                "http",
+                None,
+                True,
                 notraising(),
             ),
             (
@@ -55,12 +74,14 @@ class TestProject:
                             "id": "abc123",
                             "name": "my-data",
                             "location": "https://my-data.csv",
+                            "development": False,
                         }
                     }
                 },
                 [],
                 "https",
                 None,
+                False,
                 notraising(),
             ),
             (
@@ -70,6 +91,7 @@ class TestProject:
                             "id": "abc123",
                             "name": "my-data",
                             "location": "s3://my-data.csv",
+                            "development": False,
                         }
                     }
                 },
@@ -88,6 +110,7 @@ class TestProject:
                 ],
                 "s3",
                 [{"name": "col_1", "schema_type": "integer"}],
+                False,
                 notraising(),
             ),
             (
@@ -97,12 +120,14 @@ class TestProject:
                             "id": "abc123",
                             "name": "my-data",
                             "location": "s3://my-data.csv",
+                            "development": False,
                         }
                     }
                 },
                 [],
                 "s3",
                 None,
+                False,
                 pytest.raises(Exception, match="DataView schema must be specified."),
             ),
             (
@@ -110,11 +135,14 @@ class TestProject:
                 [],
                 "http",
                 None,
+                False,
                 pytest.raises(GQLException, match="An error occurred: .*"),
             ),
         ],
     )
-    def test_create_dataview(self, json, dvs, uri_type, schema, exception, mocker):
+    def test_create_dataview(
+        self, json, dvs, uri_type, schema, development, exception, mocker
+    ):
         with exception:
             mocker.patch(
                 "pycape.api.dataview.dataview.pd.read_csv",
@@ -137,6 +165,7 @@ class TestProject:
                 uri=f"{uri_type}://my-data.csv",
                 owner_id="fsda",
                 schema=schema,
+                development=development,
             )
 
         if isinstance(exception, contextlib._GeneratorContextManager):
@@ -144,6 +173,7 @@ class TestProject:
             assert len(my_project.dataviews) == len(dvs) + 1
             assert isinstance(my_project.dataviews[len(dvs) - 1], DataView)
             assert dataview.id == "abc123"
+            assert dataview.development == development
 
     @responses.activate
     @pytest.mark.parametrize(
