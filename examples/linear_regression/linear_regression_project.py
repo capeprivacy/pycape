@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import time
 
 import pandas as pd
 
@@ -141,6 +142,7 @@ if __name__ == "__main__":
     print("Waiting for job completion...")
     while status != "Completed" and status != "Error":
         status = job.get_status()
+        time.sleep(1)
 
     print(f"Received status {status}. Exitting...")
     if status == "Completed":
