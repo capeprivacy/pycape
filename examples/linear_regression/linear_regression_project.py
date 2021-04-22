@@ -32,6 +32,9 @@ parser.add_argument(
 parser.add_argument(
     "--show-projects", action="store_true", help="Prints projects you are in exits"
 )
+parser.add_argument(
+    "--timeout", default=90, type=int, help="How long to wait for the computation to finish"
+)
 args = parser.parse_args()
 
 token = args.token
@@ -141,9 +144,15 @@ if __name__ == "__main__":
     job = make_job()
     status = job.get_status()
     print("Waiting for job completion...")
+    count = 0
     while status != "Completed" and status != "Error":
+        if count > args.timeout:
+            print(f"Timeout after {args.timeout} seconds")
+            sys.exit(-1)
+
         status = job.get_status()
         time.sleep(1)
+        count = count + 1
 
     print(f"Received status {status}. Exiting...")
     if status == "Completed":
