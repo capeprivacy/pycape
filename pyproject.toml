@@ -21,7 +21,7 @@ boto3 = ">=1.16,<1.18"
 [tool.poetry.dev-dependencies]
 pytest = "~6.2.0"
 coverage = "5.5"
-black = "~19.10b0"
+black = "~20.8b1"
 pytest-cov = "~2.10.0"
 pytest-mock = "~3.5.1"
 pytest-httpserver = "~1.0.0"
