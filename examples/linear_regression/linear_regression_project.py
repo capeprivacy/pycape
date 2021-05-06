@@ -3,10 +3,9 @@ import os
 import sys
 import time
 
-import pandas as pd
+import numpy as np
 
 from pycape import Cape
-from pycape import DataView
 from pycape import VerticallyPartitionedLinearRegression
 
 parser = argparse.ArgumentParser(
@@ -160,6 +159,13 @@ if __name__ == "__main__":
 
     print(f"Received status {status}. Exiting...")
     if status == "Completed":
+        weights, metrics = job.get_results()
+
+        np.testing.assert_almost_equal(weights, [10.1148,  2.7721], decimal=4)
+
+        np.testing.assert_almost_equal(metrics['r_squared_result'], [0.2729], decimal=4)
+        np.testing.assert_almost_equal(metrics['mse_result'], [21.4640], decimal=4)
+
         sys.exit()
     else:
         sys.exit(-1)
