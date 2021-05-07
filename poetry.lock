@@ -833,11 +833,11 @@ test = ["coverage", "pytest", "pytest-cov", "requests"]
 
 [[package]]
 name = "pytest-mock"
-version = "3.5.1"
+version = "3.6.1"
 description = "Thin-wrapper around the mock package for easier use with pytest"
 category = "dev"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
 
 [package.dependencies]
 pytest = ">=5.0"
@@ -1060,7 +1060,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.1"
-content-hash = "25801d36d971296b6c68e095f9c5bd86cad325ddd242b79feffe0ccfcf95b0b9"
+content-hash = "38b70b90c63c08d59cfedc721c222d44e955c0a3054b9663fe57ed03be7b880f"
 
 [metadata.files]
 appdirs = [
@@ -1527,8 +1527,8 @@ pytest-httpserver = [
     {file = "pytest_httpserver-1.0.0.tar.gz", hash = "sha256:ae3095d134d40602e95721140e222139da4a579956123990af85825324d0746d"},
 ]
 pytest-mock = [
-    {file = "pytest-mock-3.5.1.tar.gz", hash = "sha256:a1e2aba6af9560d313c642dae7e00a2a12b022b80301d9d7fc8ec6858e1dd9fc"},
-    {file = "pytest_mock-3.5.1-py3-none-any.whl", hash = "sha256:379b391cfad22422ea2e252bdfc008edd08509029bcde3c25b2c0bd741e0424e"},
+    {file = "pytest-mock-3.6.1.tar.gz", hash = "sha256:40217a058c52a63f1042f0784f62009e976ba824c418cced42e88d5f40ab0e62"},
+    {file = "pytest_mock-3.6.1-py3-none-any.whl", hash = "sha256:30c2f2cc9759e76eee674b81ea28c9f0b94f8f0445a1b87762cadf774f0df7e3"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
