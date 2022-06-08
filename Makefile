@@ -27,3 +27,6 @@ lint:
 .PHONY: test
 test:
 	pytest -m .
+
+.PHONY: test-ci
+test-ci: test
