@@ -1,0 +1,8 @@
+black
+flake8-black
+flake8-isort
+flake8
+isort
+pip~=21.2
+pytest
+wheel~=0.36.2
