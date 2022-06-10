@@ -1,4 +1,3 @@
-import base64
 import io
 
 import tink
@@ -20,8 +19,7 @@ class TestEnclaveEncryption:
         public_key_stream = io.BytesIO()
         writer = tink.BinaryKeysetWriter(public_key_stream)
         cleartext_keyset_handle.write(writer, public_keyset_handle)
-        ciphertext_b64 = encrypt(plaintext, public_key_stream.getvalue(), context)
-        ciphertext = base64.b64decode(ciphertext_b64.encode("utf-8"))
+        ciphertext = encrypt(plaintext, public_key_stream.getvalue(), context)
         decrypt = private_keyset_handle.primitive(tink.hybrid.HybridDecrypt)
         decrypted_data = decrypt.decrypt(ciphertext, context)
 
