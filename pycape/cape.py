@@ -11,8 +11,8 @@ from pycape.enclave_encrypt import encrypt
 
 class Cape:
     def __init__(self):
-        self._url = "ws://localhost:8765"
-        # self._url = "wss://cape.run"
+        #self._url = "ws://localhost:8765"
+        self._url = "wss://cape.run"
         self._auth_token = "not_implemented"
 
     def run(self, function_id, input):
@@ -31,7 +31,7 @@ class Cape:
             public_key = parse_attestation(attestation)
 
             input_bytes = _convert_input_to_bytes(input)
-            ciphertext = encrypt(public_key, input_bytes)
+            ciphertext = encrypt(input_bytes, public_key)
             await websocket.send(ciphertext)
 
             result = await websocket.recv()
