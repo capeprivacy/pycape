@@ -1,5 +1,3 @@
-import base64
-
 from tink import BinaryKeysetReader
 from tink import hybrid
 from tink import read_no_secret_keyset_handle
