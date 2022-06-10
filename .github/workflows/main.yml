@@ -1,10 +1,5 @@
 name: Main
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
+on: [push]
 jobs:
   build:
     name: Test
@@ -46,3 +41,7 @@ jobs:
         run: |
           . venv/bin/activate
           make lint
+      - name: Test cape.
+        run: |
+          . venv/bin/activate
+          make test-ci

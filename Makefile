@@ -26,7 +26,7 @@ lint:
 
 .PHONY: test
 test:
-	pytest -m .
+	pytest
 
 .PHONY: test-ci
 test-ci: test
