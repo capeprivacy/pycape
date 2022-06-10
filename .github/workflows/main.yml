@@ -46,3 +46,7 @@ jobs:
         run: |
           . venv/bin/activate
           make lint
+      - name: Test cape.
+        run: |
+          . venv/bin/activate
+          make test-ci
