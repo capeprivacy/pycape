@@ -11,7 +11,7 @@ from pycape.enclave_encrypt import encrypt
 
 class Cape:
     def __init__(self):
-        #self._url = "ws://localhost:8765"
+        # self._url = "ws://localhost:8765"
         self._url = "wss://cape.run"
         self._auth_token = "not_implemented"
 
