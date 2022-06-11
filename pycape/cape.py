@@ -68,9 +68,6 @@ def _convert_input_to_bytes(input):
 
 def _parse_result(result):
     result = json.loads(result)
-    b64data = result["results"]["data"]
+    b64data = result["data"]
     data = base64.b64decode(b64data)
-    b64stderr = result["results"]["stderr"]
-    stderr = base64.b64decode(b64stderr)
-    print("stderr", stderr)
     return data
