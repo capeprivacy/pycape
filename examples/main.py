@@ -1,4 +1,4 @@
-from pycape.cape import Cape
+from pycape import Cape
 
 if __name__ == "__main__":
     cape = Cape()
