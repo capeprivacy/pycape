@@ -10,35 +10,51 @@ from pycape.enclave_encrypt import encrypt
 
 
 class Cape:
-    def __init__(self):
-        # self._url = "ws://localhost:8765"
-        self._url = "wss://cape.run"
-        self._auth_token = "not_implemented"
+    def __init__(self, url = "wss://cape.run", auth_token=""):
+        self._url = url
+        self._auth_token = auth_token
+        self._websocket = ""
+        self._public_key = ""
 
     def run(self, function_id, input):
         return asyncio.run(self._run(function_id, input))
 
-    async def _run(self, function_id, input):
+    async def connect(self, function_id):
         endpoint = f"{self._url}/v1/run/{function_id}"
 
-        async with websockets.connect(endpoint) as websocket:
+        self._websocket = await websockets.connect(endpoint)
 
-            nonce = _generate_nonce()
-            request = _create_request(self._auth_token, nonce)
-            await websocket.send(request)
+        nonce = _generate_nonce()
+        request = _create_request(self._auth_token, nonce)
+        await self._websocket.send(request)
 
-            attestation = await websocket.recv()
-            public_key = parse_attestation(attestation)
+        attestation = await self._websocket.recv()
+        self._public_key = parse_attestation(attestation)
 
-            input_bytes = _convert_input_to_bytes(input)
-            ciphertext = encrypt(input_bytes, public_key)
-            await websocket.send(ciphertext)
+        return
 
-            result = await websocket.recv()
-            result = _parse_result(result)
+    async def invoke(self, input):
+        input_bytes = _convert_input_to_bytes(input)
+        ciphertext = encrypt(input_bytes, self._public_key)
 
-            return result
+        await self._websocket.send(ciphertext)
+        result = await self._websocket.recv()
+        result = _parse_result(result)
 
+        return result
+
+    async def close(self):
+        await self._websocket.close()
+
+    async def _run(self, function_id, input):
+
+        await self.connect(function_id)
+
+        result = await self.invoke(input)
+
+        await self.close()
+
+        return result
 
 # TODO What should be the lenght?
 def _generate_nonce(length=8):
