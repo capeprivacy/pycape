@@ -17,18 +17,19 @@ class Cape:
         self._insecure = insecure
         self._websocket = ""
         self._public_key = ""
+        self._loop = asyncio.get_event_loop()
 
     def run(self, function_id, input):
         return asyncio.run(self._run(function_id, input))
 
     def connect(self, function_id):
-        asyncio.run(self._connect(function_id))
+        self._loop.run_until_complete(self._connect(function_id))
 
     def invoke(self, input):
-        return asyncio.run(self._invoke(input))
+        return self._loop.run_until_complete(self._invoke(input))
 
     def close(self):
-        asyncio.run(self._close())
+        self._loop.run_until_complete(self._close())
 
     async def _connect(self, function_id):
         endpoint = f"{self._url}/v1/run/{function_id}"
@@ -43,13 +44,14 @@ class Cape:
 
         nonce = _generate_nonce()
         request = _create_request(self._auth_token, nonce)
+
         await self._websocket.send(request)
 
         msg = await self._websocket.recv()
         attestation_doc = json.loads(msg)
         doc = base64.b64decode(attestation_doc["message"])
         self._public_key = parse_attestation(doc)
-        print("got publik keey")
+
         return
 
     async def _invoke(self, input):
