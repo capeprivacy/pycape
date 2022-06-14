@@ -1,6 +1,6 @@
 # Pycape
-The Cape Privacy Python SDK
 
+The Cape Privacy Python SDK
 
 ## Installation
 
