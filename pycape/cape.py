@@ -10,11 +10,9 @@ from pycape.enclave_encrypt import encrypt
 
 
 class Cape:
-    def __init__(self, url = "wss://cape.run", auth_token=""):
-        self._url = url
-        self._auth_token = auth_token
-        self._websocket = ""
-        self._public_key = ""
+    def __init__(self):
+        self._url = "wss://cape.run"
+        self._auth_token = "not_implemented"
 
     def run(self, function_id, input):
         return asyncio.run(self._run(function_id, input))
