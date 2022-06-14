@@ -66,6 +66,7 @@ class Cape:
 
         return result
 
+
 # TODO What should be the length?
 def _generate_nonce(length=8):
     return "".join([str(random.randint(0, 9)) for i in range(length)])
