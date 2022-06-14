@@ -21,7 +21,16 @@ class Cape:
     def run(self, function_id, input):
         return asyncio.run(self._run(function_id, input))
 
-    async def connect(self, function_id):
+    def connect(self, function_id):
+        asyncio.run(self._connect(function_id))
+
+    def invoke(self, input):
+        return asyncio.run(self._invoke(input))
+
+    def close(self):
+        asyncio.run(self._close())
+
+    async def _connect(self, function_id):
         endpoint = f"{self._url}/v1/run/{function_id}"
 
         ctx = ssl.create_default_context()
@@ -40,10 +49,10 @@ class Cape:
         attestation_doc = json.loads(msg)
         doc = base64.b64decode(attestation_doc["message"])
         self._public_key = parse_attestation(doc)
-
+        print("got publik keey")
         return
 
-    async def invoke(self, input):
+    async def _invoke(self, input):
         input_bytes = _convert_input_to_bytes(input)
         ciphertext = encrypt(input_bytes, self._public_key)
 
@@ -53,16 +62,16 @@ class Cape:
 
         return result
 
-    async def close(self):
+    async def _close(self):
         await self._websocket.close()
 
     async def _run(self, function_id, input):
 
-        await self.connect(function_id)
+        await self._connect(function_id)
 
-        result = await self.invoke(input)
+        result = await self._invoke(input)
 
-        await self.close()
+        await self._close()
 
         return result
 
