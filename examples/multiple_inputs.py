@@ -1,5 +1,6 @@
 from pycape.cape import Cape
 import asyncio
+import os
 
 async def run():
 
@@ -7,7 +8,7 @@ async def run():
     url = os.environ.get("CAPE_HOST", "wss://cape.run")
 
     cape = Cape(url=url, token=token)
-    
+
     await cape.connect("e4c2a674-9c7f-42d3-8ade-63791c16c3c7")
 
     result = await cape.invoke('Hello Cape')
