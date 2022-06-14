@@ -2,6 +2,7 @@ import asyncio
 import base64
 import json
 import random
+import ssl
 
 import websockets
 
@@ -10,9 +11,10 @@ from pycape.enclave_encrypt import encrypt
 
 
 class Cape:
-    def __init__(self):
-        self._url = "wss://cape.run"
-        self._auth_token = "not_implemented"
+    def __init__(self, url="wss://cape.run", token="", insecure=False):
+        self._url = url
+        self._auth_token = token
+        self._insecure = insecure
 
     def run(self, function_id, input):
         return asyncio.run(self._run(function_id, input))
@@ -20,33 +22,26 @@ class Cape:
     async def connect(self, function_id):
         endpoint = f"{self._url}/v1/run/{function_id}"
 
-        self._websocket = await websockets.connect(endpoint)
+        ctx = ssl.create_default_context()
 
-        nonce = _generate_nonce()
-        request = _create_request(self._auth_token, nonce)
-        await self._websocket.send(request)
+        if self._insecure:
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
 
-        attestation = await self._websocket.recv()
-        self._public_key = parse_attestation(attestation)
+        async with websockets.connect(endpoint, ssl=ctx) as websocket:
+            nonce = _generate_nonce()
+            request = _create_request(self._auth_token, nonce)
+            await websocket.send(request)
 
-        return
+            msg = await websocket.recv()
+            attestation_doc = json.loads(msg)
+            doc = base64.b64decode(attestation_doc["message"])
+            public_key = parse_attestation(doc)
 
-    async def invoke(self, input):
-        input_bytes = _convert_input_to_bytes(input)
-        ciphertext = encrypt(input_bytes, self._public_key)
+            input_bytes = _convert_input_to_bytes(input)
+            ciphertext = encrypt(input_bytes, public_key)
 
-        await self._websocket.send(ciphertext)
-        result = await self._websocket.recv()
-        result = _parse_result(result)
-
-        return result
-
-    async def close(self):
-        await self._websocket.close()
-
-    async def _run(self, function_id, input):
-
-        await self.connect(function_id)
+            await websocket.send(ciphertext)
 
         result = await self.invoke(input)
 
@@ -54,7 +49,7 @@ class Cape:
 
         return result
 
-# TODO What should be the lenght?
+# TODO What should be the length?
 def _generate_nonce(length=8):
     return "".join([str(random.randint(0, 9)) for i in range(length)])
 
