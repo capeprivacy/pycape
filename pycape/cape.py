@@ -17,11 +17,21 @@ class Cape:
         self._insecure = insecure
         self._websocket = ""
         self._public_key = ""
+        self._loop = asyncio.get_event_loop()
 
     def run(self, function_id, input):
         return asyncio.run(self._run(function_id, input))
 
-    async def connect(self, function_id):
+    def connect(self, function_id):
+        self._loop.run_until_complete(self._connect(function_id))
+
+    def invoke(self, input):
+        return self._loop.run_until_complete(self._invoke(input))
+
+    def close(self):
+        self._loop.run_until_complete(self._close())
+
+    async def _connect(self, function_id):
         endpoint = f"{self._url}/v1/run/{function_id}"
 
         ctx = ssl.create_default_context()
@@ -34,6 +44,7 @@ class Cape:
 
         nonce = _generate_nonce()
         request = _create_request(self._auth_token, nonce)
+
         await self._websocket.send(request)
 
         msg = await self._websocket.recv()
@@ -43,7 +54,7 @@ class Cape:
 
         return
 
-    async def invoke(self, input):
+    async def _invoke(self, input):
         input_bytes = _convert_input_to_bytes(input)
         ciphertext = encrypt(input_bytes, self._public_key)
 
@@ -53,16 +64,16 @@ class Cape:
 
         return result
 
-    async def close(self):
+    async def _close(self):
         await self._websocket.close()
 
     async def _run(self, function_id, input):
 
-        await self.connect(function_id)
+        await self._connect(function_id)
 
-        result = await self.invoke(input)
+        result = await self._invoke(input)
 
-        await self.close()
+        await self._close()
 
         return result
 
