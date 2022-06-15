@@ -106,6 +106,6 @@ def _convert_input_to_bytes(input):
 
 def _parse_result(result):
     result = json.loads(result)
-    b64data = result["data"]
+    b64data = result["message"]
     data = base64.b64decode(b64data)
     return data
