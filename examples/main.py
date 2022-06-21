@@ -6,11 +6,11 @@ if __name__ == "__main__":
     token = os.environ["CAPE_TOKEN"]
     url = os.environ.get("CAPE_HOST", "wss://cape.run")
     function_id = os.environ.get(
-        "CAPE_FUNCTION", "9f1f7e5b-6a84-4196-a70c-c86024d088c8"
+        "CAPE_FUNCTION", "e4c2a674-9c7f-42d3-8ade-63791c16c3c7"
     )
 
     cape = Cape(url=url, token=token)
-    input = 20
+    input = "Welcome to Cape"
     result = cape.run(function_id, input)
 
     print(f"The result is: {result}")
