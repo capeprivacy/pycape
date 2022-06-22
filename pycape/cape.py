@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+import os
 import pathlib
 import random
 import ssl
@@ -11,16 +12,16 @@ from pycape.attestation import parse_attestation
 from pycape.enclave_encrypt import encrypt
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
+_DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
 
 
 class Cape:
-    def __init__(self, url="wss://cape.run", access_token=None, insecure=False):
+    def __init__(self, url="wss://cape.run", access_token=None):
         self._url = url
         if access_token is None:
             cape_auth_path = _CAPE_CONFIG_PATH / "auth"
             access_token = _handle_default_auth(cape_auth_path)
         self._auth_token = access_token
-        self._insecure = insecure
         self._websocket = ""
         self._public_key = ""
         self._loop = asyncio.get_event_loop()
@@ -42,7 +43,7 @@ class Cape:
 
         ctx = ssl.create_default_context()
 
-        if self._insecure:
+        if _DISABLE_SSL:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
 
