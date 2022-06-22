@@ -34,7 +34,7 @@ make install
 
 ## Usage
 
-Replace `<AUTH_TOKEN>` and `<FUNCTION_ID>` with your values.
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, you can find the access token in your `~/.config` directory as follows: `cat ~/.config/cape/auth`. Then you'll obtain a function id ('<FUNCTION_ID>') once you have deployed your function with `cape deploy`.
 
 ### `run`
 
