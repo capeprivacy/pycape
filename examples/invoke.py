@@ -3,7 +3,7 @@ import os
 from pycape.cape import Cape
 
 if __name__ == "__main__":
-    token = os.environ["CAPE_TOKEN"]
+    token = os.environ.get("CAPE_TOKEN", None)
     url = os.environ.get("CAPE_HOST", "wss://cape.run")
     cape = Cape(url=url, token=token)
     function_id = os.environ.get(
