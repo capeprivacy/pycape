@@ -30,3 +30,7 @@ test:
 
 .PHONY: test-ci
 test-ci: test
+
+
+.PHONY: ci-ready
+ci-ready: fmt lint test-ci

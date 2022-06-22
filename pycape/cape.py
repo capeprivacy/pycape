@@ -99,8 +99,10 @@ def _convert_input_to_bytes(input):
         input = json.dumps(input)
     elif isinstance(input, str):
         pass
+    elif isinstance(input, bytes):
+        return input
     else:
-        raise ValueError("Is this an error situation?")
+        raise ValueError(f"Run doesn't support input of type: {type(input)}")
     return bytes(input, "utf-8")
 
 

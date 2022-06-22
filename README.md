@@ -1,6 +1,16 @@
 # Pycape
 
-The Cape Privacy Python SDK
+The Cape SDK for Pythong is a library that provides a simple way to interact with the Cape Privacy API.
+
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#installation">Installation</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+  </ol>
+</details>
+
 
 ## Installation
 
@@ -15,8 +25,55 @@ We recommend that you use a [Python "Virtual Environment"](https://packaging.pyt
 ### Install from source
 
 To install the library from source and all of its dependencies, run:
-```
+```sh
 git clone https://github.com/capeprivacy/pycape.git
 cd pycape
 make install
 ```
+
+## Usage
+
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, you can find the access token in your `~/.config` directory as follows: `cat ~/.config/cape/auth`. Then you'll obtain a function id ('<FUNCTION_ID>') once you have deployed your function with `cape deploy`.
+
+### `run`
+
+Run is used to invoke a function once with a single input.
+
+Example [run.py](https://github.com/capeprivacy/pycape/tree/main/examples/run.py):
+
+```py
+from pycape import Cape
+
+client = Cape(token='<AUTH_TOKEN>')
+client.run(function_id='<FUNCTION_ID>', input='my_data')
+```
+
+### `invoke`
+
+Invoke is used to run a function repeatedly with multiple inputs. It gives you more control over the lifecycle of the function invocation.
+
+Example [invoke.py](https://github.com/capeprivacy/pycape/blob/main/examples/invoke.py):
+
+```py
+from pycape import Cape
+
+client = Cape(token='<AUTH_TOKEN>')
+client.connect(function_id='<FUNCTION_ID>')
+client.invoke(input='my-data-1')
+client.invoke(input='my-data-2')
+client.invoke(input='my-data-3')
+cape.close()
+```
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
+
+Read more about how to contribute to the Cape SDK in [CONTRIBUTING](https://github.com/capeprivacy/pycape/tree/main/CONTRIBUTING.md).
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
