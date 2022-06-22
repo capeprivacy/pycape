@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+import pathlib
 import random
 import ssl
 
@@ -9,11 +10,16 @@ import websockets
 from pycape.attestation import parse_attestation
 from pycape.enclave_encrypt import encrypt
 
+_CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
+
 
 class Cape:
-    def __init__(self, url="wss://cape.run", token="", insecure=False):
+    def __init__(self, url="wss://cape.run", access_token=None, insecure=False):
         self._url = url
-        self._auth_token = token
+        if access_token is None:
+            cape_auth_path = _CAPE_CONFIG_PATH / "auth"
+            access_token = _handle_default_auth(cape_auth_path)
+        self._auth_token = access_token
         self._insecure = insecure
         self._websocket = ""
         self._public_key = ""
@@ -111,3 +117,19 @@ def _parse_result(result):
     b64data = result["message"]
     data = base64.b64decode(b64data)
     return data
+
+
+def _handle_default_auth(auth_path: pathlib.Path):
+    if not auth_path.exists():
+        raise ValueError(
+            f"No Cape auth file found at {str(auth_path)}. Have you authenticated "
+            "this device with the Cape CLI's `login` command?"
+        )
+    with open(auth_path, "r") as auth_file:
+        auth_dict = json.load(auth_file)
+    access_token = auth_dict.get("access_token", None)
+    if access_token is None:
+        raise ValueError(
+            "Malformed auth file found: missing 'access_token' JSON field."
+        )
+    return access_token
