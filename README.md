@@ -1,6 +1,6 @@
 # Pycape
 
-The Cape SDK for Pythong is a library that provides a simple way to interact with the Cape Privacy API.
+The Cape SDK for Python is a library that provides a simple way to interact with the Cape Privacy API.
 
 <details>
   <summary>Table of Contents</summary>
@@ -33,7 +33,7 @@ make install
 
 ## Usage
 
-Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, your can be found in the `~/.config/cape/auth` file. Then you'll obtain a function id ('<FUNCTION_ID>') once you have deployed a function with `cape deploy`.
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, your can be found in the `~/.config/cape/auth` file. Then you'll obtain a function id (`<FUNCTION_ID>`) once you have deployed a function with `cape deploy`.
 
 ### `run`
 
