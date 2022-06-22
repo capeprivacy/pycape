@@ -8,7 +8,6 @@ The Cape SDK for Pythong is a library that provides a simple way to interact wit
     <li><a href="#installation">Installation</a></li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
   </ol>
 </details>
 
@@ -75,12 +74,6 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 Please make sure to update tests as appropriate.
 
 Read more about how to contribute to the Cape SDK in [CONTRIBUTING](https://github.com/capeprivacy/pycape/tree/main/CONTRIBUTING.md).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
