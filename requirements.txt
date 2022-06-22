@@ -6,8 +6,6 @@
 #
 absl-py==1.1.0
     # via tink
-asyncio==3.4.3
-    # via -r requirements.in
 attrs==21.4.0
     # via pytest
 black==22.3.0
@@ -46,9 +44,7 @@ platformdirs==2.5.2
 pluggy==1.0.0
     # via pytest
 protobuf==3.20.1
-    # via
-    #   -r requirements.in
-    #   tink
+    # via tink
 py==1.11.0
     # via pytest
 pycodestyle==2.8.0
@@ -74,8 +70,3 @@ typing-extensions==4.2.0
     # via black
 websockets==10.3
     # via -r requirements.in
-wheel==0.36.2
-    # via -r requirements.in
-
-# The following packages are considered to be unsafe in a requirements file:
-# pip
