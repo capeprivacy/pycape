@@ -33,7 +33,7 @@ make install
 
 ## Usage
 
-Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, you can find the access token in your `~/.config` directory as follows: `cat ~/.config/cape/auth`. Then you'll obtain a function id ('<FUNCTION_ID>') once you have deployed your function with `cape deploy`.
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, your can be found in the `~/.config/cape/auth` file. Then you'll obtain a function id ('<FUNCTION_ID>') once you have deployed a function with `cape deploy`.
 
 ### `run`
 
@@ -44,7 +44,7 @@ Example [run.py](https://github.com/capeprivacy/pycape/tree/main/examples/run.py
 ```py
 from pycape import Cape
 
-client = Cape(token='<AUTH_TOKEN>')
+client = Cape()
 client.run(function_id='<FUNCTION_ID>', input='my_data')
 ```
 
@@ -57,7 +57,7 @@ Example [invoke.py](https://github.com/capeprivacy/pycape/blob/main/examples/inv
 ```py
 from pycape import Cape
 
-client = Cape(token='<AUTH_TOKEN>')
+client = Cape()
 client.connect(function_id='<FUNCTION_ID>')
 client.invoke(input='my-data-1')
 client.invoke(input='my-data-2')
