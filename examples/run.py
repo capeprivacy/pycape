@@ -9,7 +9,7 @@ if __name__ == "__main__":
         "CAPE_FUNCTION", "e4c2a674-9c7f-42d3-8ade-63791c16c3c7"
     )
 
-    cape = Cape(url=url, token=token)
+    cape = Cape(url=url, access_token=token)
     input = "Welcome to Cape"
     result = cape.run(function_id, input)
 
