@@ -1,9 +1,9 @@
-from pycape.io_lifter import iolift
+from pycape.io_lifter import io_serialize
 from pycape.serialize import deserialize
 from pycape.serialize import serialize
 
 
-@iolift
+@io_serialize
 def identity(x):
     return x
 

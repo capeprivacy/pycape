@@ -7,11 +7,11 @@ from pycape.serialize import decode
 from pycape.serialize import encode
 
 
-def iolift(f):
+def io_serialize(f):
     return lift(f, encoder_hook=encode, decoder_hook=decode).as_cape_handler()
 
 
-def lift(f, *, encoder_hook=None, decoder_hook=None):
+def lift(f, encoder_hook=None, decoder_hook=None):
     return CapeIOLifter(f, encoder_hook, decoder_hook)
 
 
