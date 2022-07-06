@@ -11,14 +11,14 @@ class _MsgpackExtType(enum.IntEnum):
 
 
 def serialize(x):
-    return msgpack.packb(x, default=_encode, strict_types=True)
+    return msgpack.packb(x, default=encode, strict_types=True)
 
 
 def deserialize(x_bytes):
-    return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=_decode)
+    return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decode)
 
 
-def _encode(x):
+def encode(x):
     if isinstance(x, str):
         return {
             "__type__": "string",
@@ -93,7 +93,7 @@ def _encode(x):
         raise ValueError(f"Unexpected input type: {type(x)}")
 
 
-def _decode(obj):
+def decode(obj):
     if "__type__" in obj:
         if obj["__type__"] == [
             "string",
