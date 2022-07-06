@@ -32,10 +32,7 @@ class CapeIOLifter:
     def as_cape_handler(self):
         def cape_handler(input_bytes):
             f_input = msgpack.unpackb(input_bytes, object_hook=self.decoder_hook)
-            fargs = f_input
-            # fargs, fkwargs = f_input[:-1], f_input[-1]
-            # output_tuple = self.func(*fargs, **fkwargs)
-            output_tuple = self.func(fargs)
+            output_tuple = self.func(f_input)
             output_blob = msgpack.packb(output_tuple, default=self.encoder_hook)
             return output_blob
 
