@@ -33,6 +33,7 @@ class Cape:
             self._run(
                 function_id,
                 input,
+                msgpack_serialize=msgpack_serialize,
             )
         )
 
@@ -41,7 +42,7 @@ class Cape:
 
     def invoke(self, input, msgpack_serialize=False):
         return self._loop.run_until_complete(
-            self._invoke(input), msgpack_serialize=False
+            self._invoke(input, msgpack_serialize=msgpack_serialize)
         )
 
     def close(self):
@@ -77,7 +78,7 @@ class Cape:
             else:
                 raise ValueError(
                     f"The input type is: {type(input)}. Provide input as bytes or "
-                    "set msgpac_serialize in the run or invoke function as True to "
+                    "set msgpac_serialize in cape.run or cape.invoke as True to "
                     "have PyCape serialize your input with MessagePack"
                 )
 
@@ -99,7 +100,7 @@ class Cape:
 
         await self._connect(function_id)
 
-        result = await self._invoke(input, msgpack_serialize)
+        result = await self._invoke(input, msgpack_serialize=msgpack_serialize)
 
         await self._close()
 

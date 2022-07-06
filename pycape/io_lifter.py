@@ -31,7 +31,14 @@ class CapeIOLifter:
 
     def as_cape_handler(self):
         def cape_handler(input_bytes):
-            f_input = msgpack.unpackb(input_bytes, object_hook=self.decoder_hook)
+            try:
+                f_input = msgpack.unpackb(input_bytes, object_hook=self.decoder_hook)
+            except ValueError:
+                raise ValueError(
+                    "Couldn't deserialize the function's input with MessagePack."
+                    "Make sure your input is serialized with MessagePack manually or "
+                    "by setting msgpack_serialize to True in cape.run or cape.invoke"
+                )
             output_tuple = self.func(f_input)
             output_blob = msgpack.packb(output_tuple, default=self.encoder_hook)
             return output_blob
