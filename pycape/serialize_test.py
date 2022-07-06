@@ -1,3 +1,4 @@
+import msgpack
 import numpy as np
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -10,6 +11,7 @@ class SerializeTest(parameterized.TestCase):
     @parameterized.parameters(
         {"x": x}
         for x in [
+            msgpack.packb("foo"),
             "foo",
             1,
             1.0,
