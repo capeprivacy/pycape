@@ -11,13 +11,13 @@ if __name__ == "__main__":
     )
     cape.connect(function_id)
 
-    result = cape.invoke("Hello Cape")
+    result = cape.invoke("Hello Cape".encode(), msgpack_serialize=False)
     print(f"The result is: {result}")
 
-    result = cape.invoke("Hello Gavin")
+    result = cape.invoke("Hello Gavin".encode(), msgpack_serialize=False)
     print(f"The result is: {result}")
 
-    result = cape.invoke("Hello Hello")
+    result = cape.invoke("Hello Hello".encode(), msgpack_serialize=False)
     print(f"The result is: {result}")
 
     cape.close()

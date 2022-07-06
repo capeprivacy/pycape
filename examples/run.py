@@ -10,7 +10,7 @@ if __name__ == "__main__":
     )
 
     cape = Cape(url=url, access_token=token)
-    input = "Welcome to Cape"
-    result = cape.run(function_id, input)
+    input = "Welcome to Cape".encode()
+    result = cape.run(function_id, input, msgpack_serialize=False)
 
     print(f"The result is: {result}")
