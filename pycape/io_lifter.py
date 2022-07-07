@@ -1,10 +1,10 @@
 from typing import Callable
 from typing import Optional
 
-import msgpack
-
 from pycape.serialize import decode
+from pycape.serialize import deserialize
 from pycape.serialize import encode
+from pycape.serialize import serialize
 
 
 def io_serialize(f):
@@ -32,15 +32,15 @@ class CapeIOLifter:
     def as_cape_handler(self):
         def cape_handler(input_bytes):
             try:
-                f_input = msgpack.unpackb(input_bytes, object_hook=self.decoder_hook)
+                f_input = deserialize(input_bytes)
             except ValueError:
                 raise ValueError(
                     "Couldn't deserialize the function's input with MessagePack."
                     "Make sure your input is serialized with MessagePack manually or "
                     "by setting msgpack_serialize to True in cape.run or cape.invoke"
                 )
-            output_tuple = self.func(f_input)
-            output_blob = msgpack.packb(output_tuple, default=self.encoder_hook)
+            output = self.func(f_input)
+            output_blob = serialize(output)
             return output_blob
 
         return cape_handler
