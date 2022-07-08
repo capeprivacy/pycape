@@ -78,7 +78,7 @@ class Cape:
             else:
                 raise ValueError(
                     f"The input type is: {type(input)}. Provide input as bytes or "
-                    "set msgpac_serialize in cape.run or cape.invoke as True to "
+                    "set msgpack_serialize in cape.run or cape.invoke as True to "
                     "have PyCape serialize your input with MessagePack"
                 )
 
