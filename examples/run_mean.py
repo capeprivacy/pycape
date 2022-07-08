@@ -10,7 +10,8 @@ if __name__ == "__main__":
     )
 
     cape = Cape(url=url, access_token=token)
-    input = "Welcome to Cape"
-    result = cape.run(function_id, input)
 
-    print(f"The result is: {result}")
+    x = [1, 2, 3, 4]
+    result = cape.run(function_id, x)
+
+    print(f"The mean of x is: {result}")

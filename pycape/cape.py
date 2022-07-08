@@ -10,6 +10,8 @@ import websockets
 
 from pycape.attestation import parse_attestation
 from pycape.enclave_encrypt import encrypt
+from pycape.serialize import deserialize
+from pycape.serialize import serialize
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
@@ -26,14 +28,22 @@ class Cape:
         self._public_key = ""
         self._loop = asyncio.get_event_loop()
 
-    def run(self, function_id, input):
-        return asyncio.run(self._run(function_id, input))
+    def run(self, function_id, input, msgpack_serialize=False):
+        return asyncio.run(
+            self._run(
+                function_id,
+                input,
+                msgpack_serialize=msgpack_serialize,
+            )
+        )
 
     def connect(self, function_id):
         self._loop.run_until_complete(self._connect(function_id))
 
-    def invoke(self, input):
-        return self._loop.run_until_complete(self._invoke(input))
+    def invoke(self, input, msgpack_serialize=False):
+        return self._loop.run_until_complete(
+            self._invoke(input, msgpack_serialize=msgpack_serialize)
+        )
 
     def close(self):
         self._loop.run_until_complete(self._close())
@@ -61,24 +71,36 @@ class Cape:
 
         return
 
-    async def _invoke(self, input):
-        input_bytes = _convert_input_to_bytes(input)
-        ciphertext = encrypt(input_bytes, self._public_key)
+    async def _invoke(self, input, msgpack_serialize=False):
+        if not isinstance(input, bytes):
+            if msgpack_serialize:
+                input = serialize(input)
+            else:
+                raise ValueError(
+                    f"The input type is: {type(input)}. Provide input as bytes or "
+                    "set msgpack_serialize in cape.run or cape.invoke as True to "
+                    "have PyCape serialize your input with MessagePack"
+                )
+
+        ciphertext = encrypt(input, self._public_key)
 
         await self._websocket.send(ciphertext)
         result = await self._websocket.recv()
         result = _parse_result(result)
+
+        if msgpack_serialize:
+            result = deserialize(result)
 
         return result
 
     async def _close(self):
         await self._websocket.close()
 
-    async def _run(self, function_id, input):
+    async def _run(self, function_id, input, msgpack_serialize=False):
 
         await self._connect(function_id)
 
-        result = await self._invoke(input)
+        result = await self._invoke(input, msgpack_serialize=msgpack_serialize)
 
         await self._close()
 
@@ -93,24 +115,6 @@ def _generate_nonce(length=8):
 def _create_request(token, nonce):
     request = {"auth_token": token, "nonce": nonce}
     return json.dumps(request)
-
-
-def _convert_input_to_bytes(input):
-    if isinstance(input, dict):
-        input = json.dumps(input)
-    elif isinstance(input, list):
-        input = json.dumps(input)
-    elif isinstance(input, int):
-        input = json.dumps(input)
-    elif isinstance(input, float):
-        input = json.dumps(input)
-    elif isinstance(input, str):
-        pass
-    elif isinstance(input, bytes):
-        return input
-    else:
-        raise ValueError(f"Run doesn't support input of type: {type(input)}")
-    return bytes(input, "utf-8")
 
 
 def _parse_result(result):
