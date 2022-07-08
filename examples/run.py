@@ -11,6 +11,6 @@ if __name__ == "__main__":
 
     cape = Cape(url=url, access_token=token)
     input = "Welcome to Cape".encode()
-    result = cape.run(function_id, input, msgpack_serialize=False)
+    result = cape.run(function_id, input)
 
-    print(f"The result is: {result}")
+    print(f"The result is: {result.decode()}")
