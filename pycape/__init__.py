@@ -1,7 +1,7 @@
 from pycape.cape import Cape
-from pycape.io_lifter import io_serialize
+from pycape.io_lifter import lift_io
 
 __all__ = [
     Cape,
-    io_serialize,
+    lift_io,
 ]
