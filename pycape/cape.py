@@ -8,10 +8,9 @@ import ssl
 
 import websockets
 
-from pycape.attestation import parse_attestation
-from pycape.enclave_encrypt import encrypt
-from pycape.serialize import deserialize
-from pycape.serialize import serialize
+from pycape import attestation as attest
+from pycape import enclave_encrypt as encrypt
+from pycape import serialize as serde
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
@@ -60,36 +59,35 @@ class Cape:
         self._websocket = await websockets.connect(endpoint, ssl=ctx)
 
         nonce = _generate_nonce()
-        request = _create_request(self._auth_token, nonce)
+        request = _create_connection_request(self._auth_token, nonce)
 
         await self._websocket.send(request)
 
         msg = await self._websocket.recv()
         attestation_doc = json.loads(msg)
         doc = base64.b64decode(attestation_doc["message"])
-        self._public_key = parse_attestation(doc)
+        self._public_key = attest.parse_attestation(doc)
 
         return
 
     async def _invoke(self, input, msgpack_serialize=False):
+        if msgpack_serialize:
+            input = serde.serialize(input)
         if not isinstance(input, bytes):
-            if msgpack_serialize:
-                input = serialize(input)
-            else:
-                raise ValueError(
-                    f"The input type is: {type(input)}. Provide input as bytes or "
-                    "set msgpack_serialize in cape.run or cape.invoke as True to "
-                    "have PyCape serialize your input with MessagePack"
-                )
+            raise TypeError(
+                f"The input type is: {type(input)}. Provide input as bytes or "
+                "set msgpack_serialize=True for PyCape to serialize your input "
+                "with MessagePack."
+            )
 
-        ciphertext = encrypt(input, self._public_key)
+        ciphertext_input = encrypt.encrypt(input, self._public_key)
 
-        await self._websocket.send(ciphertext)
+        await self._websocket.send(ciphertext_input)
         result = await self._websocket.recv()
-        result = _parse_result(result)
+        result = _parse_websocket_result(result)
 
         if msgpack_serialize:
-            result = deserialize(result)
+            result = serde.deserialize(result)
 
         return result
 
@@ -112,12 +110,12 @@ def _generate_nonce(length=8):
     return "".join([str(random.randint(0, 9)) for i in range(length)])
 
 
-def _create_request(token, nonce):
+def _create_connection_request(token, nonce):
     request = {"auth_token": token, "nonce": nonce}
     return json.dumps(request)
 
 
-def _parse_result(result):
+def _parse_websocket_result(result):
     result = json.loads(result)
     b64data = result["message"]
     data = base64.b64decode(b64data)

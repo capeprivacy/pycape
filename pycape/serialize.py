@@ -8,76 +8,15 @@ class _MsgpackExtType(enum.IntEnum):
     """Messagepack custom type ids."""
 
     ndarray = 1
-
-
-def serialize(x):
-    return msgpack.packb(x, default=encode, strict_types=True)
-
-
-def deserialize(x_bytes):
-    return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decode)
+    native_complex = 2
+    npscalar = 3
 
 
 def encode(x):
-    if isinstance(x, str):
-        return {
-            "__type__": "string",
-            "values": x,
-        }
-    elif isinstance(x, int):
-        return {
-            "__type__": "int",
-            "values": x,
-        }
-    elif isinstance(x, float):
-        return {
-            "__type__": "float",
-            "values": x,
-        }
-    elif isinstance(x, complex):
+    if isinstance(x, complex):
         return msgpack.ExtType(
             _MsgpackExtType.native_complex, msgpack.packb((x.real, x.imag))
         )
-    elif isinstance(x, list):
-        return {
-            "__type__": "list",
-            "values": x,
-        }
-    elif isinstance(x, dict):
-        return {
-            "__type__": "dict",
-            "values": x,
-        }
-    elif isinstance(x, set):
-        return {
-            "__type__": "set",
-            "values": list(x),
-        }
-    elif isinstance(x, frozenset):
-        return {
-            "__type__": "frozenset",
-            "values": list(x),
-        }
-    elif isinstance(x, tuple):
-        return {
-            "__type__": "tuple",
-            "values": list(x),
-        }
-    elif isinstance(x, bool):
-        return {
-            "__type__": "bool",
-            "values": x,
-        }
-    elif isinstance(x, bytes):
-        return {
-            "__type__": "bytes",
-            "values": x,
-        }
-    elif isinstance(x, bytearray):
-        return {
-            "__type__": "bytearray",
-            "values": x,
-        }
     elif isinstance(x, np.ndarray):
         return msgpack.ExtType(_MsgpackExtType.ndarray, _ndarray_to_bytes(x))
     elif np.issctype(type(x)):
@@ -85,28 +24,18 @@ def encode(x):
         return msgpack.ExtType(
             _MsgpackExtType.npscalar, _ndarray_to_bytes(np.asarray(x))
         )
-    elif isinstance(x, complex):
-        return msgpack.ExtType(
-            _MsgpackExtType.native_complex, msgpack.packb((x.real, x.imag))
-        )
-    else:
-        raise ValueError(f"Unexpected input type: {type(x)}")
+    elif isinstance(x, tuple):
+        return {"__type__": "tuple", "values": list(x)}
+    elif isinstance(x, set):
+        return {"__type__": "set", "values": list(x)}
+    elif isinstance(x, frozenset):
+        return {"__type__": "frozenset", "values": list(x)}
+    return x
 
 
 def decode(obj):
     if "__type__" in obj:
-        if obj["__type__"] == [
-            "string",
-            "int",
-            "float",
-            "dict",
-            "list",
-            "bool",
-            "bytes",
-            "bytearray",
-        ]:
-            return obj["values"]
-        elif obj["__type__"] == "set":
+        if obj["__type__"] == "set":
             _assert_keys_in_dict(obj, ("values",))
             return set(obj["values"])
         elif obj["__type__"] == "frozenset":
@@ -115,8 +44,25 @@ def decode(obj):
         elif obj["__type__"] == "tuple":
             _assert_keys_in_dict(obj, ("values",))
             return tuple(obj["values"])
-
     return obj
+
+
+def serialize(x, default=None):
+    encode_hook = encode
+    if default is not None:
+        if not callable(default):
+            raise TypeError(f"`default` needs to be callable, found type {type(default)}")
+        encode_hook = lambda x: default(encode(x))
+    return msgpack.packb(x, default=encode_hook, strict_types=True)
+
+
+def deserialize(x_bytes, object_hook=None):
+    decode_hook = decode
+    if object_hook is not None:
+        if not callable(object_hook):
+            raise TypeError(f"`object_hook` needs to be a callable, found type {type(object_hook)}")
+        decode_hook = lambda x: object_hook(decode(x))
+    return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decode_hook)
 
 
 def _assert_keys_in_dict(d, keys):
