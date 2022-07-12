@@ -51,8 +51,10 @@ def serialize(x, default=None):
     encode_hook = encode
     if default is not None:
         if not callable(default):
-            raise TypeError(f"`default` needs to be callable, found type {type(default)}")
-        encode_hook = lambda x: default(encode(x))
+            raise TypeError(
+                f"`default` needs to be callable, found type {type(default)}"
+            )
+        encode_hook = lambda x: default(encode(x))  # noqa: E731
     return msgpack.packb(x, default=encode_hook, strict_types=True)
 
 
@@ -60,9 +62,13 @@ def deserialize(x_bytes, object_hook=None):
     decode_hook = decode
     if object_hook is not None:
         if not callable(object_hook):
-            raise TypeError(f"`object_hook` needs to be a callable, found type {type(object_hook)}")
-        decode_hook = lambda x: object_hook(decode(x))
-    return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decode_hook)
+            raise TypeError(
+                f"`object_hook` needs to be a callable, found type {type(object_hook)}"
+            )
+        decode_hook = lambda x: object_hook(decode(x))  # noqa: E731
+    return msgpack.unpackb(
+        x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decode_hook
+    )
 
 
 def _assert_keys_in_dict(d, keys):

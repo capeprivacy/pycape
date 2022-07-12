@@ -1,6 +1,6 @@
 """Tools for lifting normal Python functions into Cape handlers.
 
-We automatically convert between Python functions and Cape handlers by decorating 
+We automatically convert between Python functions and Cape handlers by decorating
 a given Python function with a version that deserializes inputs from msgpack-ed bytes,
 executes the original function on those inputs, and then serializes outputs w/ msgpack.
 Custom types are handled by user-supplied encode_hook and decode_hook functions,
@@ -32,11 +32,15 @@ Usage with custom types:
 
     def my_cool_encoder(x):
         if isinstance(x, MyCoolClass):
-            return {"__type__": "MyCoolClass", "cool_float": x.cool_float, "cool_int": x.cool_int}
+            return {
+                "__type__": "MyCoolClass",
+                "cool_float": x.cool_float,
+                "cool_int": x.cool_int,
+            }
         elif isinstance(x, MyCoolResult):
             return {"__type__": "MyCoolResult", "cool_result": x.cool_result}
         return x
-    
+
     def my_cool_decoder(obj):
         if "__type__" in obj:
             obj_type = obj["__type__"]
@@ -58,9 +62,9 @@ Using custom types with Cape.run:
 
     my_cool_function_id = <noted during `cape deploy`>
     input = MyCoolClass(2, 3.0)  # input data we want to run with
-    # the serde hook bundle, specifying how msgpack can encode/decode MyCoolClass and MyCoolResult
+    # the serde hook bundle, specifying how msgpack can deal w/ MyCoolClass/MyCoolResult
     # hook_bundle = SerdeHookBundle(my_cool_encoder, my_cool_decoder)
-    # we can also pull this from the lifted function, since we already specified it there:
+    # we can also pull it from the lifted function, since we already specified it there:
     hook_bundle = my_cool_function.hook_bundle
     cape = Cape()
     # TODO serde_bundle kwarg in cape.run
@@ -104,8 +108,8 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
     Args:
         f: A Callable to be invoked or run with Cape.
         encoder_hook: An optional Callable that specifies how to convert custom-typed
-          inputs or outputs into msgpack-able Python types (e.g. converting MyCustomClass
-          into a dictionary of Python natives).
+          inputs or outputs into msgpack-able Python types (e.g. converting
+          MyCustomClass into a dictionary of Python natives).
         decoder_hook: An optional Callable that specifies how to invert encoder_hook
           for custom-typed inputs and outputs.
         hook_bundle: An optional tuple, list, or SerdeHookBundle that simply packages up
@@ -117,7 +121,8 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
     Raises:
         ValueError if wrong combination of encoder_hook, decoder_hook, hook_bundle is
           supplied.
-        TypeError if wrong type of 
+        TypeError if hook_bundle is not coercible to SerdeHookBundle, or if
+          encoder_hook/decoder_hook are not Callables.
     """
     _check_lift_io_kwargs(encoder_hook, decoder_hook, hook_bundle)
     if encoder_hook is not None:
@@ -134,7 +139,6 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
 
 
 class CapeIOLifter:
-    
     def __init__(
         self,
         f: Callable,
@@ -148,6 +152,7 @@ class CapeIOLifter:
 
     def as_cape_handler(self):
         encoder_hook, decoder_hook = self.hook_bundle.unbundle()
+
         def cape_handler(input_bytes):
             try:
                 f_input = serde.deserialize(input_bytes, object_hook=decoder_hook)
@@ -187,24 +192,28 @@ def _check_missing_kwargs_combo(encoder_hook, decoder_hook, hook_bundle):
         return
 
     raise ValueError(
-            "The `lift_io` decorator expects at most one of these sets of kwargs "
-            "to be specified:\n"
-            "\t - `encoder_hook` and `decoder_hook`\n"
-            "\t - `hook_bundle`\n"
-            "Found:\n"
-            f"\t - `encoder_hook: {type(encoder_hook)}\n"
-            f"\t - `decoder_hook: {type(decoder_hook)}\n"
-            f"\t - `hook_bundle: {type(hook_bundle)}\n"
-        )
+        "The `lift_io` decorator expects at most one of these sets of kwargs "
+        "to be specified:\n"
+        "\t - `encoder_hook` and `decoder_hook`\n"
+        "\t - `hook_bundle`\n"
+        "Found:\n"
+        f"\t - `encoder_hook: {type(encoder_hook)}\n"
+        f"\t - `decoder_hook: {type(decoder_hook)}\n"
+        f"\t - `hook_bundle: {type(hook_bundle)}\n"
+    )
 
 
 def _typecheck_hooks(encoder_hook, decoder_hook):
     if encoder_hook is None and decoder_hook is None:
         return
     if not callable(encoder_hook):
-        raise TypeError(f"Expected callable `encoder_hook`, found type: {type(encoder_hook)}")
+        raise TypeError(
+            f"Expected callable `encoder_hook`, found type: {type(encoder_hook)}"
+        )
     if not callable(decoder_hook):
-        raise TypeError(f"Expected callable `decoder_hook`, found type: {type(decoder_hook)}")
+        raise TypeError(
+            f"Expected callable `decoder_hook`, found type: {type(decoder_hook)}"
+        )
 
 
 def _typecheck_bundle(hook_bundle):
