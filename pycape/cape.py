@@ -10,6 +10,7 @@ import websockets
 
 from pycape import attestation as attest
 from pycape import enclave_encrypt as encrypt
+from pycape import io_lifter
 from pycape import serialize as serde
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
@@ -27,25 +28,32 @@ class Cape:
         self._public_key = ""
         self._loop = asyncio.get_event_loop()
 
-    def run(self, function_id, input, msgpack_serialize=False):
-        return asyncio.run(
-            self._run(
-                function_id,
-                input,
-                msgpack_serialize=msgpack_serialize,
-            )
-        )
+    def close(self):
+        self._loop.run_until_complete(self._close())
 
     def connect(self, function_id):
         self._loop.run_until_complete(self._connect(function_id))
 
-    def invoke(self, input, msgpack_serialize=False):
+    def invoke(self, input, serde_hooks=None, msgpack_serialize=False):
+        if serde_hooks is not None:
+            serde_hooks = io_lifter.bundle_serde_hooks(serde_hooks)
         return self._loop.run_until_complete(
-            self._invoke(input, msgpack_serialize=msgpack_serialize)
+            self._invoke(
+                input, serde_hooks=serde_hooks, msgpack_serialize=msgpack_serialize
+            )
         )
 
-    def close(self):
-        self._loop.run_until_complete(self._close())
+    def run(self, function_id, input, serde_hooks=None, msgpack_serialize=False):
+        if serde_hooks is not None:
+            serde_hooks = io_lifter.bundle_serde_hooks(serde_hooks)
+        return asyncio.run(
+            self._run(
+                function_id,
+                input,
+                serde_hooks=serde_hooks,
+                msgpack_serialize=msgpack_serialize,
+            )
+        )
 
     async def _connect(self, function_id):
         endpoint = f"{self._url}/v1/run/{function_id}"
@@ -70,9 +78,15 @@ class Cape:
 
         return
 
-    async def _invoke(self, input, msgpack_serialize=False):
+    async def _invoke(self, input, serde_hooks, msgpack_serialize):
+        if serde_hooks is not None:
+            encoder_hook, decoder_hook = serde_hooks.unbundle()
+            msgpack_serialize = True
+        else:
+            encoder_hook, decoder_hook = None, None
+
         if msgpack_serialize:
-            input = serde.serialize(input)
+            input = serde.serialize(input, default=encoder_hook)
         if not isinstance(input, bytes):
             raise TypeError(
                 f"The input type is: {type(input)}. Provide input as bytes or "
@@ -87,18 +101,18 @@ class Cape:
         result = _parse_websocket_result(result)
 
         if msgpack_serialize:
-            result = serde.deserialize(result)
+            result = serde.deserialize(result, object_hook=decoder_hook)
 
         return result
 
     async def _close(self):
         await self._websocket.close()
 
-    async def _run(self, function_id, input, msgpack_serialize=False):
+    async def _run(self, function_id, input, serde_hooks, msgpack_serialize):
 
         await self._connect(function_id)
 
-        result = await self._invoke(input, msgpack_serialize=msgpack_serialize)
+        result = await self._invoke(input, serde_hooks, msgpack_serialize)
 
         await self._close()
 
