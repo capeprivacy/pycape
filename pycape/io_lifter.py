@@ -18,11 +18,11 @@ Usage in app.py:
 
 Usage with custom types:
 
-    @dataclass
+    @dataclasses.dataclass
     class MyCoolResult:
         cool_result: float
 
-    @dataclass
+    @dataclasses.dataclass
     class MyCoolClass:
         cool_float: float
         cool_int: int
@@ -31,27 +31,24 @@ Usage with custom types:
             return MyCoolResult(self.cool_int * self.cool_float)
 
     def my_cool_encoder(x):
-        if isinstance(x, MyCoolClass):
+        if dataclasses.is_dataclass(x):
             return {
-                "__type__": "MyCoolClass",
-                "cool_float": x.cool_float,
-                "cool_int": x.cool_int,
+                "__type__": x.__class__.__name__,
+                "fields": dataclasses.asdict(x)
             }
-        elif isinstance(x, MyCoolResult):
-            return {"__type__": "MyCoolResult", "cool_result": x.cool_result}
         return x
 
     def my_cool_decoder(obj):
         if "__type__" in obj:
             obj_type = obj["__type__"]
             if obj_type == "MyCoolClass":
-                return MyCoolClass(obj["cool_float"], obj["cool_int"])
+                return MyCoolClass(**obj["fields"])
             elif obj_type == "MyCoolResult":
-                return MyCoolResult(obj["cool_result"])
+                return MyCoolResult(**obj["fields"])
         return obj
 
 
-    @lift_io(encode_hook=my_cool_encoder, decode_hook=my_cool_decoder)
+    @lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
     def my_cool_function(x: MyCoolClass) -> MyCoolResult:
         return x.mul()
 
