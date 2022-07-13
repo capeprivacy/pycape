@@ -151,7 +151,10 @@ class CapeIOLifter:
         return self._func(*args, **kwargs)
 
     def as_cape_handler(self):
-        encoder_hook, decoder_hook = self.hook_bundle.unbundle()
+        if self.hook_bundle is not None:
+            encoder_hook, decoder_hook = self.hook_bundle.unbundle()
+        else:
+            encoder_hook, decoder_hook = None, None
 
         def cape_handler(input_bytes):
             try:
