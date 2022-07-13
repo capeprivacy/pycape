@@ -75,7 +75,7 @@ from operator import xor
 from typing import Callable
 from typing import Optional
 
-from pycape import serialize as serde
+from pycape import serde
 
 
 @dataclasses.dataclass
@@ -115,6 +115,7 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
     Returns:
         A CapeIOLifter wrapping up `f`, `encoder_hook`, and `decoder_hook` that can be
         used in a deployable Cape script or can be run/invoked by the Cape client.
+
     Raises:
         ValueError if wrong combination of encoder_hook, decoder_hook, hook_bundle is
           supplied.

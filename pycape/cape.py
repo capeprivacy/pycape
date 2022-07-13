@@ -11,7 +11,7 @@ import websockets
 from pycape import attestation as attest
 from pycape import enclave_encrypt as encrypt
 from pycape import io_lifter
-from pycape import serialize as serde
+from pycape import serde
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)

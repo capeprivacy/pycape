@@ -5,7 +5,7 @@ import numpy as np
 from absl.testing import parameterized
 
 from pycape import io_lifter as lifting
-from pycape import serialize as serde
+from pycape import serde
 
 
 def identity(x):
