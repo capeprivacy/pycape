@@ -24,8 +24,8 @@ Usage with custom types:
 
     @dataclasses.dataclass
     class MyCoolClass:
-        cool_float: float
-        cool_int: int
+        cool_int: float
+        cool_float: int
 
         def mul(self):
             return MyCoolResult(self.cool_int * self.cool_float)
@@ -65,7 +65,7 @@ Using custom types with Cape.run:
     hook_bundle = my_cool_function.hook_bundle
 
     cape = Cape()
-    my_cool_result = cape.run(my_cool_function_id, input, serde_bundle=hook_bundle)
+    my_cool_result = cape.run(my_cool_function_id, input, serde_hooks=hook_bundle)
     print(my_cool_result.cool_result)
     >> 6.0
 """
