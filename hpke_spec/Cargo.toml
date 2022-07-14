@@ -16,4 +16,4 @@ hpke_errors = { git = "https://github.com/cryspen/hpke-spec" }
 hpke_kdf = { git = "https://github.com/cryspen/hpke-spec" }
 hpke_kem = { git = "https://github.com/cryspen/hpke-spec" }
 pyo3 = { version = "0.16.5", features = ["extension-module"] }
-rand = { version =  "0.8", features = ["getrandom"] }
+rand = { version =  "0.8" }
