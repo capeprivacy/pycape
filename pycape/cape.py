@@ -94,9 +94,9 @@ class Cape:
                 "with MessagePack."
             )
 
-        ciphertext_input = encrypt.encrypt(input, self._public_key)
+        input_ciphertext = encrypt(self._public_key, input)
 
-        await self._websocket.send(ciphertext_input)
+        await self._websocket.send(input_ciphertext)
         result = await self._websocket.recv()
         result = _parse_websocket_result(result)
 
