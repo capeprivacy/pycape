@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
+absl-py==1.1.0
+    # via -r requirements.in
 attrs==21.4.0
     # via pytest
 black==22.6.0
