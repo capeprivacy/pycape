@@ -1,12 +1,6 @@
-from tink import BinaryKeysetReader
-from tink import hybrid
-from tink import read_no_secret_keyset_handle
+import hpke_spec
 
 
-def encrypt(input_bytes, public_key, context=b""):
-    hybrid.register()
-    reader = BinaryKeysetReader(public_key)
-    khPub = read_no_secret_keyset_handle(reader)
-    encrypt = khPub.primitive(hybrid.HybridEncrypt)
-    ciphertext = encrypt.encrypt(input_bytes, context)
+def encrypt(public_key, input_bytes):
+    ciphertext = hpke_spec.hpke_seal(public_key, input_bytes)
     return ciphertext
