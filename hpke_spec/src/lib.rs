@@ -37,8 +37,10 @@ fn hpke_seal_bytes(pkb: &[u8], ptxtb: &[u8]) -> Result<Vec<u8>, HpkeError> {
         None,
         randomness,
     )?;
-    let ciphertext = result.1;
-    Ok(ciphertext.into_native())
+    let mut encapsulated: Vec<u8> = result.0.into_native();
+    let mut ciphertext = result.1.into_native();
+    encapsulated.append(&mut ciphertext);
+    Ok(encapsulated)
 }
 
 /// Python binding to hpke-spec's Single-Shot API function hpke::HpkeSeal
