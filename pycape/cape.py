@@ -82,7 +82,7 @@ class Cape:
                     "have PyCape serialize your input with MessagePack"
                 )
 
-        ciphertext = encrypt(input, self._public_key)
+        ciphertext = encrypt(self._public_key, input)
 
         await self._websocket.send(ciphertext)
         result = await self._websocket.recv()

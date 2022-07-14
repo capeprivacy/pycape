@@ -1,12 +1,12 @@
+absl-py
 black
 cbor2
 flake8-black
 flake8-isort
 flake8
 isort
+maturin
 msgpack
 numpy
-protobuf~=3.20
 pytest
-tink
 websockets
