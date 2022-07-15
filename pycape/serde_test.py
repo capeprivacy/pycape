@@ -3,8 +3,7 @@ import numpy as np
 from absl.testing import absltest
 from absl.testing import parameterized
 
-from pycape.serialize import deserialize
-from pycape.serialize import serialize
+from pycape import serde
 
 
 class SerializeTest(parameterized.TestCase):
@@ -27,8 +26,8 @@ class SerializeTest(parameterized.TestCase):
         ]
     )
     def test_serialize(self, x):
-        x_bytes = serialize(x)
-        x_deser = deserialize(x_bytes)
+        x_bytes = serde.serialize(x)
+        x_deser = serde.deserialize(x_bytes)
         if isinstance(x, np.ndarray):
             np.testing.assert_array_equal(x, x_deser)
         else:

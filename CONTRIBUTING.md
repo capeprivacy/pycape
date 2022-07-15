@@ -1,6 +1,11 @@
-# pycape Contribtution Guide
+# PyCape Contribution Guide
 
 This document outlines how to install and set up the `pycape` library for local development.
+
+## Style Guide
+We use [Black](https://github.com/psf/black) to avoid thinking about most code style choices.
+For all other style questions, we follow
+[Google's styleguide for Python](https://google.github.io/styleguide/pyguide.html).
 
 ## Local development
 
