@@ -9,7 +9,7 @@ import ssl
 import websockets
 
 from pycape import attestation as attest
-from pycape import enclave_encrypt as encrypt
+from pycape import enclave_encrypt
 from pycape import io_lifter
 from pycape import serde
 
@@ -94,7 +94,7 @@ class Cape:
                 "with MessagePack."
             )
 
-        input_ciphertext = encrypt(self._public_key, input)
+        input_ciphertext = enclave_encrypt.encrypt(self._public_key, input)
 
         await self._websocket.send(input_ciphertext)
         result = await self._websocket.recv()
