@@ -43,7 +43,7 @@ def my_cool_decoder(obj):
 
 
 class TestIoLifter(parameterized.TestCase):
-    @parameterized.parameters({"x": x} for x in [1, "foo", np.array([1, 2, 3, 4])])
+    @parameterized.parameters({"x": x} for x in [1, "foo", [1, 2.0, 3]])
     def test_lifted_capehandler(self, x):
         lifted_identity = lifting.lift_io(identity)
         x_ser = serde.serialize(x)
@@ -54,7 +54,7 @@ class TestIoLifter(parameterized.TestCase):
         else:
             assert x == result_deser
 
-    @parameterized.parameters({"x": x} for x in [1, "foo", np.array([1, 2, 3, 4])])
+    @parameterized.parameters({"x": x} for x in [1, "foo", [1, 2.0, 3]])
     def test_lifted_call(self, x):
         lifted_identity = lifting.lift_io(identity)
         result = lifted_identity(x)
@@ -106,8 +106,8 @@ class TestIoLifter(parameterized.TestCase):
         assert res == expected_cool_result
 
         # cape handler runs on bytes
-        cool_input_ser = serde.serialize(cool_input, default=my_cool_encoder)
+        cool_input_ser = serde.serialize(cool_input, encoder=my_cool_encoder)
         cape_handler = my_cool_function.as_cape_handler()
         cool_result_ser = cape_handler(cool_input_ser)
-        cool_result = serde.deserialize(cool_result_ser, object_hook=my_cool_decoder)
+        cool_result = serde.deserialize(cool_result_ser, decoder=my_cool_decoder)
         assert cool_result == expected_cool_result
