@@ -1,7 +1,6 @@
 import dataclasses
 from typing import Callable
 
-import numpy as np
 from absl.testing import parameterized
 
 from pycape import io_lifter as lifting
@@ -49,19 +48,13 @@ class TestIoLifter(parameterized.TestCase):
         x_ser = serde.serialize(x)
         result = lifted_identity.as_cape_handler()(x_ser)
         result_deser = serde.deserialize(result)
-        if isinstance(x, np.ndarray):
-            np.testing.assert_array_equal(x, result_deser)
-        else:
-            assert x == result_deser
+        assert x == result_deser
 
     @parameterized.parameters({"x": x} for x in [1, "foo", [1, 2.0, 3]])
     def test_lifted_call(self, x):
         lifted_identity = lifting.lift_io(identity)
         result = lifted_identity(x)
-        if isinstance(x, np.ndarray):
-            np.testing.assert_array_equal(x, result)
-        else:
-            assert x == result
+        assert x == result
 
     def test_wrong_liftio_kwargs_raises(self):
         with self.assertRaises(ValueError):
