@@ -7,7 +7,6 @@ flake8
 isort
 maturin
 msgpack
-numpy
 pytest
 websockets
 pyOpenSSL
