@@ -10,3 +10,6 @@ msgpack
 numpy
 pytest
 websockets
+pyOpenSSL
+cose
+pycryptodome
