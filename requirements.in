@@ -13,3 +13,4 @@ websockets
 pyOpenSSL
 cose
 pycryptodome
+requests

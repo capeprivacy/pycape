@@ -3,16 +3,19 @@ from cose.keys import EC2Key
 from cose.keys.curves import P384
 from cose.messages import Sign1Message
 from Crypto.Util.number import long_to_bytes
+from cryptography.x509 import load_der_x509_certificate
 from OpenSSL import crypto
 
 
-def parse_attestation(attestation):
+def parse_attestation(attestation, root_cert):
     # TODO verifies the PCRs
     payload = cbor2.loads(attestation)
     doc = cbor2.loads(payload[2])
 
     if not verify_signature(attestation, doc["certificate"]):
         raise ValueError("wrong signature")
+
+    verify_cert_chain(root_cert, doc["cabundle"], doc["certificate"])
 
     public_key = doc.get("public_key")
     if public_key is None:
@@ -22,10 +25,8 @@ def parse_attestation(attestation):
 
 
 def verify_signature(payload, cert) -> bool:
-    cert = crypto.load_certificate(crypto.FILETYPE_ASN1, cert)
-
-    # Get the key parameters from the cert public key
-    cert_public_numbers = cert.get_pubkey().to_cryptography_key().public_numbers()
+    cert = load_der_x509_certificate(cert)
+    cert_public_numbers = cert.public_key().public_numbers()
     x = cert_public_numbers.x
     y = cert_public_numbers.y
 
@@ -41,3 +42,27 @@ def verify_signature(payload, cert) -> bool:
 
     # Verify the signature using the EC2 key
     return msg.verify_signature()
+
+
+def verify_cert_chain(root_cert, cabundle, cert):
+    cert = crypto.load_certificate(crypto.FILETYPE_ASN1, cert)
+
+    # Create an X509Store object for the CA bundles
+    store = crypto.X509Store()
+
+    # Create the CA cert object from PEM string, and store into X509Store
+    _cert = crypto.load_certificate(crypto.FILETYPE_PEM, root_cert)
+    store.add_cert(_cert)
+
+    # Get the CA bundle from attestation document and store into X509Store
+    # Except the first certificate, which is the root certificate
+    for _cert_binary in cabundle:
+        _cert = crypto.load_certificate(crypto.FILETYPE_ASN1, _cert_binary)
+        store.add_cert(_cert)
+
+    # Get the X509Store context
+    store_ctx = crypto.X509StoreContext(store, cert)
+
+    # Validate the certificate
+    # If the cert is invalid, it will raise exception
+    store_ctx.verify_certificate()

@@ -1,11 +1,14 @@
 import asyncio
 import base64
+import io
 import json
 import os
 import pathlib
 import random
 import ssl
+import zipfile
 
+import requests
 import websockets
 
 from pycape import attestation as attest
@@ -74,7 +77,7 @@ class Cape:
         msg = await self._websocket.recv()
         attestation_doc = json.loads(msg)
         doc = base64.b64decode(attestation_doc["message"])
-        self._public_key = attest.parse_attestation(doc)
+        self._public_key = attest.parse_attestation(doc, download_root_cert())
 
         return
 
@@ -150,3 +153,14 @@ def _handle_default_auth(auth_path: pathlib.Path):
             "Malformed auth file found: missing 'access_token' JSON field."
         )
     return access_token
+
+
+def download_root_cert():
+    url = "https://aws-nitro-enclaves.amazonaws.com/AWS_NitroEnclaves_Root-G1.zip"
+    r = requests.get(url)
+
+    f = zipfile.ZipFile(io.BytesIO(r.content))
+    with f.open("root.pem") as p:
+        root_cert = p.read()
+
+    return root_cert
