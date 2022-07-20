@@ -1,5 +1,4 @@
 import msgpack
-import numpy as np
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -22,16 +21,12 @@ class SerializeTest(parameterized.TestCase):
             True,
             bytes("foo", "utf-8"),
             bytearray([1]),
-            np.array([1, 2]),
         ]
     )
     def test_serialize(self, x):
         x_bytes = serde.serialize(x)
         x_deser = serde.deserialize(x_bytes)
-        if isinstance(x, np.ndarray):
-            np.testing.assert_array_equal(x, x_deser)
-        else:
-            assert x == x_deser
+        assert x == x_deser
 
 
 if __name__ == "__main__":

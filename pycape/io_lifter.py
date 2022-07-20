@@ -153,7 +153,7 @@ class CapeIOLifter:
 
         def cape_handler(input_bytes):
             try:
-                f_input = serde.deserialize(input_bytes, object_hook=decoder_hook)
+                f_input = serde.deserialize(input_bytes, decoder=decoder_hook)
             except ValueError:
                 raise ValueError(
                     "Couldn't deserialize the function's input with MessagePack."
@@ -161,7 +161,7 @@ class CapeIOLifter:
                     "by setting msgpack_serialize to True in cape.run or cape.invoke"
                 )
             output = self._func(f_input)
-            output_blob = serde.serialize(output, default=encoder_hook)
+            output_blob = serde.serialize(output, encoder=encoder_hook)
             return output_blob
 
         return cape_handler

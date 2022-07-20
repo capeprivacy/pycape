@@ -1,7 +1,6 @@
 import dataclasses
 from typing import Callable
 
-import numpy as np
 from absl.testing import parameterized
 
 from pycape import io_lifter as lifting
@@ -43,25 +42,19 @@ def my_cool_decoder(obj):
 
 
 class TestIoLifter(parameterized.TestCase):
-    @parameterized.parameters({"x": x} for x in [1, "foo", np.array([1, 2, 3, 4])])
+    @parameterized.parameters({"x": x} for x in [1, "foo", [1, 2.0, 3]])
     def test_lifted_capehandler(self, x):
         lifted_identity = lifting.lift_io(identity)
         x_ser = serde.serialize(x)
         result = lifted_identity.as_cape_handler()(x_ser)
         result_deser = serde.deserialize(result)
-        if isinstance(x, np.ndarray):
-            np.testing.assert_array_equal(x, result_deser)
-        else:
-            assert x == result_deser
+        assert x == result_deser
 
-    @parameterized.parameters({"x": x} for x in [1, "foo", np.array([1, 2, 3, 4])])
+    @parameterized.parameters({"x": x} for x in [1, "foo", [1, 2.0, 3]])
     def test_lifted_call(self, x):
         lifted_identity = lifting.lift_io(identity)
         result = lifted_identity(x)
-        if isinstance(x, np.ndarray):
-            np.testing.assert_array_equal(x, result)
-        else:
-            assert x == result
+        assert x == result
 
     def test_wrong_liftio_kwargs_raises(self):
         with self.assertRaises(ValueError):
@@ -106,8 +99,8 @@ class TestIoLifter(parameterized.TestCase):
         assert res == expected_cool_result
 
         # cape handler runs on bytes
-        cool_input_ser = serde.serialize(cool_input, default=my_cool_encoder)
+        cool_input_ser = serde.serialize(cool_input, encoder=my_cool_encoder)
         cape_handler = my_cool_function.as_cape_handler()
         cool_result_ser = cape_handler(cool_input_ser)
-        cool_result = serde.deserialize(cool_result_ser, object_hook=my_cool_decoder)
+        cool_result = serde.deserialize(cool_result_ser, decoder=my_cool_decoder)
         assert cool_result == expected_cool_result
