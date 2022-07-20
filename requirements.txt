@@ -81,8 +81,6 @@ pycodestyle==2.8.0
     # via flake8
 pycparser==2.21
     # via cffi
-pycryptodome==3.15.0
-    # via -r requirements.in
 pyflakes==2.4.0
     # via flake8
 pyopenssl==22.0.0

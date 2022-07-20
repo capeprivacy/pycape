@@ -1,8 +1,9 @@
+import math
+
 import cbor2
 from cose.keys import EC2Key
 from cose.keys.curves import P384
 from cose.messages import Sign1Message
-from Crypto.Util.number import long_to_bytes
 from cryptography.x509 import load_der_x509_certificate
 from OpenSSL import crypto
 
@@ -30,8 +31,8 @@ def verify_signature(payload, cert) -> bool:
     x = cert_public_numbers.x
     y = cert_public_numbers.y
 
-    x = long_to_bytes(x)
-    y = long_to_bytes(y)
+    x = _long_to_bytes(x)
+    y = _long_to_bytes(y)
 
     # Create the EC2 key from public key parameters
     key = EC2Key(x=x, y=y, crv=P384)
@@ -66,3 +67,8 @@ def verify_cert_chain(root_cert, cabundle, cert):
     # Validate the certificate
     # If the cert is invalid, it will raise exception
     store_ctx.verify_certificate()
+
+
+def _long_to_bytes(x: int):
+    bytesize = math.ceil(x.bit_length() / 8.0)
+    return x.to_bytes(bytesize, byteorder="big")
