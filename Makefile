@@ -1,6 +1,6 @@
 .PHONY: pydep
 pydep:
-	pip install -r requirements.txt
+	pip install -r requirements.txt -r requirements-dev.txt
 	cd hpke_spec && maturin develop
 
 .PHONY: pylib
@@ -10,8 +10,9 @@ pylib:
 .PHONY: pydep-upgrade
 pydep-upgrade:
 	pip install -U pip-tools
-	pip-compile --output-file=requirements.txt requirements.in
-	pip install -r requirements.txt
+	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements.txt requirements.in
+	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements-dev.txt requirements-dev.in
+	pip install -r requirements.txt -r requirements-dev.txt
 	cd hpke_spec && maturin develop
 
 .PHONY: install
