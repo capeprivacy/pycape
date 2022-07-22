@@ -1,5 +1,11 @@
 name: Main
-on: [push]
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
   build:
     name: Test
@@ -42,3 +48,15 @@ jobs:
         run: |
           . venv/bin/activate
           make test-ci
+
+  update_release_draft:
+    permissions:
+      contents: write
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+    - uses: release-drafter/release-drafter@v5
+      with:
+        disable-autolabeler: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

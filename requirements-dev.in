@@ -1,0 +1,9 @@
+-c requirements.txt
+absl-py
+black
+flake8-black
+flake8-isort
+flake8
+isort
+maturin
+pytest
