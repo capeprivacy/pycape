@@ -18,6 +18,13 @@ pydep-upgrade:
 .PHONY: install
 install: pydep pylib
 
+.PHONY: install-release
+install-release:
+	pip install maturin -r requirements.txt
+	maturin build -m hpke_spec/Cargo.toml --release -o ./wheelhouse
+	pip install --no-index --find-links wheelhouse hpke_spec
+	rm -R wheelhouse
+
 .PHONY: fmt
 fmt:
 	isort .
