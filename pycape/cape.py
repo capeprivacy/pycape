@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import codecs
 import json
 import logging
 import os
@@ -64,7 +65,7 @@ class Cape:
             )
         )
 
-    async def _connect(self, function_id):
+    async def _connect(self, function_id, function_hash):
         endpoint = f"{self._url}/v1/run/{function_id}"
 
         ctx = ssl.create_default_context()
@@ -88,8 +89,22 @@ class Cape:
         logger.debug("< Auth completed. Received attestation document.")
         attestation_doc = _parse_wss_response(msg)
         self._root_cert = self._root_cert or attest.download_root_cert()
-        self._public_key = attest.parse_attestation(attestation_doc, self._root_cert)
+        self._public_key, user_data= attest.parse_attestation(attestation_doc, self._root_cert)
+        if function_hash is not None and user_data is None:
+            raise ValueError(
+                f"no function hash received from enclave, expected{function_hash}"
+            )
 
+        user_data_dict = json.loads(user_data)
+        received_hash = user_data_dict.get("func_hash")
+        if function_hash is not None and function_hash is not received_hash:
+            raise ValueError(
+                # using format string to avoid line too long
+                """returned function hash did not match provided, got:{0},
+                want: {1}""".format(
+                    received_hash, function_hash
+                )
+            )
         return
 
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
@@ -132,7 +147,7 @@ class Cape:
 
     async def _run(self, *args, function_id, serde_hooks, use_serdio, **kwargs):
 
-        await self._connect(function_id)
+        await self._connect(function_id, function_hash)
 
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
 
