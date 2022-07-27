@@ -75,7 +75,7 @@ class Cape:
         await self._websocket.send(request)
 
         msg = await self._websocket.recv()
-        attestation_doc = json.loads(msg)["message"]
+        attestation_doc = _parse_attestation_response(msg)
         doc = base64.b64decode(attestation_doc["message"])
         self._public_key = attest.parse_attestation(doc, download_root_cert())
 
@@ -132,10 +132,21 @@ def _create_connection_request(token, nonce):
     return json.dumps(request)
 
 
+def _parse_attestation_response(result):
+    result = json.loads(result)
+    if "error" in result:
+        raise Exception(result["error"])
+
+    return result["message"]
+
+
 def _parse_websocket_result(result):
-    result = json.loads(result)["message"]
-    b64data = result["message"]
-    data = base64.b64decode(b64data)
+    result = json.loads(result)
+    if "error" in result:
+        raise Exception(result["error"])
+
+    msg = result["message"]
+    data = base64.b64decode(msg["message"])
     return data
 
 
