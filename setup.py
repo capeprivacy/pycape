@@ -8,7 +8,7 @@ setuptools.setup(
     name="pycape",
     version="0.1.0",
     packages=setuptools.find_packages(),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     license="Apache License 2.0",
     url="https://github.com/capeprivacy/pycape",
     description="The Cape Privacy Python SDK",
