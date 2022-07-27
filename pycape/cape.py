@@ -2,6 +2,7 @@ import asyncio
 import base64
 import io
 import json
+import logging
 import os
 import pathlib
 import random
@@ -20,8 +21,12 @@ _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
 
 
+logging.basicConfig(format="%(message)s")
+logger = logging.getLogger("pycape")
+
+
 class Cape:
-    def __init__(self, url="wss://cape.run", access_token=None):
+    def __init__(self, url="wss://cape.run", access_token=None, verbose=False):
         self._url = url
         if access_token is None:
             cape_auth_path = _CAPE_CONFIG_PATH / "auth"
@@ -30,6 +35,9 @@ class Cape:
         self._websocket = ""
         self._public_key = ""
         self._loop = asyncio.get_event_loop()
+
+        if verbose:
+            logger.setLevel(logging.DEBUG)
 
     def close(self):
         self._loop.run_until_complete(self._close())
@@ -67,14 +75,20 @@ class Cape:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
 
+        logger.debug(f"* Dialing {self._url}")
         self._websocket = await websockets.connect(endpoint, ssl=ctx)
+        logger.debug("* Websocket connection established")
 
         nonce = _generate_nonce()
+        logger.debug(f"* Generated nonce: {nonce}")
         request = _create_connection_request(self._auth_token, nonce)
 
+        logger.debug("\n> Sending nonce and auth token")
         await self._websocket.send(request)
 
+        logger.debug("* Waiting for attestation document...")
         msg = await self._websocket.recv()
+        logger.debug("< Auth completed. received attestation document")
         attestation_doc = _parse_attestation_response(msg)
         doc = base64.b64decode(attestation_doc["message"])
         self._public_key = attest.parse_attestation(doc, download_root_cert())
@@ -97,10 +111,13 @@ class Cape:
                 "with MessagePack."
             )
 
+        logger.debug("\n* Encrypting inputs with Hybrid Public Key Encryption (HPKE)")
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, input)
 
+        logger.debug("\n> Sending encrypted inputs")
         await self._websocket.send(input_ciphertext)
         result = await self._websocket.recv()
+        logger.debug("< Received function results")
         result = _parse_websocket_result(result)
 
         if msgpack_serialize:
