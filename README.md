@@ -16,7 +16,7 @@ The Cape SDK for Python is a library that provides a simple way to interact with
 
 ### Prerequisites
 
-* Python 3.8+
+* Python 3.7+
 * [pip](https://pip.pypa.io/en/stable/installing/)
 * [Make](https://www.gnu.org/software/make/) (if installing from source)
 
@@ -28,7 +28,7 @@ To install the library from source and all of its dependencies, run:
 ```sh
 git clone https://github.com/capeprivacy/pycape.git
 cd pycape
-make install
+make install-release
 ```
 
 ## Usage
