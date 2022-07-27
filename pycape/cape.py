@@ -134,19 +134,19 @@ def _create_connection_request(token, nonce):
 
 def _parse_attestation_response(result):
     result = json.loads(result)
-    if 'error' in result:
-        raise Exception(result['error'])
+    if "error" in result:
+        raise Exception(result["error"])
 
-    return result['message']
+    return result["message"]
 
 
 def _parse_websocket_result(result):
     result = json.loads(result)
-    if 'error' in result:
-        raise Exception(result['error'])
+    if "error" in result:
+        raise Exception(result["error"])
 
-    msg = result['message']
-    data = base64.b64decode(msg['message'])
+    msg = result["message"]
+    data = base64.b64decode(msg["message"])
     return data
 
 
