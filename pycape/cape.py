@@ -20,13 +20,14 @@ from pycape import serde
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
 
-
 logging.basicConfig(format="%(message)s")
 logger = logging.getLogger("pycape")
 
 
 class Cape:
-    def __init__(self, url="wss://cape.run", access_token=None, verbose=False):
+    def __init__(
+        self, url="wss://hackathon.capeprivacy.com", access_token=None, verbose=False
+    ):
         self._url = url
         if access_token is None:
             cape_auth_path = _CAPE_CONFIG_PATH / "auth"
