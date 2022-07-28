@@ -1,15 +1,12 @@
 import asyncio
 import base64
-import io
 import json
 import logging
 import os
 import pathlib
 import random
 import ssl
-import zipfile
 
-import requests
 import websockets
 
 from pycape import attestation as attest
@@ -20,13 +17,14 @@ from pycape import serde
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
 
-
 logging.basicConfig(format="%(message)s")
 logger = logging.getLogger("pycape")
 
 
 class Cape:
-    def __init__(self, url="wss://cape.run", access_token=None, verbose=False):
+    def __init__(
+        self, url="wss://hackathon.capeprivacy.com", access_token=None, verbose=False
+    ):
         self._url = url
         if access_token is None:
             cape_auth_path = _CAPE_CONFIG_PATH / "auth"
@@ -34,6 +32,7 @@ class Cape:
         self._auth_token = access_token
         self._websocket = ""
         self._public_key = ""
+        self._root_cert = None
         self._loop = asyncio.get_event_loop()
 
         if verbose:
@@ -80,18 +79,17 @@ class Cape:
         logger.debug("* Websocket connection established")
 
         nonce = _generate_nonce()
-        logger.debug(f"* Generated nonce: {nonce}")
         request = _create_connection_request(self._auth_token, nonce)
 
-        logger.debug("\n> Sending nonce and auth token")
+        logger.debug("\n> Sending auth request...")
         await self._websocket.send(request)
 
         logger.debug("* Waiting for attestation document...")
         msg = await self._websocket.recv()
-        logger.debug("< Auth completed. received attestation document")
-        attestation_doc = _parse_attestation_response(msg)
-        doc = base64.b64decode(attestation_doc["message"])
-        self._public_key = attest.parse_attestation(doc, download_root_cert())
+        logger.debug("< Auth completed. Received attestation document.")
+        attestation_doc = _parse_wss_response(msg)
+        self._root_cert = self._root_cert or attest.download_root_cert()
+        self._public_key = attest.parse_attestation(attestation_doc, self._root_cert)
 
         return
 
@@ -111,14 +109,13 @@ class Cape:
                 "with MessagePack."
             )
 
-        logger.debug("\n* Encrypting inputs with Hybrid Public Key Encryption (HPKE)")
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, input)
 
-        logger.debug("\n> Sending encrypted inputs")
+        logger.debug("> Sending encrypted inputs")
         await self._websocket.send(input_ciphertext)
-        result = await self._websocket.recv()
+        response = await self._websocket.recv()
         logger.debug("< Received function results")
-        result = _parse_websocket_result(result)
+        result = _parse_wss_response(response)
 
         if msgpack_serialize:
             result = serde.deserialize(result, object_hook=decoder_hook)
@@ -141,7 +138,9 @@ class Cape:
 
 # TODO What should be the length?
 def _generate_nonce(length=8):
-    return "".join([str(random.randint(0, 9)) for i in range(length)])
+    nonce = "".join([str(random.randint(0, 9)) for i in range(length)])
+    logger.debug(f"* Generated nonce: {nonce}")
+    return nonce
 
 
 def _create_connection_request(token, nonce):
@@ -149,22 +148,23 @@ def _create_connection_request(token, nonce):
     return json.dumps(request)
 
 
-def _parse_attestation_response(result):
-    result = json.loads(result)
-    if "error" in result:
-        raise Exception(result["error"])
-
-    return result["message"]
-
-
-def _parse_websocket_result(result):
-    result = json.loads(result)
-    if "error" in result:
-        raise Exception(result["error"])
-
-    msg = result["message"]
-    data = base64.b64decode(msg["message"])
-    return data
+def _parse_wss_response(response):
+    response = json.loads(response)
+    if "error" in response:
+        raise Exception(response["error"])
+    response_msg = _handle_expected_field(
+        response,
+        "message",
+        fallback_err="Missing 'message' field in websocket response.",
+    )
+    inner_msg = _handle_expected_field(
+        response_msg,
+        "message",
+        fallback_err=(
+            "Malformed websocket response contents: missing inner " "'message' field."
+        ),
+    )
+    return base64.b64decode(inner_msg)
 
 
 def _handle_default_auth(auth_path: pathlib.Path):
@@ -175,20 +175,19 @@ def _handle_default_auth(auth_path: pathlib.Path):
         )
     with open(auth_path, "r") as auth_file:
         auth_dict = json.load(auth_file)
-    access_token = auth_dict.get("access_token", None)
-    if access_token is None:
-        raise ValueError(
-            "Malformed auth file found: missing 'access_token' JSON field."
-        )
+    access_token = _handle_expected_field(
+        auth_dict,
+        "access_token",
+        fallback_err="Malformed auth file found: missing 'access_token' JSON field.",
+    )
     return access_token
 
 
-def download_root_cert():
-    url = "https://aws-nitro-enclaves.amazonaws.com/AWS_NitroEnclaves_Root-G1.zip"
-    r = requests.get(url)
-
-    f = zipfile.ZipFile(io.BytesIO(r.content))
-    with f.open("root.pem") as p:
-        root_cert = p.read()
-
-    return root_cert
+def _handle_expected_field(dictionary, field, *, fallback_err=None):
+    v = dictionary.get(field, None)
+    if v is None:
+        if fallback_err is not None:
+            logger.error(fallback_err)
+            raise RuntimeError(fallback_err)
+        raise RuntimeError(f"Dictionary {dictionary} missing key {field}.")
+    return v
