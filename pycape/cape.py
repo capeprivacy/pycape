@@ -42,8 +42,10 @@ class Cape:
     def close(self):
         self._loop.run_until_complete(self._close())
 
-    def connect(self, function_id):
-        self._loop.run_until_complete(self._connect(function_id))
+    def connect(self, function_id, function_hash=None):
+        self._loop.run_until_complete(
+            self._connect(function_id, function_hash=function_hash)
+        )
 
     def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
         if serde_hooks is not None:
@@ -92,7 +94,7 @@ class Cape:
         self._public_key, user_data= attest.parse_attestation(attestation_doc, self._root_cert)
         if function_hash is not None and user_data is None:
             raise ValueError(
-                f"no function hash received from enclave, expected{function_hash}"
+                f"No function hash received from enclave, expected{function_hash}."
             )
 
         user_data_dict = json.loads(user_data)
@@ -100,8 +102,8 @@ class Cape:
         if function_hash is not None and function_hash is not received_hash:
             raise ValueError(
                 # using format string to avoid line too long
-                """returned function hash did not match provided, got:{0},
-                want: {1}""".format(
+                """Returned function hash did not match provided, got:{0},
+                want: {1}.""".format(
                     received_hash, function_hash
                 )
             )
@@ -145,9 +147,10 @@ class Cape:
     async def _close(self):
         await self._websocket.close()
 
-    async def _run(self, *args, function_id, serde_hooks, use_serdio, **kwargs):
-
-        await self._connect(function_id, function_hash)
+    async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
+        await self._connect(
+            function_param["function_id"], function_param["function_hash"]
+        )
 
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
 
