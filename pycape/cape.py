@@ -91,7 +91,9 @@ class Cape:
         logger.debug("< Auth completed. Received attestation document.")
         attestation_doc = _parse_wss_response(msg)
         self._root_cert = self._root_cert or attest.download_root_cert()
-        self._public_key, user_data= attest.parse_attestation(attestation_doc, self._root_cert)
+        self._public_key, user_data = attest.parse_attestation(
+            attestation_doc, self._root_cert
+        )
         if function_hash is not None and user_data is None:
             raise ValueError(
                 f"No function hash received from enclave, expected{function_hash}."
@@ -101,11 +103,8 @@ class Cape:
         received_hash = user_data_dict.get("func_hash")
         if function_hash is not None and function_hash is not received_hash:
             raise ValueError(
-                # using format string to avoid line too long
-                """Returned function hash did not match provided, got:{0},
-                want: {1}.""".format(
-                    received_hash, function_hash
-                )
+                f"Returned function hash did not match provided, "
+                f"got: {received_hash}, want: {function_hash}."
             )
         return
 
