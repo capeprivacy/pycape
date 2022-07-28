@@ -75,7 +75,7 @@ def verify_cert_chain(root_cert, cabundle, cert):
     logger.debug("* Attestation certificate chain verified.")
 
 
-def verify_attestation_signature(payload, cert) -> bool:
+def verify_attestation_signature(payload, cert):
     logger.debug("* Verifying attestation certificate signature...")
     cert = load_der_x509_certificate(cert)
     cert_public_numbers = cert.public_key().public_numbers()
