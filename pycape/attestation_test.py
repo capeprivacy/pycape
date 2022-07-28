@@ -17,9 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import NameOID
 
-from pycape.attestation import parse_attestation
-from pycape.attestation import verify_cert_chain
-from pycape.attestation import verify_signature
+from pycape import attestation as attest
 
 
 class TestAttestation:
@@ -34,12 +32,12 @@ class TestAttestation:
         doc_bytes = create_attestation_doc(root_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
-        public_key = parse_attestation(
+        public_key = attest.parse_attestation(
             attestation, root_cert.public_bytes(Encoding.PEM)
         )
         assert len(public_key) == 32
 
-    def test_verify_signature(self):
+    def test_verify_attestation_signature(self):
         crv = P384
         root_private_key = ec.generate_private_key(
             crv.curve_obj, backend=default_backend()
@@ -53,7 +51,7 @@ class TestAttestation:
         payload = cbor2.loads(attestation)
         doc = cbor2.loads(payload[2])
 
-        verify_signature(attestation, doc["certificate"])
+        attest.verify_attestation_signature(attestation, doc["certificate"])
 
     def test_verify_cert_chain(self):
         crv = P384
@@ -76,7 +74,7 @@ class TestAttestation:
         with f.open("root.pem") as p:
             root_cert = p.read()
 
-        verify_cert_chain(root_cert, doc["cabundle"], doc["certificate"])
+        attest.verify_cert_chain(root_cert, doc["cabundle"], doc["certificate"])
 
 
 def create_cose_1_sign_msg(payload, private_key):
