@@ -1,3 +1,4 @@
+import logging
 import math
 
 import cbor2
@@ -7,15 +8,20 @@ from cose.messages import Sign1Message
 from cryptography.x509 import load_der_x509_certificate
 from OpenSSL import crypto
 
+logger = logging.getLogger("pycape")
+
 
 def parse_attestation(attestation, root_cert):
+    logger.debug("\n* Verifying attestation document")
     # TODO verifies the PCRs
     payload = cbor2.loads(attestation)
     doc = cbor2.loads(payload[2])
 
+    logger.debug("* Verifying signature")
     if not verify_signature(attestation, doc["certificate"]):
         raise ValueError("wrong signature")
 
+    logger.debug("* Verifying certificate chain")
     verify_cert_chain(root_cert, doc["cabundle"], doc["certificate"])
 
     public_key = doc.get("public_key")
