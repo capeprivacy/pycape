@@ -77,7 +77,9 @@ from typing import Optional
 from serdio import serde
 
 
-def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None, as_handler=False):
+def lift_io(
+    f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None, as_handler=False
+):
     """Lift a function into a callable that abstracts input-output (de-)serialization.
 
     The resulting callable is nearly identical to the original function,
@@ -98,10 +100,15 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None, a
           for custom-typed inputs and outputs.
         hook_bundle: An optional tuple, list, or SerdeHookBundle that simply packages up
           encoder_hook and decoder_hook Callables into a single object.
+        as_handler: A boolean controlling the return type of the decorator. If False,
+            returns an IOLifter wrapping up `f` and the hook bundle specified by the
+            combination of `encoder_hook`/`decoder_hook`/`hook_bundle`. If True, returns
+            the result of applying lambda x: x.as_cape_handler() to the IOLifter.
 
     Returns:
         An IOLifter wrapping up `f`, `encoder_hook`, and `decoder_hook` that can be
         used in a deployable Cape script or can be run/invoked by the Cape client.
+        If as_handler=True, instead returns the IO-lifted version of `f`.
 
     Raises:
         ValueError if wrong combination of encoder_hook, decoder_hook, hook_bundle is
@@ -117,7 +124,7 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None, a
         hook_bundle = serde.bundle_serde_hooks(hook_bundle)
         _typecheck_hooks(hook_bundle.encoder_hook, hook_bundle.decoder_hook)
     if f is None:
-        return ft.partial(IOLifter, hook_bundle=hook_bundle, as_handler=as_handler)
+        return ft.partial(lift_io, hook_bundle=hook_bundle, as_handler=as_handler)
     if as_handler:
         return IOLifter(f, hook_bundle=hook_bundle).as_bytes_handler()
     return IOLifter(f, hook_bundle=hook_bundle)
