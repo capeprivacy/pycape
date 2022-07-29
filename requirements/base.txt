@@ -34,8 +34,10 @@ hpke-spec==0.1.1
     # via -r requirements/base.in
 idna==3.3
     # via requests
-msgpack==1.0.4
+file:./lift_io
     # via -r requirements/base.in
+msgpack==1.0.4
+    # via lift-io
 oscrypto==1.3.0
     # via certvalidator
 pycparser==2.21
