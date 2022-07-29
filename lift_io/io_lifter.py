@@ -69,25 +69,12 @@ Using custom types with Cape.run:
     print(my_cool_result.cool_result)
     >> 6.0
 """
-import dataclasses
 import functools as ft
 from operator import xor
 from typing import Callable
 from typing import Optional
 
 from pycape import serde
-
-
-@dataclasses.dataclass
-class SerdeHookBundle:
-    encoder_hook: Callable
-    decoder_hook: Callable
-
-    def to_dict(self):
-        return dataclasses.asdict(self)
-
-    def unbundle(self):
-        return dataclasses.astuple(self)
 
 
 def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
@@ -124,9 +111,10 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
     """
     _check_lift_io_kwargs(encoder_hook, decoder_hook, hook_bundle)
     if encoder_hook is not None:
-        hook_bundle = SerdeHookBundle(encoder_hook, decoder_hook)
+        _typecheck_hooks(encoder_hook, decoder_hook)
+        hook_bundle = serde.SerdeHookBundle(encoder_hook, decoder_hook)
     elif hook_bundle is not None:
-        hook_bundle = bundle_serde_hooks(hook_bundle)
+        hook_bundle = serde.bundle_serde_hooks(hook_bundle)
         _typecheck_hooks(hook_bundle.encoder_hook, hook_bundle.decoder_hook)
     if f is None:
         return ft.partial(CapeIOLifter, hook_bundle=hook_bundle)
@@ -137,7 +125,7 @@ class CapeIOLifter:
     def __init__(
         self,
         f: Callable,
-        hook_bundle: Optional[SerdeHookBundle],
+        hook_bundle: Optional[serde.SerdeHookBundle],
     ):
         self._func = f
         self._hook_bundle = hook_bundle
@@ -169,25 +157,6 @@ class CapeIOLifter:
     @property
     def hook_bundle(self):
         return self._hook_bundle
-
-
-def bundle_serde_hooks(hook_bundle):
-    if isinstance(hook_bundle, (tuple, list)):
-        hook_bundle = SerdeHookBundle(*hook_bundle)
-    elif isinstance(hook_bundle, dict):
-        _check_dict_hook_bundle(hook_bundle)
-        hook_bundle = SerdeHookBundle(**hook_bundle)
-    return hook_bundle
-
-
-def _check_dict_hook_bundle(hook_bundle):
-    correct_size = len(hook_bundle) == 2
-    correct_keys = "encoder_hook" in hook_bundle and "decoder_hook" in hook_bundle
-    if not correct_size or not correct_keys:
-        raise ValueError(
-            "`hook_bundle` dict must have exactly two key-value pairs: 'encoder_hook'"
-            f"and 'decoder_hook'. Found dict with keys: {list(hook_bundle.keys())}."
-        )
 
 
 def _check_lift_io_kwargs(encoder_hook, decoder_hook, hook_bundle):
@@ -237,7 +206,7 @@ def _typecheck_hooks(encoder_hook, decoder_hook):
 def _typecheck_bundle(hook_bundle):
     if hook_bundle is None:
         return
-    if not isinstance(hook_bundle, (tuple, list, dict, SerdeHookBundle)):
+    if not isinstance(hook_bundle, (tuple, list, dict, serde.SerdeHookBundle)):
         raise TypeError(
             "`hook_bundle` keyword-argument must be one of:\n"
             "\t- tuple\n"
