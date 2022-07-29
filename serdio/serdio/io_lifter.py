@@ -70,6 +70,7 @@ Using custom types with Cape.run:
     >> 6.0
 """
 import functools as ft
+import inspect
 from operator import xor
 from typing import Callable
 from typing import Optional
@@ -160,7 +161,14 @@ class IOLifter:
                     "Make sure your input is serialized with MessagePack manually or "
                     "by setting use_serdio=True in Cape.run or Cape.invoke"
                 )
-            output = self._func(f_input)
+
+            if _check_if_multiple_inputs(f_input):
+                args, kwargs = f_input.get("args"), f_input.get("kwargs")
+                _check_inputs_match_signature(self._func, args, kwargs)
+                output = self._func(*args, **kwargs)
+            else:
+                output = self._func(f_input)
+
             output_blob = serde.serialize(output, encoder=encoder_hook)
             return output_blob
 
@@ -227,3 +235,28 @@ def _typecheck_bundle(hook_bundle):
             "\t- SerdeHookBundle\n"
             f"but found type: {type(hook_bundle)}."
         )
+
+
+def _check_inputs_match_signature(f, args, kwargs):
+    sig = inspect.signature(f)
+    n_inputs = len(args) + len(kwargs)
+    n_sig_parameters = len(sig.parameters)
+
+    if n_inputs != n_sig_parameters:
+        raise ValueError(
+            f"The number of inputs {n_inputs} provided in Cape.run or Cape invoke"
+            f" doesn't match the number of inputs {n_sig_parameters} expected "
+            "by the Cape handler"
+        )
+
+
+def _check_if_multiple_inputs(f_input):
+    # if multilple inputs, cape.run or cape.invoke send inputs function
+    # as a dictionnary with the following keys: "args" and "kwargs"
+    if isinstance(f_input, dict):
+        args = f_input.get("args")
+        kwargs = f_input.get("kwargs")
+        if args is not None and kwargs is not None:
+            return True
+    else:
+        False
