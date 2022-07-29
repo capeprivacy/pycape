@@ -5,4 +5,4 @@
 #    make pydep-upgrade
 #
 msgpack==1.0.4
-    # via -r requirements.in
+    # via serdio (serdio/pyproject.toml)

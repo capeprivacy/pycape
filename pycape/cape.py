@@ -47,9 +47,7 @@ class Cape:
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return self._loop.run_until_complete(
-            self._invoke(
-                input, serde_hooks=serde_hooks, use_serdio=use_serdio
-            )
+            self._invoke(input, serde_hooks=serde_hooks, use_serdio=use_serdio)
         )
 
     def run(self, function_id, input, serde_hooks=None, use_serdio=False):

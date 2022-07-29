@@ -84,7 +84,7 @@ class TestIoLifter(parameterized.TestCase):
             lifting.lift_io(lambda x: x, hook_bundle=fake_bundle)
 
         with self.assertRaises(TypeError):
-            also_fake_bundle = lifting.SerdeHookBundle(1, 2)
+            also_fake_bundle = serde.SerdeHookBundle(1, 2)
             lifting.lift_io(lambda x: x, hook_bundle=also_fake_bundle)
 
     def test_module_docstring_example(self):

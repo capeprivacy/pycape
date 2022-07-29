@@ -9,6 +9,7 @@ pylib:
 .PHONY: pydep-upgrade
 pydep-upgrade:
 	pip install -U pip-tools
+	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=serdio/requirements.txt serdio/pyproject.toml
 	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements/base.txt requirements/base.in
 	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements/dev.txt requirements/dev.in
 	pip install -r requirements/base.txt -r requirements/dev.txt
@@ -32,7 +33,8 @@ lint:
 
 .PHONY: test
 test:
-	pytest
+	pytest serdio
+	pytest pycape
 
 .PHONY: test-ci
 test-ci: test
