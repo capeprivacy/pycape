@@ -1,4 +1,4 @@
--c requirements.txt
+-c base.txt
 absl-py
 black
 flake8-black

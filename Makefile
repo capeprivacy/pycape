@@ -1,6 +1,6 @@
 .PHONY: pydep
 pydep:
-	pip install -r requirements.txt -r requirements-dev.txt
+	pip install -r requirements/base.txt -r requirements/dev.txt
 
 .PHONY: pylib
 pylib:
@@ -9,16 +9,16 @@ pylib:
 .PHONY: pydep-upgrade
 pydep-upgrade:
 	pip install -U pip-tools
-	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements.txt requirements.in
-	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements-dev.txt requirements-dev.in
-	pip install -r requirements.txt -r requirements-dev.txt
+	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements/base.txt requirements/base.in
+	CUSTOM_COMPILE_COMMAND="make pydep-upgrade" pip-compile --output-file=requirements/dev.txt requirements/dev.in
+	pip install -r requirements/base.txt -r requirements/dev.txt
 
 .PHONY: install
 install: pydep pylib
 
 .PHONY: install-release
 install-release:
-	pip install -r requirements.txt
+	pip install -r requirements/base.txt
 	pip install .
 
 .PHONY: fmt
