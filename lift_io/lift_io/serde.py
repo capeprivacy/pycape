@@ -64,6 +64,7 @@ def deserialize(x_bytes, decoder=None):
             )
     return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decoder)
 
+
 @dataclasses.dataclass
 class SerdeHookBundle:
     encoder_hook: Callable

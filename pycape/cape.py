@@ -9,10 +9,9 @@ import ssl
 
 import websockets
 
+import lift_io
 from pycape import attestation as attest
 from pycape import enclave_encrypt
-from pycape import io_lifter
-from pycape import serde
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
@@ -46,7 +45,7 @@ class Cape:
 
     def invoke(self, input, serde_hooks=None, msgpack_serialize=False):
         if serde_hooks is not None:
-            serde_hooks = io_lifter.bundle_serde_hooks(serde_hooks)
+            serde_hooks = lift_io.bundle_serde_hooks(serde_hooks)
         return self._loop.run_until_complete(
             self._invoke(
                 input, serde_hooks=serde_hooks, msgpack_serialize=msgpack_serialize
@@ -55,7 +54,7 @@ class Cape:
 
     def run(self, function_id, input, serde_hooks=None, msgpack_serialize=False):
         if serde_hooks is not None:
-            serde_hooks = io_lifter.bundle_serde_hooks(serde_hooks)
+            serde_hooks = lift_io.bundle_serde_hooks(serde_hooks)
         return asyncio.run(
             self._run(
                 function_id,
@@ -101,7 +100,7 @@ class Cape:
             encoder_hook, decoder_hook = None, None
 
         if msgpack_serialize:
-            input = serde.serialize(input, default=encoder_hook)
+            input = lift_io.serialize(input, default=encoder_hook)
         if not isinstance(input, bytes):
             raise TypeError(
                 f"The input type is: {type(input)}. Provide input as bytes or "
@@ -118,7 +117,7 @@ class Cape:
         result = _parse_wss_response(response)
 
         if msgpack_serialize:
-            result = serde.deserialize(result, object_hook=decoder_hook)
+            result = lift_io.deserialize(result, object_hook=decoder_hook)
 
         return result
 
