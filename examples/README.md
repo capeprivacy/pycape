@@ -29,7 +29,7 @@ python invoke_echo.py
 
 ## Mean: running functions on Python types
 
-To facilate serialization and deserialization of the input and output, PyCape offers the option to automatically handle serialization for native python types with [MessagePack](https://msgpack.org/index.html) by decorating the cape handler function with `@lift_io` and setting `msgpack_serialize=True` in `cape.run` or `cape.invoke`. See `examples/mean/app.py` for instructions on decorating.
+To facilate serialization and deserialization of the input and output, PyCape offers the option to automatically handle serialization for native python types with [MessagePack](https://msgpack.org/index.html) by decorating the cape handler function with `@serdio.lift_io` and setting `use_serdio=True` in `cape.run` or `cape.invoke`. See `examples/mean/app.py` for instructions on decorating.
 
 As an example, we will compute the mean of a list of numbers. All commands should be run from the root directory of the repo.
 

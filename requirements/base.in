@@ -1,6 +1,6 @@
 cbor2
 hpke_spec~=0.1.1
-file:./lift_io
+file:./serdio
 websockets
 pyOpenSSL
 cose

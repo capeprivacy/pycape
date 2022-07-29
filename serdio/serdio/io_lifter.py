@@ -74,7 +74,7 @@ from operator import xor
 from typing import Callable
 from typing import Optional
 
-from pycape import serde
+from serdio import serde
 
 
 def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
@@ -100,7 +100,7 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
           encoder_hook and decoder_hook Callables into a single object.
 
     Returns:
-        A CapeIOLifter wrapping up `f`, `encoder_hook`, and `decoder_hook` that can be
+        An IOLifter wrapping up `f`, `encoder_hook`, and `decoder_hook` that can be
         used in a deployable Cape script or can be run/invoked by the Cape client.
 
     Raises:
@@ -117,11 +117,11 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
         hook_bundle = serde.bundle_serde_hooks(hook_bundle)
         _typecheck_hooks(hook_bundle.encoder_hook, hook_bundle.decoder_hook)
     if f is None:
-        return ft.partial(CapeIOLifter, hook_bundle=hook_bundle)
-    return CapeIOLifter(f, hook_bundle=hook_bundle)
+        return ft.partial(IOLifter, hook_bundle=hook_bundle)
+    return IOLifter(f, hook_bundle=hook_bundle)
 
 
-class CapeIOLifter:
+class IOLifter:
     def __init__(
         self,
         f: Callable,

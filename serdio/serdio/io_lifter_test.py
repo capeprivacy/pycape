@@ -3,8 +3,8 @@ from typing import Callable
 
 from absl.testing import parameterized
 
-from pycape import io_lifter as lifting
-from pycape import serde
+from serdio import io_lifter as lifting
+from serdio import serde
 
 
 def identity(x):
