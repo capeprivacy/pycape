@@ -45,10 +45,10 @@ hash for security.
 Example [run.py](https://github.com/capeprivacy/pycape/tree/main/examples/run.py):
 
 ```py
-from pycape import Cape
+from pycape import Cape, FunctionRef
 
 client = Cape(url="wss://hackathon.capeprivacy.com")
-client.run(function_param={"function_id":'<FUNCTION_ID>', "function_hash" : '<FUNCTION_HASH>'}, input='my_data')
+client.run(function_ref=FunctionRef(function_id='<FUNCTION_ID>', function_hash='<FUNCTION_HASH>'), input='my_data')
 ```
 
 ### `invoke`

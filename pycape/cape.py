@@ -1,12 +1,12 @@
 import asyncio
 import base64
-import codecs
 import json
 import logging
 import os
 import pathlib
 import random
 import ssl
+from functools import wraps
 
 import websockets
 
@@ -15,11 +15,42 @@ from pycape import attestation as attest
 from pycape import enclave_encrypt
 from serdio import func_utils as serdio_utils
 
+from .function_ref import FunctionRef
+
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
 
 logging.basicConfig(format="%(message)s")
 logger = logging.getLogger("pycape")
+
+
+def check_run(method):
+    """
+    check_run turns the positional arguments into function_ref if types match
+    """
+
+    @wraps(method)
+    def new_method(*args, **kwargs):
+        # take the first non named argument as function id and construct function_ref
+        if len(args) >= 2:
+            # ignore self
+            function_id = args[1]
+            if not isinstance(function_id, str):
+                raise ValueError(
+                    f"Expected function_id to be string, got {type(function_id)}"
+                )
+            if "function_ref" in kwargs:
+                raise ValueError(
+                    f"Invalid positional argument {function_id} provide, "
+                    "function_ref was also provided"
+                )
+            kwargs["function_ref"] = FunctionRef(function_id=function_id)
+            args = list(args[0:1]) + list(args[2:])
+        if isinstance(kwargs["function_ref"], str):
+            raise ValueError("Expected input to be FunctionRef, but got string.")
+        return method(*args, **kwargs)
+
+    return new_method
 
 
 class Cape:
@@ -54,13 +85,13 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def run(self, function_id, *args, serde_hooks=None, use_serdio=False, **kwargs):
+    def run(self, function_ref, *args, serde_hooks=None, use_serdio=False, **kwargs):
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return asyncio.run(
             self._run(
                 *args,
-                function_id=function_id,
+                function_ref,
                 serde_hooks=serde_hooks,
                 use_serdio=use_serdio,
                 **kwargs,
@@ -101,11 +132,14 @@ class Cape:
 
         user_data_dict = json.loads(user_data)
         received_hash = user_data_dict.get("func_hash")
-        if function_hash is not None and function_hash is not received_hash:
-            raise ValueError(
-                f"Returned function hash did not match provided, "
-                f"got: {received_hash}, want: {function_hash}."
-            )
+        if function_hash is not None:
+            # Function hash is hex encoded, we manipulate it to string for comparison.
+            received_hash = str(base64.b64decode(received_hash).hex())
+            if str(function_hash) != str(received_hash):
+                raise ValueError(
+                    f"Returned function hash did not match provided, "
+                    f"got: {received_hash}, want: {function_hash}."
+                )
         return
 
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
@@ -147,10 +181,6 @@ class Cape:
         await self._websocket.close()
 
     async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
-        await self._connect(
-            function_param["function_id"], function_param["function_hash"]
-        )
-
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
 
         await self._close()
