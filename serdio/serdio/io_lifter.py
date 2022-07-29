@@ -77,7 +77,7 @@ from typing import Optional
 from serdio import serde
 
 
-def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
+def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None, as_handler=False):
     """Lift a function into a callable that abstracts input-output (de-)serialization.
 
     The resulting callable is nearly identical to the original function,
@@ -117,7 +117,9 @@ def lift_io(f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None):
         hook_bundle = serde.bundle_serde_hooks(hook_bundle)
         _typecheck_hooks(hook_bundle.encoder_hook, hook_bundle.decoder_hook)
     if f is None:
-        return ft.partial(IOLifter, hook_bundle=hook_bundle)
+        return ft.partial(IOLifter, hook_bundle=hook_bundle, as_handler=as_handler)
+    if as_handler:
+        return IOLifter(f, hook_bundle=hook_bundle).as_bytes_handler()
     return IOLifter(f, hook_bundle=hook_bundle)
 
 
@@ -134,6 +136,9 @@ class IOLifter:
         return self._func(*args, **kwargs)
 
     def as_cape_handler(self):
+        return self.as_bytes_handler()
+
+    def as_bytes_handler(self):
         if self.hook_bundle is not None:
             encoder_hook, decoder_hook = self.hook_bundle.unbundle()
         else:
@@ -146,7 +151,7 @@ class IOLifter:
                 raise ValueError(
                     "Couldn't deserialize the function's input with MessagePack."
                     "Make sure your input is serialized with MessagePack manually or "
-                    "by setting msgpack_serialize to True in cape.run or cape.invoke"
+                    "by setting use_serdio=True in Cape.run or Cape.invoke"
                 )
             output = self._func(f_input)
             output_blob = serde.serialize(output, encoder=encoder_hook)
