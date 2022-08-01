@@ -1,6 +1,6 @@
 cbor2
 hpke_spec~=0.1.1
-msgpack
+file:./serdio
 websockets
 pyOpenSSL
 cose

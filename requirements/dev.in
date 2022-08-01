@@ -1,4 +1,5 @@
--c requirements.txt
+-c base.txt
+-c ../serdio/requirements.txt
 absl-py
 black
 flake8-black

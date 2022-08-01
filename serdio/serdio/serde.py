@@ -1,4 +1,6 @@
+import dataclasses
 import enum
+from typing import Callable
 
 import msgpack
 
@@ -63,7 +65,32 @@ def deserialize(x_bytes, decoder=None):
     return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decoder)
 
 
-def _assert_keys_in_dict(d, keys):
-    for key in keys:
-        if key not in d:
-            raise ValueError(f"Missing key in data object {key}")
+@dataclasses.dataclass
+class SerdeHookBundle:
+    encoder_hook: Callable
+    decoder_hook: Callable
+
+    def to_dict(self):
+        return dataclasses.asdict(self)
+
+    def unbundle(self):
+        return dataclasses.astuple(self)
+
+
+def bundle_serde_hooks(hook_bundle):
+    if isinstance(hook_bundle, (tuple, list)):
+        hook_bundle = SerdeHookBundle(*hook_bundle)
+    elif isinstance(hook_bundle, dict):
+        _check_dict_hook_bundle(hook_bundle)
+        hook_bundle = SerdeHookBundle(**hook_bundle)
+    return hook_bundle
+
+
+def _check_dict_hook_bundle(hook_bundle):
+    correct_size = len(hook_bundle) == 2
+    correct_keys = "encoder_hook" in hook_bundle and "decoder_hook" in hook_bundle
+    if not correct_size or not correct_keys:
+        raise ValueError(
+            "`hook_bundle` dict must have exactly two key-value pairs: 'encoder_hook'"
+            f"and 'decoder_hook'. Found dict with keys: {list(hook_bundle.keys())}."
+        )

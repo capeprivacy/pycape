@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "serdio"
+description = "Auto-magic lifting of function inputs + outputs into msgpack-ed bytes."
+version = "0.1.0"
+requires-python = ">=3.7"
+dependencies = ["msgpack"]
+classifiers = [
+    "Programming Language :: Python",
+]
+urls = {repository = "https://github.com/capeprivacy/pycape"}

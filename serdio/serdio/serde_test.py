@@ -2,7 +2,7 @@ import msgpack
 from absl.testing import absltest
 from absl.testing import parameterized
 
-from pycape import serde
+from serdio import serde
 
 
 class SerializeTest(parameterized.TestCase):
