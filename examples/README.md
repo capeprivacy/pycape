@@ -29,7 +29,7 @@ python invoke_echo.py
 
 ## Mean: running functions on Python types
 
-To facilate serialization and deserialization of the input and output, PyCape offers the option to automatically handle serialization for native python types with [MessagePack](https://msgpack.org/index.html) by decorating the cape handler function with `@serdio.lift_io` and setting `use_serdio=True` in `cape.run` or `cape.invoke`. See `examples/mean/app.py` for instructions on decorating.
+To facilate serialization and deserialization of the input and output, we use Serdio, which can automatically handle serialization for native python types with [MessagePack](https://msgpack.org/index.html). To use Serdio, we decorate our cape handler function with `@serdio.lift_io` and set `use_serdio=True` when we call `cape.run` or `cape.invoke`. See `examples/mean/app.py` for instructions on decorating.
 
 As an example, we will compute the mean of a list of numbers. All commands should be run from the root directory of the repo.
 
@@ -40,30 +40,23 @@ export TARGET=examples/mean/build
 export CAPE_HOST=<WSS_URL>
 ```
 
-###  Step 1: Install PyCape dependencies to build target
-The wheel file in the last line might have a slightly different name, depending on your platform-specifics. Depending on your OS and Python version, you may have to run this in a manylinux-compliant Docker image with Python 3.9 (e.g. `python:3.9-slim-bullseye`).
+###  Step 1: Install Serdio to build target
+Depending on your OS and Python version, you may have to run this in a manylinux-compliant Docker image with Python 3.9 (e.g. `python:3.9-slim-bullseye`).
 ```sh
-pip install -r requirements.txt --target $TARGET
-pushd hpke_spec && maturin build && popd  # take note of the wheel name in this line's output
-pip install hpke_spec/target/wheels/hpke_spec-0.1.0-cp39-cp39-manylinux_2_31_x86_64.whl --target $TARGET
+pip install serdio --target $TARGET
 ```
 
-### Step 2: Install PyCape to build target
-```sh
-pip install . --target $TARGET
-```
-
-### Step 3: Add application code to build target
+### Step 2: Add application code to build target
 ```sh
 cp examples/mean/app.py $TARGET
 ```
 
-### Step 4: Deploy function with dependencies
+### Step 3: Deploy function with dependencies
 ```sh
 pushd examples/mean && cape deploy build --url $CAPE_HOST && popd
 ```
 
-### Step 5: Use PyCape client to run the function in a Cape enclave
+### Step 4: Use PyCape client to run the function in a Cape enclave
 Finally, run the function with the PyCape client:
 ```sh
 export CAPE_FUNCTION=<FUNCTION_ID returned from cape deploy>
