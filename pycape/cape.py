@@ -52,9 +52,7 @@ class Cape:
             )
         )
 
-    def run(
-        self, *args, function_id, serde_hooks=None, use_serdio=False, **kwargs
-    ):
+    def run(self, function_id, *args, serde_hooks=None, use_serdio=False, **kwargs):
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return asyncio.run(
@@ -99,10 +97,10 @@ class Cape:
         # If multiple args and kwargs are supplied to the function, bundle
         # them into a dictionary before serializing, so can be deserialized
         # and supplied to cape handler properly.
-        if len(args) == 1 & kwargs is None:
-            inputs = args
-        elif len(args) == 0 & len(kwargs) == 1:
-            inputs = kwargs.values[0]
+        if len(args) == 1 and len(kwargs) == 0:
+            inputs = args[0]
+        elif len(args) == 0 and len(kwargs) == 1:
+            inputs = kwargs.popitem()[1]
         else:
             inputs = {"args": args, "kwargs": kwargs}
 
@@ -114,7 +112,7 @@ class Cape:
 
         if use_serdio:
             inputs = serdio.serialize(inputs, default=encoder_hook)
-        if not isinstance(input, bytes):
+        if not isinstance(inputs, bytes):
             raise TypeError(
                 f"The input type is: {type(inputs)}. Provide input as bytes or "
                 "set use_serdio=True for PyCape to serialize your input "
@@ -141,7 +139,9 @@ class Cape:
 
         await self._connect(function_id)
 
-        result = await self._invoke(*args, serde_hooks, use_serdio, **kwargs)
+        result = await self._invoke(
+            *args, serde_hooks=serde_hooks, use_serdio=use_serdio, **kwargs
+        )
 
         await self._close()
 

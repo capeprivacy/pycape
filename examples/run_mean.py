@@ -12,6 +12,6 @@ if __name__ == "__main__":
     cape = Cape(url=url, access_token=token)
 
     x = [1, 2, 3, 4]
-    result = cape.run(x, function_id=function_id, use_serdio=True)
+    result = cape.run(function_id, x, use_serdio=True)
 
     print(f"The mean of x is: {result}")
