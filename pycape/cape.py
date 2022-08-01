@@ -111,7 +111,7 @@ class Cape:
             encoder_hook, decoder_hook = None, None
 
         if use_serdio:
-            inputs = serdio.serialize(inputs, default=encoder_hook)
+            inputs = serdio.serialize(inputs, encoder=encoder_hook)
         if not isinstance(inputs, bytes):
             raise TypeError(
                 f"The input type is: {type(inputs)}. Provide input as bytes or "
@@ -128,7 +128,7 @@ class Cape:
         result = _parse_wss_response(response)
 
         if use_serdio:
-            result = serdio.deserialize(result, object_hook=decoder_hook)
+            result = serdio.deserialize(result, decoder=decoder_hook)
 
         return result
 
