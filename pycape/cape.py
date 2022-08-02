@@ -12,6 +12,7 @@ import websockets
 import serdio
 from pycape import attestation as attest
 from pycape import enclave_encrypt
+from serdio import utils as serdio_utils
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
@@ -92,15 +93,11 @@ class Cape:
         return
 
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
-        # If multiple args and kwargs are supplied to the function, bundle
-        # them into a dictionary before serializing, so can be deserialized
-        # and supplied to cape handler properly.
-        if len(args) == 1 and len(kwargs) == 0:
-            inputs = args[0]
-        elif len(args) == 0 and len(kwargs) == 1:
-            inputs = kwargs.popitem()[1]
-        else:
-            inputs = {"args": args, "kwargs": kwargs}
+        # If multiple args and/or kwargs are supplied to the Cape function through
+        # Cape.run or Cape.invoke, before serialization, we pack them
+        # into a dictionary with the following keys:
+        # {"cape_fn_args": <tuple_args>, "cape_fn_kwargs": <dict_kwargs>}.
+        inputs = serdio_utils.pack_function_args_kwargs(args, kwargs)
 
         if serde_hooks is not None:
             encoder_hook, decoder_hook = serde_hooks.unbundle()

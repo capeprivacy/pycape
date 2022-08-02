@@ -76,6 +76,7 @@ from typing import Callable
 from typing import Optional
 
 from serdio import serde
+from serdio import utils
 
 
 def lift_io(
@@ -162,7 +163,7 @@ class IOLifter:
                     "by setting use_serdio=True in Cape.run or Cape.invoke"
                 )
 
-            args, kwargs = _check_inputs(f_input)
+            args, kwargs = utils.unpack_function_args_kwargs(f_input)
             if args is None and kwargs is None:
                 output = self._func(f_input)
             else:
@@ -248,14 +249,3 @@ def _check_inputs_match_signature(f, args, kwargs):
             f" doesn't match the number of inputs {n_sig_parameters} expected "
             "by the Cape handler"
         )
-
-
-def _check_inputs(f_input):
-    # if multilple inputs, Cape.run or Cape.invoke send inputs function
-    # as a dictionnary with the following keys: "args" and "kwargs"
-    if isinstance(f_input, dict):
-        args = f_input.get("args")
-        kwargs = f_input.get("kwargs")
-        return args, kwargs
-    else:
-        return None, None

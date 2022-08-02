@@ -5,6 +5,7 @@ from absl.testing import parameterized
 
 from serdio import io_lifter as lifting
 from serdio import serde
+from serdio import utils
 
 
 def identity(x):
@@ -58,18 +59,18 @@ class TestIoLifter(parameterized.TestCase):
         lifted_multiple_identity = lifting.lift_io(multiple_identity)
         args = (1, 2)
         kwargs = {"z": 4}
-        inputs = {"args": args, "kwargs": kwargs}
+        inputs = utils.pack_function_args_kwargs(args, kwargs)
         inputs_ser = serde.serialize(inputs)
         result = lifted_multiple_identity.as_cape_handler()(inputs_ser)
         result_deser = serde.deserialize(result)
-        assert inputs["args"] == result_deser[:2]
-        assert inputs["kwargs"]["z"] == result_deser[2]
+        assert args == result_deser[:2]
+        assert kwargs["z"] == result_deser[2]
 
     def test_lifted_capehandler_wrong_nb_inputs(self):
         lifted_multiple_identity = lifting.lift_io(multiple_identity)
         args = (1,)
         kwargs = {"z": 4}
-        inputs = {"args": args, "kwargs": kwargs}
+        inputs = utils.pack_function_args_kwargs(args, kwargs)
         inputs_ser = serde.serialize(inputs)
         with self.assertRaises(ValueError):
             lifted_multiple_identity.as_cape_handler()(inputs_ser)
