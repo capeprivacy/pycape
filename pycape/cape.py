@@ -47,9 +47,7 @@ class Cape:
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return self._loop.run_until_complete(
-            self._invoke(
-                *args, serde_hooks=serde_hooks, use_serdio=use_serdio, **kwargs
-            )
+            self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
     def run(self, function_id, *args, serde_hooks=None, use_serdio=False, **kwargs):
@@ -93,7 +91,7 @@ class Cape:
 
         return
 
-    async def _invoke(self, *args, serde_hooks, use_serdio, **kwargs):
+    async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and kwargs are supplied to the function, bundle
         # them into a dictionary before serializing, so can be deserialized
         # and supplied to cape handler properly.
@@ -139,9 +137,7 @@ class Cape:
 
         await self._connect(function_id)
 
-        result = await self._invoke(
-            *args, serde_hooks=serde_hooks, use_serdio=use_serdio, **kwargs
-        )
+        result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
 
         await self._close()
 
