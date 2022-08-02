@@ -5,7 +5,7 @@ from absl.testing import parameterized
 
 from serdio import io_lifter as lifting
 from serdio import serde
-from serdio import utils
+from serdio import func_utils
 
 
 def identity(x):
@@ -59,7 +59,7 @@ class TestIoLifter(parameterized.TestCase):
         lifted_multiple_identity = lifting.lift_io(multiple_identity)
         args = (1, 2)
         kwargs = {"z": 4}
-        inputs = utils.pack_function_args_kwargs(args, kwargs)
+        inputs = func_utils.pack_function_args_kwargs(args, kwargs)
         inputs_ser = serde.serialize(inputs)
         result = lifted_multiple_identity.as_cape_handler()(inputs_ser)
         result_deser = serde.deserialize(result)
@@ -70,7 +70,7 @@ class TestIoLifter(parameterized.TestCase):
         lifted_multiple_identity = lifting.lift_io(multiple_identity)
         args = (1,)
         kwargs = {"z": 4}
-        inputs = utils.pack_function_args_kwargs(args, kwargs)
+        inputs = func_utils.pack_function_args_kwargs(args, kwargs)
         inputs_ser = serde.serialize(inputs)
         with self.assertRaises(ValueError):
             lifted_multiple_identity.as_cape_handler()(inputs_ser)

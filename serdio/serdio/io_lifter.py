@@ -76,7 +76,7 @@ from typing import Callable
 from typing import Optional
 
 from serdio import serde
-from serdio import utils
+from serdio import func_utils
 
 
 def lift_io(
@@ -163,7 +163,7 @@ class IOLifter:
                     "by setting use_serdio=True in Cape.run or Cape.invoke"
                 )
 
-            args, kwargs = utils.unpack_function_args_kwargs(f_input)
+            args, kwargs = func_utils.unpack_function_args_kwargs(f_input)
             if args is None and kwargs is None:
                 output = self._func(f_input)
             else:

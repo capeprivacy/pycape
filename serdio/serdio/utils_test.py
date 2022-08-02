@@ -1,6 +1,6 @@
 from absl.testing import parameterized
 
-from serdio import utils
+from serdio import func_utils
 
 
 class TestSerdioUtils(parameterized.TestCase):
@@ -17,7 +17,7 @@ class TestSerdioUtils(parameterized.TestCase):
         ]
     )
     def test_arg_kwargs_packing(self, args, kwargs, exp_packed_args_kwargs):
-        packed_args_kwargs = utils.pack_function_args_kwargs(args, kwargs)
+        packed_args_kwargs = func_utils.pack_function_args_kwargs(args, kwargs)
         assert packed_args_kwargs == exp_packed_args_kwargs
 
     @parameterized.parameters(
@@ -32,6 +32,6 @@ class TestSerdioUtils(parameterized.TestCase):
         ]
     )
     def test_unpack_args_kwargs(self, packed_args_kwargs, exp_args, exp_kwargs):
-        args, kwargs = utils.unpack_function_args_kwargs(packed_args_kwargs)
+        args, kwargs = func_utils.unpack_function_args_kwargs(packed_args_kwargs)
         assert args == exp_args
         assert kwargs == exp_kwargs

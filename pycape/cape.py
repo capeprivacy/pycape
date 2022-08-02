@@ -12,7 +12,7 @@ import websockets
 import serdio
 from pycape import attestation as attest
 from pycape import enclave_encrypt
-from serdio import utils as serdio_utils
+from serdio import func_utils as serdio_utils
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
