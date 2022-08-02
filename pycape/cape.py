@@ -6,51 +6,20 @@ import os
 import pathlib
 import random
 import ssl
-from functools import wraps
 
 import websockets
 
 import serdio
 from pycape import attestation as attest
 from pycape import enclave_encrypt
+from pycape.function_ref import FunctionRef
 from serdio import func_utils as serdio_utils
-
-from pycape import function_ref
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
 
 logging.basicConfig(format="%(message)s")
 logger = logging.getLogger("pycape")
-
-
-def _check_run(method):
-    """
-    check_run turns the positional arguments into function_ref if types match
-    """
-
-    @wraps(method)
-    def new_method(*args, **kwargs):
-        # take the first non named argument as function id and construct function_ref
-        if len(args) >= 2:
-            # ignore self
-            function_id = args[1]
-            if not isinstance(function_id, str):
-                raise ValueError(
-                    f"Expected function_id to be string, got {type(function_id)}"
-                )
-            if "function_ref" in kwargs:
-                raise ValueError(
-                    f"Invalid positional argument {function_id} provide, "
-                    "function_ref was also provided"
-                )
-            kwargs["function_ref"] = function_ref.FunctionRef(function_id=function_id)
-            args = list(args[0:1]) + list(args[2:])
-        if isinstance(kwargs["function_ref"], str):
-            raise ValueError("Expected input to be FunctionRef, but got string.")
-        return method(*args, **kwargs)
-
-    return new_method
 
 
 class Cape:
@@ -73,10 +42,8 @@ class Cape:
     def close(self):
         self._loop.run_until_complete(self._close())
 
-    def connect(self, function_id, function_hash=None):
-        self._loop.run_until_complete(
-            self._connect(function_id, function_hash=function_hash)
-        )
+    def connect(self, function_ref):
+        self._loop.run_until_complete(self._connect(function_ref))
 
     def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
         if serde_hooks is not None:
@@ -86,6 +53,7 @@ class Cape:
         )
 
     def run(self, function_ref, *args, serde_hooks=None, use_serdio=False, **kwargs):
+        function_ref = _convert_to_function_ref(function_ref)
         function_id = function_ref.get_id()
         if function_id is None:
             raise ValueError("Function id was not provided.")
@@ -94,14 +62,16 @@ class Cape:
         return asyncio.run(
             self._run(
                 *args,
-                function_ref,
+                function_ref=function_ref,
                 serde_hooks=serde_hooks,
                 use_serdio=use_serdio,
                 **kwargs,
             )
         )
 
-    async def _connect(self, function_id, function_hash):
+    async def _connect(self, function_ref):
+        function_id = function_ref.get_id()
+        function_hash = function_ref.get_hash()
         endpoint = f"{self._url}/v1/run/{function_id}"
 
         ctx = ssl.create_default_context()
@@ -129,6 +99,8 @@ class Cape:
             attestation_doc, self._root_cert
         )
         if function_hash is not None and user_data is None:
+            # Close the connection explicitly before throwing exception
+            await self._close()
             raise ValueError(
                 f"No function hash received from enclave, expected{function_hash}."
             )
@@ -136,7 +108,7 @@ class Cape:
         user_data_dict = json.loads(user_data)
         received_hash = user_data_dict.get("func_hash")
         if function_hash is not None:
-            # Function hash is hex encoded, we manipulate it to string for comparison.
+            # Function hash is hex encoded, we manipulate it to string for comparison
             received_hash = str(base64.b64decode(received_hash).hex())
             if str(function_hash) != str(received_hash):
                 raise ValueError(
@@ -184,8 +156,10 @@ class Cape:
         await self._websocket.close()
 
     async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
-        result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
 
+        await self._connect(function_ref)
+
+        result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         await self._close()
 
         return result
@@ -246,3 +220,14 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
             raise RuntimeError(fallback_err)
         raise RuntimeError(f"Dictionary {dictionary} missing key {field}.")
     return v
+
+
+def _convert_to_function_ref(function_ref):
+    if isinstance(function_ref, str):
+        function_ref = FunctionRef(function_ref)
+    elif isinstance(function_ref, FunctionRef):
+        return function_ref
+    raise TypeError(
+        f"`function_ref` arg must be a string function ID, "
+        f"or a FunctionRef object, found {type(function_ref)}"
+    )
