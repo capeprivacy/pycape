@@ -1,6 +1,7 @@
 import base64
 import datetime
 import io
+import json
 import time
 import zipfile
 
@@ -32,9 +33,11 @@ class TestAttestation:
         doc_bytes = create_attestation_doc(root_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
-        public_key = attest.parse_attestation(
+        public_key, user_data = attest.parse_attestation(
             attestation, root_cert.public_bytes(Encoding.PEM)
         )
+        expected_user_data = json.dumps({"func_hash": "stuff"})
+        assert user_data == expected_user_data
         assert len(public_key) == 32
 
     def test_verify_attestation_signature(self):
@@ -102,7 +105,7 @@ def create_cose_1_sign_msg(payload, private_key):
 def create_attestation_doc(root_cert, cert):
     cert = cert.public_bytes(Encoding.DER)
     root_cert = root_cert.public_bytes(Encoding.DER)
-
+    user_data = json.dumps({"func_hash": "stuff"})
     public_key = base64.b64decode("d4Y4fxNr/hga+d86m2Lw+SXu+QO6Uuk3yrtrS9CoVgI=")
     obj = {
         "module_id": "my-module",
@@ -112,6 +115,7 @@ def create_attestation_doc(root_cert, cert):
         "certificate": cert,
         "cabundle": [root_cert],
         "public_key": public_key,
+        "user_data": user_data,
     }
 
     return cbor2.encoder.dumps(obj)

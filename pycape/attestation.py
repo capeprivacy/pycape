@@ -46,7 +46,9 @@ def parse_attestation(attestation, root_cert):
 
     verify_attestation_signature(attestation, doc_cert)
     verify_cert_chain(root_cert, cabundle, doc_cert)
-    return public_key
+    # Send back optional parameter user_data
+    user_data = doc.get("user_data")
+    return public_key, user_data
 
 
 def verify_cert_chain(root_cert, cabundle, cert):

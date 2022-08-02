@@ -24,7 +24,7 @@ class TestEnclaveEncryption:
         doc_bytes = create_attestation_doc(root_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
-        public_key = parse_attestation(
+        public_key, _ = parse_attestation(
             attestation, root_cert.public_bytes(Encoding.PEM)
         )
         _ = encrypt(public_key, plaintext)

@@ -12,6 +12,7 @@ import websockets
 import serdio
 from pycape import attestation as attest
 from pycape import enclave_encrypt
+from pycape.function_ref import FunctionRef
 from serdio import func_utils as serdio_utils
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
@@ -41,8 +42,9 @@ class Cape:
     def close(self):
         self._loop.run_until_complete(self._close())
 
-    def connect(self, function_id):
-        self._loop.run_until_complete(self._connect(function_id))
+    def connect(self, function_ref):
+        function_ref = _convert_to_function_ref(function_ref)
+        self._loop.run_until_complete(self._connect(function_ref))
 
     def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
         if serde_hooks is not None:
@@ -51,20 +53,23 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def run(self, function_id, *args, serde_hooks=None, use_serdio=False, **kwargs):
+    def run(self, function_ref, *args, serde_hooks=None, use_serdio=False, **kwargs):
+        function_ref = _convert_to_function_ref(function_ref)
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return asyncio.run(
             self._run(
                 *args,
-                function_id=function_id,
+                function_ref=function_ref,
                 serde_hooks=serde_hooks,
                 use_serdio=use_serdio,
                 **kwargs,
             )
         )
 
-    async def _connect(self, function_id):
+    async def _connect(self, function_ref):
+        function_id = function_ref.get_id()
+        function_hash = function_ref.get_hash()
         endpoint = f"{self._url}/v1/run/{function_id}"
 
         ctx = ssl.create_default_context()
@@ -88,8 +93,26 @@ class Cape:
         logger.debug("< Auth completed. Received attestation document.")
         attestation_doc = _parse_wss_response(msg)
         self._root_cert = self._root_cert or attest.download_root_cert()
-        self._public_key = attest.parse_attestation(attestation_doc, self._root_cert)
+        self._public_key, user_data = attest.parse_attestation(
+            attestation_doc, self._root_cert
+        )
+        if function_hash is not None and user_data is None:
+            # Close the connection explicitly before throwing exception
+            await self._close()
+            raise ValueError(
+                f"No function hash received from enclave, expected{function_hash}."
+            )
 
+        user_data_dict = json.loads(user_data)
+        received_hash = user_data_dict.get("func_hash")
+        if function_hash is not None:
+            # Function hash is hex encoded, we manipulate it to string for comparison
+            received_hash = str(base64.b64decode(received_hash).hex())
+            if str(function_hash) != str(received_hash):
+                raise ValueError(
+                    "Returned function hash did not match provided, "
+                    f"got: {received_hash}, want: {function_hash}."
+                )
         return
 
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
@@ -130,12 +153,11 @@ class Cape:
     async def _close(self):
         await self._websocket.close()
 
-    async def _run(self, *args, function_id, serde_hooks, use_serdio, **kwargs):
+    async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
 
-        await self._connect(function_id)
+        await self._connect(function_ref)
 
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
-
         await self._close()
 
         return result
@@ -196,3 +218,14 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
             raise RuntimeError(fallback_err)
         raise RuntimeError(f"Dictionary {dictionary} missing key {field}.")
     return v
+
+
+def _convert_to_function_ref(function_ref):
+    if isinstance(function_ref, str):
+        function_ref = FunctionRef(function_ref)
+    elif isinstance(function_ref, FunctionRef):
+        return function_ref
+    raise TypeError(
+        "`function_ref` arg must be a string function ID, "
+        f"or a FunctionRef object, found {type(function_ref)}"
+    )

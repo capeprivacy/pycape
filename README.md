@@ -33,19 +33,22 @@ make install-release
 
 ## Usage
 
-Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, your token can be found in the `~/.config/cape/auth` file. Then you'll obtain a function id (`<FUNCTION_ID>`) once you have deployed a function with `cape deploy`.
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, your token can be found in the `~/.config/cape/auth` file. Then you'll obtain a function id (`<FUNCTION_ID>`) and function hash (`<FUNCTION_HASH>`) once you have deployed a function with `cape deploy`.
 
 ### `run`
 
 Run is used to invoke a function once with a single input.
+We now return function hash to the user during deploy. If function hash is specified to None, then
+verification of function hash will not occur. It is encouraged to always provide the desired function
+hash for security. 
 
 Example [run.py](https://github.com/capeprivacy/pycape/tree/main/examples/run.py):
 
 ```py
-from pycape import Cape
+from pycape import Cape, FunctionRef
 
-client = Cape()
-client.run(function_id='<FUNCTION_ID>', input='my_data')
+client = Cape(url="wss://hackathon.capeprivacy.com")
+client.run(function_ref=FunctionRef(function_id='<FUNCTION_ID>', function_hash='<FUNCTION_HASH>'), input='my_data')
 ```
 
 ### `invoke`
