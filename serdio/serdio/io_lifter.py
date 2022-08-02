@@ -162,12 +162,12 @@ class IOLifter:
                     "by setting use_serdio=True in Cape.run or Cape.invoke"
                 )
 
-            if _check_if_multiple_inputs(f_input):
-                args, kwargs = f_input.get("args"), f_input.get("kwargs")
+            args, kwargs = _check_inputs(f_input)
+            if args is None and kwargs is None:
+                output = self._func(f_input)
+            else:
                 _check_inputs_match_signature(self._func, args, kwargs)
                 output = self._func(*args, **kwargs)
-            else:
-                output = self._func(f_input)
 
             output_blob = serde.serialize(output, encoder=encoder_hook)
             return output_blob
@@ -250,13 +250,12 @@ def _check_inputs_match_signature(f, args, kwargs):
         )
 
 
-def _check_if_multiple_inputs(f_input):
-    # if multilple inputs, cape.run or cape.invoke send inputs function
+def _check_inputs(f_input):
+    # if multilple inputs, Cape.run or Cape.invoke send inputs function
     # as a dictionnary with the following keys: "args" and "kwargs"
     if isinstance(f_input, dict):
         args = f_input.get("args")
         kwargs = f_input.get("kwargs")
-        if args is not None and kwargs is not None:
-            return True
+        return args, kwargs
     else:
-        False
+        return None, None
