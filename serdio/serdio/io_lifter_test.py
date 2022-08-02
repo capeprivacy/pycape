@@ -3,9 +3,9 @@ from typing import Callable
 
 from absl.testing import parameterized
 
+from serdio import func_utils
 from serdio import io_lifter as lifting
 from serdio import serde
-from serdio import func_utils
 
 
 def identity(x):

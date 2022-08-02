@@ -75,8 +75,8 @@ from operator import xor
 from typing import Callable
 from typing import Optional
 
-from serdio import serde
 from serdio import func_utils
+from serdio import serde
 
 
 def lift_io(
