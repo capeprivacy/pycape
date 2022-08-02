@@ -3,12 +3,17 @@ from typing import Callable
 
 from absl.testing import parameterized
 
+from serdio import func_utils
 from serdio import io_lifter as lifting
 from serdio import serde
 
 
 def identity(x):
     return x
+
+
+def multiple_identity(x, y, z=1):
+    return x, y, z
 
 
 @dataclasses.dataclass
@@ -49,6 +54,26 @@ class TestIoLifter(parameterized.TestCase):
         result = lifted_identity.as_cape_handler()(x_ser)
         result_deser = serde.deserialize(result)
         assert x == result_deser
+
+    def test_lifted_capehandler_multiple_inputs(self):
+        lifted_multiple_identity = lifting.lift_io(multiple_identity)
+        args = (1, 2)
+        kwargs = {"z": 4}
+        inputs = func_utils.pack_function_args_kwargs(args, kwargs)
+        inputs_ser = serde.serialize(inputs)
+        result = lifted_multiple_identity.as_cape_handler()(inputs_ser)
+        result_deser = serde.deserialize(result)
+        assert args == result_deser[:2]
+        assert kwargs["z"] == result_deser[2]
+
+    def test_lifted_capehandler_wrong_nb_inputs(self):
+        lifted_multiple_identity = lifting.lift_io(multiple_identity)
+        args = (1,)
+        kwargs = {"z": 4}
+        inputs = func_utils.pack_function_args_kwargs(args, kwargs)
+        inputs_ser = serde.serialize(inputs)
+        with self.assertRaises(ValueError):
+            lifted_multiple_identity.as_cape_handler()(inputs_ser)
 
     @parameterized.parameters({"x": x} for x in [1, "foo", [1, 2.0, 3]])
     def test_lifted_call(self, x):

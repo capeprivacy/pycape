@@ -4,7 +4,7 @@ from pycape import Cape
 
 if __name__ == "__main__":
     token = os.environ.get("CAPE_TOKEN", None)
-    url = os.environ.get("CAPE_HOST", "wss://cape.run")
+    url = os.environ.get("CAPE_HOST", "wss://hackathon.capeprivacy.com")
     function_id = os.environ.get(
         "CAPE_FUNCTION", "e4c2a674-9c7f-42d3-8ade-63791c16c3c7"
     )
