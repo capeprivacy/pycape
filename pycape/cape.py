@@ -43,6 +43,7 @@ class Cape:
         self._loop.run_until_complete(self._close())
 
     def connect(self, function_ref):
+        function_ref = _convert_to_function_ref(function_ref)
         self._loop.run_until_complete(self._connect(function_ref))
 
     def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
@@ -54,9 +55,6 @@ class Cape:
 
     def run(self, function_ref, *args, serde_hooks=None, use_serdio=False, **kwargs):
         function_ref = _convert_to_function_ref(function_ref)
-        function_id = function_ref.get_id()
-        if function_id is None:
-            raise ValueError("Function id was not provided.")
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return asyncio.run(
@@ -112,7 +110,7 @@ class Cape:
             received_hash = str(base64.b64decode(received_hash).hex())
             if str(function_hash) != str(received_hash):
                 raise ValueError(
-                    f"Returned function hash did not match provided, "
+                    "Returned function hash did not match provided, "
                     f"got: {received_hash}, want: {function_hash}."
                 )
         return
@@ -228,6 +226,6 @@ def _convert_to_function_ref(function_ref):
     elif isinstance(function_ref, FunctionRef):
         return function_ref
     raise TypeError(
-        f"`function_ref` arg must be a string function ID, "
+        "`function_ref` arg must be a string function ID, "
         f"or a FunctionRef object, found {type(function_ref)}"
     )
