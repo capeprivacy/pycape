@@ -15,7 +15,7 @@ from pycape import attestation as attest
 from pycape import enclave_encrypt
 from serdio import func_utils as serdio_utils
 
-from .function_ref import FunctionRef
+from pycape import function_ref
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
@@ -24,7 +24,7 @@ logging.basicConfig(format="%(message)s")
 logger = logging.getLogger("pycape")
 
 
-def check_run(method):
+def _check_run(method):
     """
     check_run turns the positional arguments into function_ref if types match
     """
@@ -44,7 +44,7 @@ def check_run(method):
                     f"Invalid positional argument {function_id} provide, "
                     "function_ref was also provided"
                 )
-            kwargs["function_ref"] = FunctionRef(function_id=function_id)
+            kwargs["function_ref"] = function_ref.FunctionRef(function_id=function_id)
             args = list(args[0:1]) + list(args[2:])
         if isinstance(kwargs["function_ref"], str):
             raise ValueError("Expected input to be FunctionRef, but got string.")
@@ -86,6 +86,9 @@ class Cape:
         )
 
     def run(self, function_ref, *args, serde_hooks=None, use_serdio=False, **kwargs):
+        function_id = function_ref.get_id()
+        if function_id is None:
+            raise ValueError("Function id was not provided.")
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return asyncio.run(
