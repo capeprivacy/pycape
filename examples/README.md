@@ -1,6 +1,6 @@
 # Examples
 
-Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, you can find the access token in your `~/.config` directory as follows: `cat ~/.config/cape/auth`. Then you'll obtain a function id ('<FUNCTION_ID>') once you have deployed your function with `cape deploy`.
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, you can find the access token in your `~/.config` directory as follows: `cat ~/.config/cape/auth`. Then you'll obtain a function id ('<FUNCTION_ID>') and a function hash (`<FUNCTION_HASH>`) once you have deployed your function with `cape deploy`. If a function hash is not specified then the verification of the function hash will not occur. It is encouraged to always provide the desired function hash for security. 
 
 ## Echo: running functions on raw bytes
 
@@ -15,7 +15,8 @@ After deploying the function, to run a function once, you can run the following 
 ```
 export CAPE_TOKEN=<AUTH_TOKEN>
 export CAPE_HOST=<WSS_URL>
-export CAPE_FUNCTION=<FUNCTION_ID returned from cape deploy>
+export CAPE_FUNCTION_ID=<FUNCTION_ID returned from cape deploy>
+export CAPE_FUNCTION_HASH=<FUNCTION_HASH returned from cape deploy>
 python run_echo.py
 ```
 
@@ -23,7 +24,8 @@ To run a function repeatedly, you can run the following example:
 ```
 export CAPE_TOKEN=<AUTH_TOKEN>
 export CAPE_HOST=<WSS_URL>
-export CAPE_FUNCTION=<FUNCTION_ID returned from cape deploy>
+export CAPE_FUNCTION_ID=<FUNCTION_ID returned from cape deploy>
+export CAPE_FUNCTION_HASH=<FUNCTION_HASH returned from cape deploy>
 python invoke_echo.py
 ```
 
