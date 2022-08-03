@@ -222,10 +222,11 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
 
 def _convert_to_function_ref(function_ref):
     if isinstance(function_ref, str):
-        function_ref = FunctionRef(function_ref)
+        return FunctionRef(function_ref)
     elif isinstance(function_ref, FunctionRef):
         return function_ref
-    raise TypeError(
-        "`function_ref` arg must be a string function ID, "
-        f"or a FunctionRef object, found {type(function_ref)}"
-    )
+    else:
+        raise TypeError(
+            "`function_ref` arg must be a string function ID, "
+            f"or a FunctionRef object, found {type(function_ref)}"
+        )

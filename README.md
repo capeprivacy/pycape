@@ -38,11 +38,11 @@ Before running a function, you need to first get an access token (`<AUTH_TOKEN>`
 ### `run`
 
 Run is used to invoke a function once with a single input.
-We now return function hash to the user during deploy. If function hash is specified to None, then
+Cape returns a function hash to the user during deploy. If function hash is specified to None, then
 verification of function hash will not occur. It is encouraged to always provide the desired function
 hash for security. 
 
-Example [run.py](https://github.com/capeprivacy/pycape/tree/main/examples/run.py):
+Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/run_echo.py):
 
 ```py
 from pycape import Cape, FunctionRef
@@ -55,7 +55,7 @@ client.run(function_ref=FunctionRef(function_id='<FUNCTION_ID>', function_hash='
 
 Invoke is used to run a function repeatedly with multiple inputs. It gives you more control over the lifecycle of the function invocation.
 
-Example [invoke.py](https://github.com/capeprivacy/pycape/blob/main/examples/invoke.py):
+Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/invoke_echo.py):
 
 ```py
 from pycape import Cape
