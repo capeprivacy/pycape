@@ -7,13 +7,18 @@ Custom types are handled by user-supplied encode_hook and decode_hook functions,
 bundled into a SerdeHookBundle dataclass.
 
 
-Usage in app.py:
+Basic usage in app.py:
 
-    @lift_io
-    def my_cool_function(x: int, y: float) -> float:
+    @serdio.lift_io(as_handler=True)
+    def cape_handler(x: int, y: float) -> float:
         return x * y
 
-    cape_handler = my_cool_function.as_cape_handler()
+Then with Cape.run:
+    function_id = <noted during `cape deploy`>
+    cape = Cape()
+    z = cape.run(function_id, 2, 3.0, use_serdio=True)
+    print(z)
+    >> 6.0
 
 
 Usage with custom types:
@@ -48,20 +53,21 @@ Usage with custom types:
         return obj
 
 
-    @lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
+    @serdio.lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
     def my_cool_function(x: MyCoolClass) -> MyCoolResult:
         return x.mul()
 
     cape_handler = my_cool_function.as_cape_handler()
 
-
-Using custom types with Cape.run:
+Then with Cape.run:
 
     my_cool_function_id = <noted during `cape deploy`>
     input = MyCoolClass(2, 3.0)  # input data we want to run with
-    # the serde hook bundle, specifying how msgpack can deal w/ MyCoolClass/MyCoolResult
+
+    # the serde hook bundle, specifies how msgpack can deal w/ MyCoolClass/MyCoolResult
     # hook_bundle = SerdeHookBundle(my_cool_encoder, my_cool_decoder)
     # we can also pull it from the lifted function, since we already specified it there:
+    from app import my_cool_function
     hook_bundle = my_cool_function.hook_bundle
 
     cape = Cape()
