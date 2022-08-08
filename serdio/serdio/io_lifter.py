@@ -64,7 +64,7 @@ Then with Cape.run:
     my_cool_function_id = <noted during `cape deploy`>
     input = MyCoolClass(2, 3.0)  # input data we want to run with
 
-    # the serde hook bundle, specifies how msgpack should deal w/ MyCoolClass/MyCoolResult
+    # the serde hook bundle, specifies how msgpack can deal w/ MyCoolClass/MyCoolResult
     # hook_bundle = SerdeHookBundle(my_cool_encoder, my_cool_decoder)
     # we can also pull it from the lifted function, since we already specified it there:
     from app import my_cool_function
