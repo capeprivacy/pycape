@@ -1,0 +1,192 @@
+name: Release PyCape & Serdio
+
+on:
+  push:
+    # branches: [ main ]
+    # tags:
+    #   - "v*.*.*"
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      id: py3
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+    - name: Install pypa/build
+      run: >-
+        python -m
+        pip install
+        build
+        --user
+    - name: Build a binary wheel and a source tarball
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+        --outdir dist/
+    - name: Install dependencies
+      run: pip install -r requirements/base.txt 
+    - name: Install wheel
+      run: |
+        pip install pycape --no-index --find-links dist --force-reinstall
+        python -c "import pycape"
+        python -c "import serdio"        
+    - name: Test wheel
+      run: |
+        pip install pytest absl-py
+        pytest pycape
+        pytest serdio
+    - name: Upload wheels
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheels
+        path: dist
+
+  windows:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      id: py3
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x86
+    - name: Install pypa/build
+      run: >-
+        python -m
+        pip install
+        build
+        --user
+    - name: Build a binary wheel and a source tarball
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+        --outdir dist/
+    - name: Install dependencies
+      run: pip install -r requirements/base.txt 
+    - name: Install wheel
+      run: |
+        pip install pycape --no-index --find-links dist --force-reinstall
+        python -c "import pycape"
+        python -c "import serdio"        
+
+    - name: Test wheel
+      run: |
+        pip install pytest absl-py
+        pytest pycape
+        pytest serdio
+    - name: Upload wheels
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheels
+        path: dist
+
+  macos:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      id: py3
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+    - name: Install pypa/build
+      run: >-
+        python -m
+        pip install
+        build
+        --user
+    - name: Build a binary wheel and a source tarball
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+        --outdir dist/
+    - name: Install dependencies
+      run: pip install -r requirements/base.txt  
+    - name: Install wheel - x86_64
+      run: |
+        pip install pycape --no-index --find-links dist --force-reinstall
+        python -c "import pycape"
+        python -c "import serdio"        
+    - name: Test wheel
+      run: |
+        pip install pytest absl-py
+        pytest pycape
+        pytest serdio
+    - name: Upload wheels
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheels
+        path: dist
+  
+  # update_release_draft:
+  #   permissions:
+  #     contents: write
+  #     pull-requests: read
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Release drafter
+  #     id: release_drafter
+  #     uses: release-drafter/release-drafter@v5
+  #     with:
+  #       disable-autolabeler: true
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #   outputs:
+  #     upload_url: ${{ steps.release_drafter.outputs.upload_url }}
+
+  # release:
+  #   name: Release
+  #   runs-on: ubuntu-latest
+  #   if: "startsWith(github.ref, 'refs/tags/')"
+  #   needs: [ linux, macos, windows, update_release_draft ]
+  #   steps:
+  #     - uses: actions/download-artifact@v2
+  #       id: download
+  #       with:
+  #         name: wheels
+  #     - name: Zip wheels into wheelhouse
+  #       run: zip -r wheelhouse.zip . -i *.whl
+  #       working-directory: ${{ steps.download.outputs.download-path }}
+  #     - name: Upload Release Asset
+  #       id: upload-release-asset
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.update_release_draft.outputs.upload_url }}
+  #         asset_path: wheelhouse.zip
+  #         asset_name: wheelhouse.zip
+  #         asset_content_type: application/zip
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: 3.9
+      # - name: Publish to PyPI
+      #   env:
+      #     TWINE_USERNAME: __token__
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      #   run: |
+      #     rm wheelhouse.zip
+      #     pip install --upgrade twine
+      #     twine upload --skip-existing *
+      #   working-directory: ${{ steps.download.outputs.download-path }}
