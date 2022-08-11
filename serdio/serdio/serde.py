@@ -52,8 +52,8 @@ def serialize(x, encoder=None):
             raise TypeError(
                 f"`encoder` arg needs to be callable, found type {type(encoder)}"
             )
-        encode_hook = lambda x: encoder(_default_encoder(x))  # noqa: E731
-    return msgpack.packb(x, default=encode_hook, strict_types=False)
+        encode_hook = lambda x: _default_encoder(encoder(x))  # noqa: E731
+    return msgpack.packb(x, default=encode_hook, strict_types=True)
 
 
 def deserialize(x_bytes, decoder=None):
