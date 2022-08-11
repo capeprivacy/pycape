@@ -139,21 +139,21 @@ jobs:
         name: wheels
         path: dist
   
-  # update_release_draft:
-  #   permissions:
-  #     contents: write
-  #     pull-requests: read
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Release drafter
-  #     id: release_drafter
-  #     uses: release-drafter/release-drafter@v5
-  #     with:
-  #       disable-autolabeler: true
-  #     env:
-  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #   outputs:
-  #     upload_url: ${{ steps.release_drafter.outputs.upload_url }}
+  update_release_draft:
+    permissions:
+      contents: write
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+    - name: Release drafter
+      id: release_drafter
+      uses: release-drafter/release-drafter@v5
+      with:
+        disable-autolabeler: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      upload_url: ${{ steps.release_drafter.outputs.upload_url }}
 
   # release:
   #   name: Release
