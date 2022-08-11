@@ -72,7 +72,9 @@ class Cape:
         self._websocket = ""
         self._public_key = ""
         self._root_cert = None
-        self._loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self._loop = loop
 
         if verbose:
             logger.setLevel(logging.DEBUG)
@@ -183,7 +185,7 @@ class Cape:
         function_ref = _convert_to_function_ref(function_ref)
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
-        return asyncio.run(
+        return self._loop.run_until_complete(
             self._run(
                 *args,
                 function_ref=function_ref,
