@@ -98,7 +98,7 @@ jobs:
   macos:
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: "3.8"
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
@@ -111,8 +111,9 @@ jobs:
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.9.0
       env:
-          CIBW_PLATFORM: macos
-          CIBW_ARCHS_MACOS: arm64
+        # CIBW_BUILD: cp38-macosx_arm64
+        CIBW_PLATFORM: macos
+        CIBW_ARCHS_MACOS: arm64
       with:
         package-dir: .
         output-dir: dist
