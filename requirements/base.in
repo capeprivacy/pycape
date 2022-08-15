@@ -1,5 +1,5 @@
 cbor2
-hpke_spec~=0.2.0
+hybrid_pke~=1.0
 file:./serdio
 websockets
 pyOpenSSL

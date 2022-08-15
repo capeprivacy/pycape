@@ -1,11 +1,14 @@
 import logging
 
-import hpke_spec
+import hybrid_pke
 
 logger = logging.getLogger("pycape")
 
 
 def encrypt(public_key, input_bytes):
     logger.debug("* Encrypting inputs with Hybrid Public Key Encryption (HPKE)")
-    ciphertext = hpke_spec.hpke_seal(public_key, input_bytes)
+    hpke = hybrid_pke.default()
+    info = b""
+    aad = b""
+    _, ciphertext = hpke.seal(public_key, info, aad, input_bytes)
     return ciphertext
