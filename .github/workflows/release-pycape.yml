@@ -109,10 +109,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: x64
     - name: Build wheels
-        uses: pypa/cibuildwheel@v2.9.0
-        with:
-          package-dir: .
-          output-dir: dist
+      uses: pypa/cibuildwheel@v2.9.0
+      with:
+        package-dir: .
+        output-dir: dist
     - name: Install dependencies
       run: pip install -r requirements/base.txt  
     - name: Install wheel - x86_64
