@@ -112,7 +112,7 @@ jobs:
       uses: pypa/cibuildwheel@v2.9.0
       env:
           CIBW_PLATFORM: macos
-          CIBW_ARCHS_MACOS: x86_64
+          CIBW_ARCHS_MACOS: arm64
       with:
         package-dir: .
         output-dir: dist
