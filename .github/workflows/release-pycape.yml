@@ -111,6 +111,7 @@ jobs:
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.9.0
       env:
+          CIBW_PLATFORM: macos
           CIBW_ARCHS_MACOS: x86_64
       with:
         package-dir: .
