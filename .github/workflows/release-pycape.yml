@@ -98,7 +98,7 @@ jobs:
   macos:
     strategy:
       matrix:
-        python-version: "3.8"
+        python-version: ["3.8", "3.9", "3.10"]
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
@@ -107,7 +107,7 @@ jobs:
       id: py3
       with:
         python-version: ${{ matrix.python-version }}
-        # architecture: x64
+        architecture: x64
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.9.0
       env:
