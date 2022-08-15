@@ -97,21 +97,21 @@ jobs:
 
   macos:
     strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+      # matrix:
+      #   python-version: ["3.8", "3.9", "3.10"]
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Install Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      id: py3
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
+    # - name: Install Python ${{ matrix.python-version }}
+    #   uses: actions/setup-python@v4
+    #   id: py3
+    #   with:
+    #     python-version: ${{ matrix.python-version }}
+    #     architecture: x64
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.9.0
       env:
-        # CIBW_BUILD: cp38-macosx_arm64
+        CIBW_BUILD: cp38-macosx_arm64
         CIBW_PLATFORM: macos
         CIBW_ARCHS_MACOS: arm64
       with:
