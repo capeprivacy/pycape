@@ -64,7 +64,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ linux, macos, windows, update_release_draft ]
+    needs: [ linux, update_release_draft ]
     steps:
       - uses: actions/download-artifact@v2
         id: download
