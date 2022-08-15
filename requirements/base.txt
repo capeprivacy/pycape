@@ -30,7 +30,7 @@ cryptography==37.0.4
     #   pyopenssl
 ecdsa==0.18.0
     # via cose
-hpke-spec==0.2.0
+hybrid-pke==1.0.0
     # via -r requirements/base.in
 idna==3.3
     # via requests
