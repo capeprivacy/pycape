@@ -29,7 +29,7 @@ jobs:
         --outdir dist/
     - name: Install wheel
       run: |
-        pip install pycape --no-index --find-links dist --force-reinstall
+        pip install dist/*whl
         python -c "import pycape"
         python -c "import serdio"        
     - name: Test wheel
