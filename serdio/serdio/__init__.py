@@ -5,6 +5,7 @@ from serdio.serde import deserialize
 from serdio.serde import serialize
 
 __version__ = "0.1.0"
+
 __all__ = [
     "lift_io",
     "bundle_serde_hooks",
