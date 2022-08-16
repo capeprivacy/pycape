@@ -69,7 +69,7 @@ jobs:
       - name: Fetch wheel name
         run: |
           export PYCAPE_WHEEL_PATH=`find ${{ steps.download.outputs.download-path }} -name "*.whl"`
-          export PYCAPE_WHEEL_NAME=`basename $PYCAPE_WHEEL_FULL`
+          export PYCAPE_WHEEL_NAME=`basename $PYCAPE_WHEEL_PATH`
           echo "wheel_path=$PYCAPE_WHEEL_PATH" >> $GITHUB_ENV
           echo "wheel_name=$PYCAPE_WHEEL_NAME" >> $GITHUB_ENV
       - name: Upload Release Asset
