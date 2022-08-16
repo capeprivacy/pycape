@@ -27,16 +27,9 @@ for i in err_deploy:
         function_hash = i.split(" ")
         CAPE_FUNCTION_HASH = function_hash[3]
 
-# Parse cape/auth for CAPE_TOKEN
-HOME = os.getenv("HOME")
-auth_file = f"{HOME}/.config/cape/auth"
-f = open(auth_file)
-cape_auth = json.load(f)
-CAPE_TOKEN = cape_auth["access_token"]
-
 # Run function
 function_ref = FunctionRef(CAPE_FUNCTION_ID, CAPE_FUNCTION_HASH)
-cape = Cape(url=CAPE_HOST, access_token=CAPE_TOKEN)
+cape = Cape(url=CAPE_HOST)
 input = "Welcome to Cape".encode()
 result = cape.run(function_ref, input)
 print(f"The result is: {result.decode()}")
