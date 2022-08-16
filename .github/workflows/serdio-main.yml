@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'serdio/*'
+      - 'serdio/**'
   pull_request:
     branches: [ main ]
     paths:
-      - 'serdio/*'
+      - 'serdio/**'
 
 jobs:
   check:
@@ -22,7 +22,7 @@ jobs:
       - name: Install serdio + dev dependencies.
         run: pip install -r serdio/requirements.txt -r requirements/dev.txt
       - name: Install serdio package.
-        run: pip install serdio --no-index
+        run: pip install ./serdio
       - name: Lint check the cape package.
         run: flake8 serdio
       - name: Test cape.
