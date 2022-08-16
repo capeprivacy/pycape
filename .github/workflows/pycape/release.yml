@@ -1,4 +1,4 @@
-name: Release PyCape & Serdio
+name: PyCape Release
 
 on:
   push:
@@ -13,27 +13,24 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
-        python-version: "3.9"
+        python-version: 3.9
     - name: Install pypa/build
       run: >-
         python -m
         pip install
         build
         --user
-    - name: Build wheels for serdio and pycape
+    - name: Build wheel for pycape
       run: |
-        python -m build --wheel --outdir dist serdio
         python -m build --sdist --wheel --outdir dist
     - name: Install wheels & test installation
       run: |
         pip install $(find dist -name "*.whl")
-        python -c "import pycape"
-        python -c "import serdio"
+        python -c "import pycape; print(pycape.__version__)"
     - name: Test wheel
       run: |
         pip install pytest absl-py
         pytest pycape
-        pytest serdio
     - name: Upload wheels
       uses: actions/upload-artifact@v2
       with:
@@ -59,16 +56,19 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
+    # if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ linux, update_release_draft ]
     steps:
       - uses: actions/download-artifact@v2
         id: download
         with:
           name: wheels
-      - name: Zip wheels into wheelhouse
-        run: zip -r wheelhouse.zip . -i *.whl
-        working-directory: ${{ steps.download.outputs.download-path }}
+      - name: Fetch wheel name
+        run: |
+          export PYCAPE_WHEEL_PATH=`find ${{ steps.download.outputs.download-path }} -name "*.whl"`
+          export PYCAPE_WHEEL_NAME=`basename $PYCAPE_WHEEL_FULL`
+          echo "wheel_path=$PYCAPE_WHEEL_PATH" >> $GITHUB_ENV
+          echo "wheel_name=$PYCAPE_WHEEL_NAME" >> $GITHUB_ENV
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
@@ -76,18 +76,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.update_release_draft.outputs.upload_url }}
-          asset_path: wheelhouse.zip
-          asset_name: wheelhouse.zip
+          asset_path: ${{ env.wheel_path }}
+          asset_name: ${{ env.wheel_name }}
           asset_content_type: application/zip
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
-      # - name: Publish to PyPI
-      #   env:
-      #     TWINE_USERNAME: __token__
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      #   run: |
-      #     rm wheelhouse.zip
-      #     pip install --upgrade twine
-      #     twine upload --skip-existing *
-      #   working-directory: ${{ steps.download.outputs.download-path }}
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN_PYCAPE }}
+        run: |
+          pip install --upgrade twine
+          twine upload --skip-existing *
+        working-directory: ${{ steps.download.outputs.download-path }}
