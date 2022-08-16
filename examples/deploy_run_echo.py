@@ -1,6 +1,6 @@
-import subprocess
 import json
 import os
+import subprocess
 
 from pycape import Cape
 from pycape import FunctionRef
