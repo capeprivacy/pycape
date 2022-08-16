@@ -15,25 +15,14 @@ jobs:
         with:
           python-version: "3.10"
           cache: 'pip'
-      - name: Isolate in a virtual environment.
-        run: |
-          python -m venv venv
       - name: Install dev dependencies.
-        run: |
-          . venv/bin/activate
-          make pydep
+        run: make pydep
       - name: Install PyCape package.
-        run: |
-          . venv/bin/activate
-          make pylib
+        run: make pylib
       - name: Lint PyCape.
-        run: |
-          . venv/bin/activate
-          make lint
+        run: make lint
       - name: Test PyCape.
-        run: |
-          . venv/bin/activate
-          make test
+        run: make test
 
   release-notes:
     permissions:

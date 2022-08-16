@@ -1,0 +1,13 @@
+name: Serdio CI
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      serdio/*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No changes to Serdio, CI not required" '

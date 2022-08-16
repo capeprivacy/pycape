@@ -1,0 +1,29 @@
+name: Serdio CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      serdio/*
+  pull_request:
+    branches: [ main ]
+    paths:
+      serdio/*
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: 'pip'
+      - name: Install serdio + dev dependencies.
+        run: pip install -r serdio/requirements.txt -r requirements/dev.txt
+      - name: Install serdio package.
+        run: pip install serdio --no-index
+      - name: Lint check the cape package.
+        run: flake8 serdio
+      - name: Test cape.
+        run: pytest serdio
