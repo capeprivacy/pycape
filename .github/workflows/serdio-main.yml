@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-      serdio/*
+      - 'serdio/*'
   pull_request:
     branches: [ main ]
     paths:
-      serdio/*
+      - 'serdio/*'
 
 jobs:
   check:
