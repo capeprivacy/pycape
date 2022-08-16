@@ -207,7 +207,7 @@ class Cape:
             ctx.verify_mode = ssl.CERT_NONE
 
         logger.debug(f"* Dialing {self._url}")
-        self._websocket = await websockets.connect(endpoint, ssl=ctx)
+        self._websocket = await websockets.connect(endpoint, ssl=ctx, max_size=None)
         logger.debug("* Websocket connection established")
 
         nonce = _generate_nonce()
