@@ -20,6 +20,10 @@ jobs:
         pip install
         build
         --user
+    - name: Install isolated serdio dependency
+      run: |
+        pip install -r serdio/requirements.txt
+        pip install ./serdio
     - name: Build wheel for pycape
       run: |
         python -m build --outdir dist
