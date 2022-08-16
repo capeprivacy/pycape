@@ -27,8 +27,6 @@ jobs:
         --sdist
         --wheel
         --outdir dist/
-    - name: Install dependencies
-      run: pip install -r requirements/base.txt 
     - name: Install wheel
       run: |
         pip install pycape --no-index --find-links dist --force-reinstall
