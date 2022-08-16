@@ -20,16 +20,13 @@ jobs:
         pip install
         build
         --user
-    - name: Build & install serdio
+    - name: Build wheels for serdio and pycape
       run: |
-        python -m build --wheel --outdir serdio-dist serdio
-        pip install $(find serdio-dist -name "*.whl")
-    - name: Build a binary wheel and a source tarball
+        python -m build --wheel --outdir dist serdio
+        python -m build --sdist --wheel --outdir dist
+    - name: Install wheels & test installation
       run: |
-        python -m build --sdist --wheel --outdir pycape-dist/
-    - name: Install wheel
-      run: |
-        pip install $(find pycape-dist -name "*.whl")
+        pip install $(find dist -name "*.whl")
         python -c "import pycape"
         python -c "import serdio"
     - name: Test wheel
