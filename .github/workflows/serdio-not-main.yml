@@ -7,7 +7,7 @@ on:
       serdio/*
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     steps:
       - run: 'echo "No changes to Serdio, CI not required" '
