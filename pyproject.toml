@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["serdio*"]
+
+[project]
+name = "pycape" 
+description = "The Cape Privacy Python SDK"
+readme = "README.md"
+version = "0.1.0"
+requires-python = ">=3.7"
+dependencies = [
+    "cbor2", 
+    "hybrid_pke",
+    "websockets",
+    "pyOpenSSL",
+    "cose",
+    "requests",
+    "serdio",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Development Status :: 3 - Alpha",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Security :: Cryptography",
+]
+urls = {repository = "https://github.com/capeprivacy/pycape"}

@@ -33,12 +33,11 @@ lint:
 
 .PHONY: test
 test:
-	pytest serdio
 	pytest pycape
 
 .PHONY: test-ci
 test-ci: test
-
+	pytest serdio
 
 .PHONY: ci-ready
-ci-ready: fmt lint test-ci
+ci-ready: fmt lint test
