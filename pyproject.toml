@@ -18,7 +18,8 @@ dependencies = [
     "pyOpenSSL",
     "cose",
     "requests",
-    ]
+    "serdio",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
