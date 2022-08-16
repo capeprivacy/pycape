@@ -7,7 +7,7 @@ Cape client.
 
 Usage:
     FUNCTION_ID = < given by CLI after `cape deploy` >
-    cape = Cape(url="wss://hackathon.capeprivacy.com")
+    cape = Cape(url="wss://enclave.capeprivacy.com")
     cape.connect(FUNCTION_ID)
 
     c1 = cape.invoke(3, 4, use_serdio=True)
@@ -51,7 +51,7 @@ class Cape:
     """
 
     def __init__(
-        self, url="wss://hackathon.capeprivacy.com", access_token=None, verbose=False
+        self, url="wss://enclave.capeprivacy.com", access_token=None, verbose=False
     ):
         """Cape client constructor.
 

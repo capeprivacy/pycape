@@ -5,7 +5,7 @@ from pycape import FunctionRef
 
 if __name__ == "__main__":
     token = os.environ.get("CAPE_TOKEN", None)
-    url = os.environ.get("CAPE_HOST", "wss://hackathon.capeprivacy.com")
+    url = os.environ.get("CAPE_HOST", "wss://enclave.capeprivacy.com")
     function_id = os.environ.get(
         "CAPE_FUNCTION_ID", "e4c2a674-9c7f-42d3-8ade-63791c16c3c7"
     )

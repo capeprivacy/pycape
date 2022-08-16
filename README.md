@@ -47,7 +47,7 @@ Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/r
 ```py
 from pycape import Cape, FunctionRef
 
-client = Cape(url="wss://hackathon.capeprivacy.com")
+client = Cape(url="wss://enclave.capeprivacy.com")
 client.run(function_ref=FunctionRef(function_id='<FUNCTION_ID>', function_hash='<FUNCTION_HASH>'), input='my_data')
 ```
 
