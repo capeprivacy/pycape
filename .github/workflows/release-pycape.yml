@@ -22,14 +22,14 @@ jobs:
         --user
     - name: Build & install serdio
       run: |
-        pushd serdio; python -m build --wheel --outdir ../serdio-dist; popd
-        pip install $(ls serdio-dist | grep *.whl)
+        python -m build --wheel --outdir serdio-dist serdio
+        pip install $(find serdio-dist -name "*.whl")
     - name: Build a binary wheel and a source tarball
       run: |
         python -m build --sdist --wheel --outdir pycape-dist/
     - name: Install wheel
       run: |
-        pip install $(ls pycape-dist | grep *.whl)
+        pip install $(find pycape-dist -name "*.whl")
         python -c "import pycape"
         python -c "import serdio"
     - name: Test wheel
