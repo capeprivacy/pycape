@@ -1,3 +1,5 @@
+# Dependency Management
+
 .PHONY: pydep
 pydep:
 	pip install -r requirements/base.txt -r requirements/dev.txt
@@ -22,6 +24,8 @@ install-release:
 	pip install -r requirements/base.txt
 	pip install .
 
+# CI
+
 .PHONY: fmt
 fmt:
 	isort .
@@ -41,3 +45,24 @@ test-ci: test
 
 .PHONY: ci-ready
 ci-ready: fmt lint test
+
+# Releasing
+
+.PHONY: bump-prep
+bump-prep:
+	pip install -U bumpver
+
+.PHONY: bump-patch
+bump-patch: bump-prep
+	bumpver update --tag=final
+	bumpver update --patch --tag=rc --no-tag-commit
+
+.PHONY: bump-minor
+bump-minor: bump-prep
+	bumpver update --minor --tag=final
+	bumpver update --patch --tag=rc --no-tag-commit
+
+.PHONY: bump-major
+bump-major: bump-prep
+	bumpver update --major --tag=final
+	bumpver update --patch --tag=rc --no-tag-commit
