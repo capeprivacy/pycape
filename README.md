@@ -66,9 +66,9 @@ from pycape import Cape
 
 client = Cape(url="wss://enclave.capeprivacy.com")
 client.connect(FunctionRef(function_id="<FUNCTION_ID>", function_hash="<FUNCTION_HASH>"))
-client.invoke('my-data-1'.encode())
-client.invoke('my-data-2'.encode())
-client.invoke('my-data-3'.encode())
+client.invoke(b"my-data-1")
+client.invoke(b"my-data-2")
+client.invoke(b"my-data-3")
 cape.close()
 ```
 
