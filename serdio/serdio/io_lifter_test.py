@@ -132,7 +132,9 @@ class TestIoLifter(parameterized.TestCase):
 
     def test_multiple_not_native_python_types(self):
         @lifting.lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
-        def my_cool_function(x: MyCoolClass, y: MyCoolClass, z: MyCoolClass) -> MyCoolResult:
+        def my_cool_function(
+            x: MyCoolClass, y: MyCoolClass, z: MyCoolClass
+        ) -> MyCoolResult:
             return x.mul(), y.mul(), z.mul()
 
         # # runs as normal
@@ -142,7 +144,9 @@ class TestIoLifter(parameterized.TestCase):
         assert res == expected_cool_result
 
         # cape handler runs on bytes
-        cool_input_pack = func_utils.pack_function_args_kwargs((cool_input, cool_input), {"z": cool_input})
+        cool_input_pack = func_utils.pack_function_args_kwargs(
+            (cool_input, cool_input), {"z": cool_input}
+        )
         cool_input_ser = serde.serialize(cool_input_pack, encoder=my_cool_encoder)
         cape_handler = my_cool_function.as_cape_handler()
         cool_result_ser = cape_handler(cool_input_ser)
