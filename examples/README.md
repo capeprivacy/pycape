@@ -1,6 +1,6 @@
 # Examples
 
-Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, you can find the access token in your `~/.config` directory as follows: `cat ~/.config/cape/auth`. Then you'll obtain a function id ('<FUNCTION_ID>') and a function hash (`<FUNCTION_HASH>`) once you have deployed your function with `cape deploy`. If a function hash is not specified then the verification of the function hash will not occur. It is encouraged to always provide the desired function hash for security. 
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, you can find the access token in your `~/.config` directory as follows: `cat ~/.config/cape/auth`. The access token will be used when instantiating `Cape` client. If `access_token` attribute is None, it will try to automatically load the access token from your config file. Then you'll obtain a function id ('<FUNCTION_ID>') and a function hash (`<FUNCTION_HASH>`) once you have deployed your function with `cape deploy`. If a function hash is not specified then the verification of the function hash will not occur. It is encouraged to always provide the desired function hash for security. 
 
 ## Echo: running functions on raw bytes
 
