@@ -10,5 +10,5 @@ def encrypt(public_key, input_bytes):
     hpke = hybrid_pke.default()
     info = b""
     aad = b""
-    _, ciphertext = hpke.seal(public_key, info, aad, input_bytes)
-    return ciphertext
+    encap, ciphertext = hpke.seal(public_key, info, aad, input_bytes)
+    return encap + ciphertext
