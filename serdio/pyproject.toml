@@ -4,7 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "serdio"
-description = "Auto-magic lifting of function inputs + outputs into msgpack-ed bytes."
+description = "Automatic serialization of function inputs and outputs using MessagePack."
+readme = "README.md"
 version = "1.0.0-rc"
 requires-python = ">=3.7"
 dependencies = ["msgpack"]

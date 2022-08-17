@@ -42,8 +42,8 @@ class SerializeTest(parameterized.TestCase):
         ]
     )
     def test_custom_types(self, x):
-        x_bytes = serde.serialize(x, ut.my_cool_encoder)
-        x_deser = serde.deserialize(x_bytes, ut.my_cool_decoder)
+        x_bytes = serde.serialize(x, encoder=ut.my_cool_encoder)
+        x_deser = serde.deserialize(x_bytes, decoder=ut.my_cool_decoder)
         assert x == x_deser
 
 

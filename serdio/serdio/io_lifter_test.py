@@ -4,7 +4,6 @@ from typing import Callable
 from absl.testing import parameterized
 
 from serdio import _test_utils as ut
-from serdio import func_utils
 from serdio import io_lifter as lifting
 from serdio import serde
 
@@ -20,21 +19,15 @@ class TestIoLifter(parameterized.TestCase):
 
     def test_lifted_capehandler_multiple_inputs(self):
         lifted_multiple_identity = lifting.lift_io(ut.multiple_identity)
-        args = (1, 2)
-        kwargs = {"z": 4}
-        inputs = func_utils.pack_function_args_kwargs(args, kwargs)
-        inputs_ser = serde.serialize(inputs)
+        inputs_ser = serde.serialize(1, 2, z=4)
         result = lifted_multiple_identity.as_cape_handler()(inputs_ser)
         result_deser = serde.deserialize(result)
-        assert args == result_deser[:2]
-        assert kwargs["z"] == result_deser[2]
+        assert (1, 2) == result_deser[:2]
+        assert 4 == result_deser[2]
 
     def test_lifted_capehandler_wrong_nb_inputs(self):
         lifted_multiple_identity = lifting.lift_io(ut.multiple_identity)
-        args = (1,)
-        kwargs = {"z": 4}
-        inputs = func_utils.pack_function_args_kwargs(args, kwargs)
-        inputs_ser = serde.serialize(inputs)
+        inputs_ser = serde.serialize(1, z=4)
         with self.assertRaises(ValueError):
             lifted_multiple_identity.as_cape_handler()(inputs_ser)
 
@@ -115,10 +108,9 @@ class TestIoLifter(parameterized.TestCase):
         assert res == expected_cool_result
 
         # cape handler runs on bytes
-        cool_input_pack = func_utils.pack_function_args_kwargs(
-            (cool_input, cool_input), {"z": cool_input}
+        cool_input_ser = serde.serialize(
+            cool_input, cool_input, cool_input, encoder=ut.my_cool_encoder
         )
-        cool_input_ser = serde.serialize(cool_input_pack, encoder=ut.my_cool_encoder)
         cape_handler = my_cool_function.as_cape_handler()
         cool_result_ser = cape_handler(cool_input_ser)
         cool_result = serde.deserialize(cool_result_ser, decoder=ut.my_cool_decoder)
