@@ -207,9 +207,8 @@ class Cape:
             ctx.verify_mode = ssl.CERT_NONE
 
         logger.debug(f"* Dialing {self._url}")
-        req_header = _create_request_header(self._auth_token)
         self._websocket = await websockets.connect(
-            endpoint, ssl=ctx, extra_headers=req_header, max_size=None
+            endpoint, ssl=ctx, subprotocols=["auth", self._auth_token], max_size=None
         )
         logger.debug("* Websocket connection established")
 
@@ -303,12 +302,6 @@ def _generate_nonce(length=8):
 def _create_connection_request(token, nonce):
     request = {"message": {"auth_token": token, "nonce": nonce}}
     return json.dumps(request)
-
-
-def _create_request_header(token):
-    header = websockets.datastructures.Headers()
-    header["Sec-Websocket-Protocol"] = f"auth, {token}"
-    return header
 
 
 def _parse_wss_response(response):
