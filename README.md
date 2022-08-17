@@ -49,10 +49,12 @@ Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/r
 from pycape import Cape, FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
-client.run(
-    FunctionRef(function_id="<FUNCTION_ID>", function_hash="<FUNCTION_HASH>"),
-    b"my_data",
-)
+function_id = "ad134b923745c726"
+function_hash = "1b5cb2a978697d6c5dadb876c8976adb"
+f = FunctionRef(function_id, function_hash)
+result = client.run(f, b"Hello!")
+print(result.decode())
+>> hello!
 ```
 
 ### `invoke`
@@ -65,11 +67,19 @@ Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/example
 from pycape import Cape
 
 client = Cape(url="wss://enclave.capeprivacy.com")
-client.connect(FunctionRef(function_id="<FUNCTION_ID>", function_hash="<FUNCTION_HASH>"))
-client.invoke(b"my-data-1")
-client.invoke(b"my-data-2")
-client.invoke(b"my-data-3")
-cape.close()
+function_id = "ad134b923745c726"
+function_hash = "1b5cb2a978697d6c5dadb876c8976adb"
+f = FunctionRef(function_id, function_hash)
+client.connect(f)
+result = client.invoke(b"Hello Alice!")
+print(result.decode())
+>> Hello Alice!
+result = client.invoke(b"Hello Bob!")
+print(result.decode())
+>> Hello Bob!
+result = client.invoke(b"Hello Carole!")
+print(result.decode())
+>> Hello Carole!
 ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
