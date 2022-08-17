@@ -208,7 +208,10 @@ class Cape:
 
         logger.debug(f"* Dialing {self._url}")
         self._websocket = await websockets.connect(
-            endpoint, ssl=ctx, subprotocols=["auth", self._auth_token], max_size=None
+            endpoint,
+            ssl=ctx,
+            subprotocols=["cape.runtime", self._auth_token],
+            max_size=None,
         )
         logger.debug("* Websocket connection established")
 
