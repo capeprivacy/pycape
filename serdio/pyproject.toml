@@ -5,9 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "serdio"
 description = "Auto-magic lifting of function inputs + outputs into msgpack-ed bytes."
-version = "0.1.0"
+version = "1.0.0-rc"
 requires-python = ">=3.7"
 dependencies = ["msgpack"]
+authors = [
+    {email = "contact@capeprivacy.com", name = "Cape Privacy"}
+]
+license = { file = "../LICENSE" }
 classifiers = [
     "Programming Language :: Python",
 ]
