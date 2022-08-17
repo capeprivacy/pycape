@@ -34,7 +34,6 @@ import serdio
 from pycape import attestation as attest
 from pycape import enclave_encrypt
 from pycape.function_ref import FunctionRef
-from serdio import func_utils as serdio_utils
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
@@ -255,7 +254,16 @@ class Cape:
         # Cape.run or Cape.invoke, before serialization, we pack them
         # into a dictionary with the following keys:
         # {"cape_fn_args": <tuple_args>, "cape_fn_kwargs": <dict_kwargs>}.
-        inputs = serdio_utils.pack_function_args_kwargs(args, kwargs)
+        single_input = _maybe_get_single_input(args, kwargs)
+        if single_input is not None:
+            inputs = single_input
+        elif single_input is None and not use_serdio:
+            raise ValueError(
+                "Expected a single input of type 'bytes' when use_serdio=False.\n"
+                "Found:"
+                f"\t- args: {args}"
+                f"\t- kwargs: {kwargs}"
+            )
 
         if serde_hooks is not None:
             encoder_hook, decoder_hook = serde_hooks.unbundle()
@@ -264,12 +272,13 @@ class Cape:
             encoder_hook, decoder_hook = None, None
 
         if use_serdio:
-            inputs = serdio.serialize(inputs, encoder=encoder_hook)
+            inputs = serdio.serialize(*args, encoder=encoder_hook, **kwargs)
+
         if not isinstance(inputs, bytes):
             raise TypeError(
                 f"The input type is: {type(inputs)}. Provide input as bytes or "
                 "set use_serdio=True for PyCape to serialize your input "
-                "with MessagePack."
+                "with Serdio."
             )
 
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
@@ -362,3 +371,12 @@ def _convert_to_function_ref(function_ref):
             "`function_ref` arg must be a string function ID, "
             f"or a FunctionRef object, found {type(function_ref)}"
         )
+
+
+def _maybe_get_single_input(args, kwargs):
+    single_arg = len(args) == 1 and len(kwargs) == 0
+    single_kwarg = len(args) == 0 and len(kwargs) == 1
+    if single_arg:
+        return args[0]
+    elif single_kwarg:
+        return kwargs.items()[0][1]
