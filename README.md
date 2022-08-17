@@ -38,7 +38,7 @@ Before running a function, you need to first get an access token (`<AUTH_TOKEN>`
 ### `run`
 
 Run is used to invoke a function once with a single input. By default, inputs and outputs are expected to be bytes. 
-However you can easily serialize and deserialize inputs and outputs, using Serdio. To learn more about Serdio, you can find [this example](https://github.com/capeprivacy/pycape/tree/main/examples#mean-running-functions-on-python-types).
+However you can easily serialize and deserialize inputs and outputs, using Serdio. To learn more about Serdio, check out [this example](https://github.com/capeprivacy/pycape/tree/main/examples#mean-running-functions-on-python-types).
 Cape returns a function hash to the user during deploy. If function hash is specified to None, then
 verification of function hash will not occur. It is encouraged to always provide the desired function
 hash for security. 
