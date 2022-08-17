@@ -51,7 +51,7 @@ from pycape import Cape, FunctionRef
 client = Cape(url="wss://enclave.capeprivacy.com")
 client.run(
     FunctionRef(function_id="<FUNCTION_ID>", function_hash="<FUNCTION_HASH>"),
-    "my_data".encode(),
+    b"my_data",
 )
 ```
 
