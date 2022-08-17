@@ -3,7 +3,7 @@ import subprocess
 from pycape import Cape
 from pycape import FunctionRef
 
-CAPE_HOST = "wss://hackathon.capeprivacy.com"
+CAPE_HOST = "wss://enclave.capeprivacy.com"
 
 # Cape deploy function
 proc_deploy = subprocess.Popen(
