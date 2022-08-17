@@ -14,33 +14,45 @@ class _MsgpackExtType(enum.IntEnum):
     native_frozenset = 4
 
 
-def _default_encoder(x):
+def _default_encoder(x, custom_encoder=None):
+    if custom_encoder is None:
+        custom_encoder = lambda x: x  # noqa: E731
     if isinstance(x, complex):
         return msgpack.ExtType(
-            _MsgpackExtType.native_complex, msgpack.packb((x.real, x.imag))
+            _MsgpackExtType.native_complex,
+            msgpack.packb((x.real, x.imag), default=custom_encoder),
         )
     elif isinstance(x, tuple):
-        return msgpack.ExtType(_MsgpackExtType.native_tuple, msgpack.packb(list(x)))
+        return msgpack.ExtType(
+            _MsgpackExtType.native_tuple, msgpack.packb(list(x), default=custom_encoder)
+        )
     elif isinstance(x, set):
-        return msgpack.ExtType(_MsgpackExtType.native_set, msgpack.packb(list(x)))
+        return msgpack.ExtType(
+            _MsgpackExtType.native_set, msgpack.packb(list(x), default=custom_encoder)
+        )
     elif isinstance(x, frozenset):
-        return msgpack.ExtType(_MsgpackExtType.native_frozenset, msgpack.packb(list(x)))
+        return msgpack.ExtType(
+            _MsgpackExtType.native_frozenset,
+            msgpack.packb(list(x), default=custom_encoder),
+        )
     return x
 
 
-def _msgpack_ext_unpack(code, data):
+def _msgpack_ext_unpack(code, data, custom_decoder=None):
     """Messagepack decoders for custom types."""
+    if custom_decoder is None:
+        custom_decoder = lambda x: x  # noqa: E731
     if code == _MsgpackExtType.native_complex:
-        complex_tuple = msgpack.unpackb(data)
+        complex_tuple = msgpack.unpackb(data, object_hook=custom_decoder)
         return complex(complex_tuple[0], complex_tuple[1])
     elif code == _MsgpackExtType.native_tuple:
-        tuple_list = msgpack.unpackb(data)
+        tuple_list = msgpack.unpackb(data, object_hook=custom_decoder)
         return tuple(tuple_list)
     elif code == _MsgpackExtType.native_set:
-        set_list = msgpack.unpackb(data)
+        set_list = msgpack.unpackb(data, object_hook=custom_decoder)
         return set(set_list)
     elif code == _MsgpackExtType.native_frozenset:
-        frozenset_list = msgpack.unpackb(data)
+        frozenset_list = msgpack.unpackb(data, object_hook=custom_decoder)
         return frozenset(frozenset_list)
     return msgpack.ExtType(code, data)
 
@@ -52,17 +64,23 @@ def serialize(x, encoder=None):
             raise TypeError(
                 f"`encoder` arg needs to be callable, found type {type(encoder)}"
             )
-        encode_hook = lambda x: encoder(_default_encoder(x))  # noqa: E731
+        encode_hook = lambda x: _default_encoder(  # noqa: E731
+            encoder(x), custom_encoder=encoder
+        )
     return msgpack.packb(x, default=encode_hook, strict_types=True)
 
 
 def deserialize(x_bytes, decoder=None):
+    ext_hook = _msgpack_ext_unpack
     if decoder is not None:
         if not callable(decoder):
             raise TypeError(
                 f"`decoder` needs to be a callable, found type {type(decoder)}"
             )
-    return msgpack.unpackb(x_bytes, ext_hook=_msgpack_ext_unpack, object_hook=decoder)
+        ext_hook = lambda c, d: _msgpack_ext_unpack(  # noqa: E731
+            c, d, custom_decoder=decoder
+        )
+    return msgpack.unpackb(x_bytes, ext_hook=ext_hook, object_hook=decoder)
 
 
 @dataclasses.dataclass
