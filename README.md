@@ -33,11 +33,12 @@ make install-release
 
 ## Usage
 
-Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, your token can be found in the `~/.config/cape/auth` file. Then you'll obtain a function id (`<FUNCTION_ID>`) and function hash (`<FUNCTION_HASH>`) once you have deployed a function with `cape deploy`.
+Before running a function, you need to first get an access token (`<AUTH_TOKEN>`) with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape login`. Once logged into Cape, your token can be found in the `~/.config/cape/auth` file. The access token will be used when instantiating `Cape` client. If `access_token` attribute is None, it will try to load automatically the access token from your config file. Then you'll obtain a function id (`<FUNCTION_ID>`) and function hash (`<FUNCTION_HASH>`) once you have deployed a function with `cape deploy`.
 
 ### `run`
 
-Run is used to invoke a function once with a single input.
+Run is used to invoke a function once with a single input. By default, inputs and outputs are expected to be bytes. 
+However you can easily serialize and deserialize inputs and outputs, using Serdio. To learn more about Serdio, check out [this example](https://github.com/capeprivacy/pycape/tree/main/examples#mean-running-functions-on-python-types).
 Cape returns a function hash to the user during deploy. If function hash is specified to None, then
 verification of function hash will not occur. It is encouraged to always provide the desired function
 hash for security. 
@@ -48,7 +49,12 @@ Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/r
 from pycape import Cape, FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
-client.run(function_ref=FunctionRef(function_id='<FUNCTION_ID>', function_hash='<FUNCTION_HASH>'), input='my_data')
+function_id = "ad134b923745c726"
+function_hash = "1b5cb2a978697d6c5dadb876c8976adb"
+f = FunctionRef(function_id, function_hash)
+result = client.run(f, b"Hello!")
+print(result.decode())
+>> hello!
 ```
 
 ### `invoke`
@@ -60,12 +66,20 @@ Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/example
 ```py
 from pycape import Cape
 
-client = Cape()
-client.connect(function_id='<FUNCTION_ID>')
-client.invoke(input='my-data-1')
-client.invoke(input='my-data-2')
-client.invoke(input='my-data-3')
-cape.close()
+client = Cape(url="wss://enclave.capeprivacy.com")
+function_id = "ad134b923745c726"
+function_hash = "1b5cb2a978697d6c5dadb876c8976adb"
+f = FunctionRef(function_id, function_hash)
+client.connect(f)
+result = client.invoke(b"Hello Alice!")
+print(result.decode())
+>> Hello Alice!
+result = client.invoke(b"Hello Bob!")
+print(result.decode())
+>> Hello Bob!
+result = client.invoke(b"Hello Carole!")
+print(result.decode())
+>> Hello Carole!
 ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
