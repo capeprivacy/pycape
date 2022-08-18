@@ -85,7 +85,7 @@ NEVER PUBLISH A GITHUB RELEASE FROM A TAG THAT HAS FAILED ITS RELEASE WORKFLOWS
 Finally, navigate to the `Releases` section of the repo (you can find it on the right sidebar of the repo's homepage). The latest one should be a "draft" release. Open the draft release, and update it to match the version bump you just went through. This includes:
 1. Make sure the tag (drop-down menu in top-left) is set to `1.1.0`.
 2. Modify the release title to match your semantic version bump. By default it's the next patch version, so you'll probably only have to change it if you are doing a minor or major bump.
-3. Clean up any of the commit messages from the version history. You can also add comments here to describe any changes to the library, including any breaking changes that caused a major version bump.
+3. If you'd like, you have a chance to clean up the version history in the Release body before publishing. You can also add comments here to emphasize or describe higher-level changes to the library. This could include pointing out or explaining breaking changes that required a major version bump.
 4. Finally, press "Publish".
 
 ## 8. Relax.
