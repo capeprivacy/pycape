@@ -22,6 +22,12 @@ The Cape SDK for Python is a library that provides a simple way to interact with
 
 We recommend that you use a [Python "Virtual Environment"](https://packaging.python.org/tutorials/installing-packages/#creating-virtual-environments) when installing `pycape`.
 
+### Install via pip
+You can install the current release with:
+```sh
+pip install pycape
+```
+
 ### Install from source
 
 To install the library from source and all of its dependencies, run:
