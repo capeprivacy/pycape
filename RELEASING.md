@@ -56,6 +56,13 @@ Date:   <OMITTED>
     bump version 1.0.0-rc -> 1.1.0
 ```
 
+You can verify that the commits have been propely signed with `git log --show-signature`.
+
+If you don't have automatic GPG-signing set up, you should use your GPG key to sign these commits retroactively with:
+```sh
+git rebase origin/main -x 'git commit -n -S --no-edit --amend'
+```
+
 BEFORE you follow the next step, it's worth fetching from `origin` and checking your `git log` to make sure that your current HEAD is only two commits ahead of the latest commit on main. If more commits have been added, you will have to hard reset your local version of `main` to the origin's and start over.
 
 ## 4. Push the release commits to `origin`
@@ -71,7 +78,7 @@ Finally, once you've verified that CI is passing for the release commits, you wi
 Seriously, this is your last chance to avoid disaster. NEVER PUSH A TAG IF ITS COMMITS HAVEN'T PASSED THE CI WORKFLOWS IN GITHUB ACTIONS.
 
 ```sh
-git push 1.1.0
+git push origin 1.1.0
 ```
 
 This will trigger the PyCape and Serdio release workflows in the repo's Github Actions. These workflows will build wheels for PyCape and Serdio, test the wheels, upload them to the latest draft Github Release, and finally push them to PyPI for public consumption.
