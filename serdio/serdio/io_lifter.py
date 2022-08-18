@@ -81,7 +81,6 @@ from operator import xor
 from typing import Callable
 from typing import Optional
 
-from serdio import func_utils
 from serdio import serde
 
 
@@ -161,20 +160,17 @@ class IOLifter:
 
         def cape_handler(input_bytes):
             try:
-                f_input = serde.deserialize(input_bytes, decoder=decoder_hook)
+                args, kwargs = serde.deserialize(
+                    input_bytes, decoder=decoder_hook, as_signature=True
+                )
             except ValueError:
                 raise ValueError(
                     "Couldn't deserialize the function's input with MessagePack."
                     "Make sure your input is serialized with MessagePack manually or "
                     "by setting use_serdio=True in Cape.run or Cape.invoke"
                 )
-
-            args, kwargs = func_utils.unpack_function_args_kwargs(f_input)
-            if args is None and kwargs is None:
-                output = self._func(f_input)
-            else:
-                _check_inputs_match_signature(self._func, args, kwargs)
-                output = self._func(*args, **kwargs)
+            _check_inputs_match_signature(self._func, args, kwargs)
+            output = self._func(*args, **kwargs)
 
             output_blob = serde.serialize(output, encoder=encoder_hook)
             return output_blob
@@ -184,6 +180,14 @@ class IOLifter:
     @property
     def hook_bundle(self):
         return self._hook_bundle
+
+    @property
+    def encoder(self):
+        return self._hook_bundle.encoder_hook
+
+    @property
+    def decoder(self):
+        return self._hook_bundle.decoder_hook
 
 
 def _check_lift_io_kwargs(encoder_hook, decoder_hook, hook_bundle):
