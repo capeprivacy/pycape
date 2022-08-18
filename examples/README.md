@@ -6,19 +6,14 @@ Before running a function, you need to first get an access token (`<AUTH_TOKEN>`
 
 By default, Cape functions expect bytes as input and return bytes as output. For this first example, we run an echo function which expects bytes and return bytes as output.
 
-To automatically deploy and run an example function that performs `echo`, run:
-```
-python3 deploy_run_echo.py
-```
-
-Alternatively, you can `cape login` and `cape deploy` with Cape's CLI and set the following environment variables as follows. 
-Once you have logged into Cape with `cape login` deploy the echo functions by running:
+Once you have logged into Cape with `cape login` deploy the echo functions as follow:
 ```
 cape deploy echo/
 ```
 
 After deploying the function, to run a function once, you can run the following example:
 ```
+export CAPE_TOKEN=<AUTH_TOKEN>
 export CAPE_HOST=<WSS_URL>
 export CAPE_FUNCTION_ID=<FUNCTION_ID returned from cape deploy>
 export CAPE_FUNCTION_HASH=<FUNCTION_HASH returned from cape deploy>
@@ -27,6 +22,7 @@ python run_echo.py
 
 To run a function repeatedly, you can run the following example:
 ```
+export CAPE_TOKEN=<AUTH_TOKEN>
 export CAPE_HOST=<WSS_URL>
 export CAPE_FUNCTION_ID=<FUNCTION_ID returned from cape deploy>
 export CAPE_FUNCTION_HASH=<FUNCTION_HASH returned from cape deploy>
