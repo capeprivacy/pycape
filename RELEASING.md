@@ -56,6 +56,13 @@ Date:   <OMITTED>
     bump version 1.0.0-rc -> 1.1.0
 ```
 
+You can verify that the commits have been propely signed with `git log --show-signature`.
+
+If you don't have automatic GPG-signing set up, you should use your GPG key to sign these commits retroactively with:
+```sh
+git rebase origin/main -x 'git commit -n -S --no-edit --amend'
+```
+
 BEFORE you follow the next step, it's worth fetching from `origin` and checking your `git log` to make sure that your current HEAD is only two commits ahead of the latest commit on main. If more commits have been added, you will have to hard reset your local version of `main` to the origin's and start over.
 
 ## 4. Push the release commits to `origin`
