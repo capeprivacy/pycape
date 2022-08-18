@@ -71,7 +71,7 @@ Finally, once you've verified that CI is passing for the release commits, you wi
 Seriously, this is your last chance to avoid disaster. NEVER PUSH A TAG IF ITS COMMITS HAVEN'T PASSED THE CI WORKFLOWS IN GITHUB ACTIONS.
 
 ```sh
-git push 1.1.0
+git push origin 1.1.0
 ```
 
 This will trigger the PyCape and Serdio release workflows in the repo's Github Actions. These workflows will build wheels for PyCape and Serdio, test the wheels, upload them to the latest draft Github Release, and finally push them to PyPI for public consumption.
