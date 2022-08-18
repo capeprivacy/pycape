@@ -55,8 +55,8 @@ Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/r
 from pycape import Cape, FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
-function_id = "ad134b923745c726"
-function_hash = "1b5cb2a978697d6c5dadb876c8976adb"
+function_id = "X9rgtUVm6yYrPMZamBWTZY"
+function_hash = "cbca8c9f7ac41138935018c3f45cd16d1abfbe15a37b1fc09a11dfbc3d44b447"
 f = FunctionRef(function_id, function_hash)
 result = client.run(f, b"Hello!")
 print(result.decode())
@@ -70,11 +70,11 @@ Invoke is used to run a function repeatedly with multiple inputs. It gives you m
 Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/invoke_echo.py):
 
 ```py
-from pycape import Cape
+from pycape import Cape, FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
-function_id = "ad134b923745c726"
-function_hash = "1b5cb2a978697d6c5dadb876c8976adb"
+function_id = "X9rgtUVm6yYrPMZamBWTZY"
+function_hash = "cbca8c9f7ac41138935018c3f45cd16d1abfbe15a37b1fc09a11dfbc3d44b447"
 f = FunctionRef(function_id, function_hash)
 client.connect(f)
 result = client.invoke(b"Hello Alice!")
