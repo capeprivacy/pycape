@@ -52,7 +52,8 @@ hash for security.
 Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/run_echo.py):
 
 ```py
-from pycape import Cape, FunctionRef
+from pycape import Cape
+from pycape import FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
 function_id = "X9rgtUVm6yYrPMZamBWTZY"
@@ -70,7 +71,8 @@ Invoke is used to run a function repeatedly with multiple inputs. It gives you m
 Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/invoke_echo.py):
 
 ```py
-from pycape import Cape, FunctionRef
+from pycape import Cape
+from pycape import FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
 function_id = "X9rgtUVm6yYrPMZamBWTZY"
