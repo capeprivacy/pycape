@@ -43,9 +43,12 @@ export CAPE_HOST=<WSS_URL>
 ```
 
 ###  Step 1: Install Serdio to build target
-Depending on your OS and Python version, you may have to run this in a manylinux-compliant Docker image with Python 3.9 (e.g. `python:3.9-slim-bullseye`).
 ```sh
 pip install ./serdio --target $TARGET
+```
+Depending on your OS and Python version, you may have to run this in a manylinux-compliant Docker image with Python 3.9 (e.g. `python:3.9-slim-bullseye`).
+```sh
+docker run -v `pwd`:/build -w /build --rm -it python:3.9-slim-bullseye pip install serdio --target /build/$TARGET
 ```
 
 ### Step 2: Add application code to build target
