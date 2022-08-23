@@ -18,6 +18,9 @@ class _MsgpackExtType(enum.IntEnum):
 
 
 def _default_encoder(x, custom_encoder=None):
+    """
+    Messagepack encoder that encodes the following types: complex, tuple, set, and frozen set
+    """
     if custom_encoder is None:
         encoder = _default_encoder  # noqa: E731
     else:
@@ -80,6 +83,9 @@ def _msgpack_ext_unpack(code, data, custom_decoder=None):
 
 
 def serialize(*args, encoder=None, **kwargs):
+    """
+    Serializes an input objecy into a byte array
+    """
     x = {ARGS_MARKER: args}
     if len(kwargs) > 0:
         x[KWARGS_MARKER] = kwargs
@@ -96,6 +102,9 @@ def serialize(*args, encoder=None, **kwargs):
 
 
 def deserialize(serdio_bytes, decoder=None, as_signature=False):
+    """
+    Unpacks bytes to an object
+    """
     ext_hook = _msgpack_ext_unpack
     if decoder is not None:
         if not callable(decoder):

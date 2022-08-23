@@ -306,12 +306,18 @@ class Cape:
 
 # TODO What should be the length?
 def _generate_nonce(length=8):
+    """
+    Generates a string of digits between 0 and 9 of length 8
+    """
     nonce = "".join([str(random.randint(0, 9)) for i in range(length)])
     logger.debug(f"* Generated nonce: {nonce}")
     return nonce
 
 
 def _create_connection_request(nonce):
+    """
+    Returns a json string with nonce
+    """
     request = {"message": {"nonce": nonce}}
     return json.dumps(request)
 
