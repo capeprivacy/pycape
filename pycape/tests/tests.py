@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock
 import json
 
-class Test(unittest.TestCase):
+class TestCape(unittest.TestCase):
     def test_convert_to_function_ref(self):
         CAPE_FUNCTION_ID = 'mHwsZ9Bh5cK4Bz8utHjdhy'
         fun_ref = _convert_to_function_ref(CAPE_FUNCTION_ID)
@@ -25,9 +25,8 @@ class Test(unittest.TestCase):
     def test_connect(self):
         Cape = Mock()
         client = Cape()
-        # CAPE_FUNCTION_ID = 'mHwsZ9Bh5cK4Bz8utHjdhy'
-        # function_ref = _convert_to_function_ref(CAPE_FUNCTION_ID)
-        function_ref = "x"
+        CAPE_FUNCTION_ID = 'mHwsZ9Bh5cK4Bz8utHjdhy'
+        function_ref = _convert_to_function_ref(CAPE_FUNCTION_ID)
         client.connect(function_ref)
         client.connect.assert_called_with(function_ref)
     
