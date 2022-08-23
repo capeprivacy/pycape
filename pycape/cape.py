@@ -70,6 +70,7 @@ class Cape:
         self._auth_token = access_token
         self._websocket = ""
         self._public_key = ""
+        self._encryption_ctx = None
         self._root_cert = None
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -228,6 +229,8 @@ class Cape:
         self._public_key, user_data = attest.parse_attestation(
             attestation_doc, self._root_cert
         )
+        logger.debug("Create Hybrid PKE encryption context.")
+        self._encryption_ctx = enclave_encrypt.EncryptionContext(self._public_key)
         if function_hash is not None and user_data is None:
             # Close the connection explicitly before throwing exception
             await self._close()
@@ -281,7 +284,13 @@ class Cape:
                 "with Serdio."
             )
 
-        input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
+        if self._encryption_ctx is None:
+            raise RuntimeError(
+                "Cape client missing HPKE encryption context: did you accidentally "
+                "call Cape.invoke before Cape.connect?"
+            )
+        logger.debug("* Encrypting inputs with HPKE context")
+        input_ciphertext = self._encryption_ctx.seal(inputs)
 
         logger.debug("> Sending encrypted inputs")
         await self._websocket.send(input_ciphertext)
