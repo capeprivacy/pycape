@@ -7,7 +7,7 @@ from pycape.attestation import parse_attestation
 from pycape.attestation_test import create_attestation_doc
 from pycape.attestation_test import create_certs
 from pycape.attestation_test import create_cose_1_sign_msg
-from pycape.enclave_encrypt import encrypt
+from pycape import enclave_encrypt
 
 
 class TestEnclaveEncryption:
@@ -27,4 +27,6 @@ class TestEnclaveEncryption:
         public_key, _ = parse_attestation(
             attestation, root_cert.public_bytes(Encoding.PEM)
         )
-        _ = encrypt(public_key, plaintext)
+        ctx = enclave_encrypt.EncryptionContext(public_key)
+        sealed = ctx.seal(plaintext)
+        assert len(sealed) > 32  # encapsulated key is 32 bytes for default hpke config
