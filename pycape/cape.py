@@ -323,6 +323,9 @@ def _create_connection_request(nonce):
 
 
 def _parse_wss_response(response):
+    """
+    Returns the inner message field received in a WebSocket message from enclave
+    """
     response = json.loads(response)
     if "error" in response:
         raise Exception(response["error"])
@@ -358,6 +361,9 @@ def _handle_default_auth(auth_path: pathlib.Path):
 
 
 def _handle_expected_field(dictionary, field, *, fallback_err=None):
+    """
+    Returns value of a provided key from dictionary
+    """
     v = dictionary.get(field, None)
     if v is None:
         if fallback_err is not None:
@@ -368,6 +374,9 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
 
 
 def _convert_to_function_ref(function_ref):
+    """
+    Returns a PyCape FunctionRef object that represents the Cape function
+    """
     if isinstance(function_ref, str):
         return FunctionRef(function_ref)
     elif isinstance(function_ref, FunctionRef):
