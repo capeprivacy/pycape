@@ -51,14 +51,16 @@ class TestCape(unittest.TestCase):
         function_ref = _convert_to_function_ref(CAPE_FUNCTION_ID)
         client.connect(function_ref)
         client.connect.assert_called_with(function_ref)
-    
+
     def test_run(self):
         Cape = Mock()
         client = Cape()
         CAPE_FUNCTION_ID = "mHwsZ9Bh5cK4Bz8utHjdhy"
         function_ref = _convert_to_function_ref(CAPE_FUNCTION_ID)
         input = "Welcome to Cape"
-        result = client.run(function_ref, input.encode()).return_value = b"Welcome to Cape"
+        result = client.run(
+            function_ref, input.encode()
+        ).return_value = b"Welcome to Cape"
         self.assertEqual(result.decode(), input)
 
 
