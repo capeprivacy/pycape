@@ -4,7 +4,6 @@ import unittest
 from unittest.mock import Mock
 
 import pycape
-from pycape import Cape
 from pycape.cape import _convert_to_function_ref
 from pycape.cape import _create_connection_request
 from pycape.cape import _generate_nonce
