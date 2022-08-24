@@ -1,3 +1,4 @@
+import base64
 import json
 import unittest
 from unittest.mock import Mock
@@ -6,6 +7,8 @@ import pycape
 from pycape.cape import _convert_to_function_ref
 from pycape.cape import _create_connection_request
 from pycape.cape import _generate_nonce
+from pycape.cape import _handle_expected_field
+from pycape.cape import _parse_wss_response
 
 
 class TestCape(unittest.TestCase):
@@ -32,6 +35,21 @@ class TestCape(unittest.TestCase):
         function_ref = _convert_to_function_ref(CAPE_FUNCTION_ID)
         client.connect(function_ref)
         client.connect.assert_called_with(function_ref)
+
+    def test_handle_expected_field(self):
+        response = '{"message": "connected"}'
+        response = json.loads(response)
+        response_msg = _handle_expected_field(
+            response,
+            "message",
+            fallback_err="Missing 'message' field in websocket response.",
+        )
+        self.assertEqual(response_msg, "connected")
+
+    def test_parse_wss_response(self):
+        response = json.dumps({"message": {"message": "conn"}})
+        inner_msg = _parse_wss_response(response)
+        self.assertEqual(inner_msg, base64.b64decode("conn"))
 
 
 if __name__ == "__main__":
