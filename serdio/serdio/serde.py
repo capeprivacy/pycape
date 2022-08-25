@@ -19,7 +19,14 @@ class _MsgpackExtType(enum.IntEnum):
 
 def _default_encoder(x, custom_encoder=None):
     """
-    Messagepack encoder that encodes the following types: complex, tuple, set, and frozen set
+    Messagepack encoders for custom types
+    
+    Args:
+        x: input value
+        custom_encoder: optional argument that specifies a custom Messagepack encoding
+    
+    Returns: Messagepack encoder function that packs objects of the following types into bytes: complex, tuple, set, and frozen set
+
     """
     if custom_encoder is None:
         encoder = _default_encoder  # noqa: E731
@@ -53,7 +60,16 @@ def _default_encoder(x, custom_encoder=None):
 
 
 def _msgpack_ext_unpack(code, data, custom_decoder=None):
-    """Messagepack decoders for custom types."""
+    """Messagepack decoders for custom types.
+    
+    Args:
+        code
+        data
+        custom_decoder
+    
+    Returns:
+        A Messagepack decoder based on type
+    """
     if custom_decoder is None:
         custom_decoder = lambda x: x  # noqa: E731
         ext_hook = _msgpack_ext_unpack
@@ -84,7 +100,14 @@ def _msgpack_ext_unpack(code, data, custom_decoder=None):
 
 def serialize(*args, encoder=None, **kwargs):
     """
-    Serializes an input objecy into a byte array
+    Serializes an input object into a byte array
+
+    Args:
+        *args: Arguments to pass to serialize, e.g.: input object to serialize
+        encoder: Optional argument to specify Messagepack encoder
+    
+    Returns:
+        Serialized object encoded using provided or default Messagepack encoder
     """
     x = {ARGS_MARKER: args}
     if len(kwargs) > 0:
@@ -98,12 +121,20 @@ def serialize(*args, encoder=None, **kwargs):
         encode_hook = lambda x: _default_encoder(  # noqa: E731
             x, custom_encoder=encoder
         )
+    print("encode_hook", encode_hook)
     return msgpack.packb(x, default=encode_hook, strict_types=True)
 
 
 def deserialize(serdio_bytes, decoder=None, as_signature=False):
     """
     Unpacks bytes to an object
+
+    Args:
+        *args: Arguments to pass to deserialize, e.g.: a byte array to deserialize
+        decoder: Optional argument to specify Messagepack decoder
+    
+    Returns:
+        Serialized object decoded using provided or default Messagepack decoder
     """
     ext_hook = _msgpack_ext_unpack
     if decoder is not None:
