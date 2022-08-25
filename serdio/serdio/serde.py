@@ -20,11 +20,11 @@ class _MsgpackExtType(enum.IntEnum):
 def _default_encoder(x, custom_encoder=None):
     """
     Messagepack encoders for custom types
-    
+
     Args:
         x: input value
         custom_encoder: optional argument that specifies a custom Messagepack encoding
-    
+
     Returns: Messagepack encoder function that packs objects of the following types into bytes: complex, tuple, set, and frozen set
 
     """
@@ -61,12 +61,12 @@ def _default_encoder(x, custom_encoder=None):
 
 def _msgpack_ext_unpack(code, data, custom_decoder=None):
     """Messagepack decoders for custom types.
-    
+
     Args:
         code: Data type encoded as 1 (complex), 2 (tuple), 3 (set), or 4 (frozen set)
         data: Byte array to unpack
         custom_decoder: Optional argument to specify custom decoder
-    
+
     Returns:
         A Messagepack decoder function based on custom data type
     """
@@ -106,7 +106,7 @@ def serialize(*args, encoder=None, **kwargs):
         *args: Arguments to pass to serialize, e.g.: input object to serialize
         encoder: Optional argument to specify Messagepack encoder
         kwargs: Keyword arguments to be passed to serialize
-    
+
     Returns:
         Serialized object encoded using provided or default Messagepack encoder
     """
@@ -133,7 +133,7 @@ def deserialize(serdio_bytes, decoder=None, as_signature=False):
         serdio_bytes: Byte array to deserialize
         decoder: Optional argument to specify Messagepack decoder
         as_signature: Optional argument
-    
+
     Returns:
         Deserialized object decoded using provided or default Messagepack decoder
     """
@@ -146,7 +146,6 @@ def deserialize(serdio_bytes, decoder=None, as_signature=False):
         ext_hook = lambda c, d: _msgpack_ext_unpack(  # noqa: E731
             c, d, custom_decoder=decoder
         )
-    
 
     unpacked = msgpack.unpackb(serdio_bytes, ext_hook=ext_hook, object_hook=decoder)
     unpacked_args = unpacked.get(ARGS_MARKER)
