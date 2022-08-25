@@ -25,8 +25,8 @@ def _default_encoder(x, custom_encoder=None):
         x: input value
         custom_encoder: optional argument that specifies a custom Messagepack encoding
 
-    Returns: Messagepack encoder function that packs objects of the following types into bytes: complex, tuple, set, and frozen set
-
+    Returns: Messagepack encoder function that packs objects of the following types into
+        bytes: complex, tuple, set, and frozen set
     """
     if custom_encoder is None:
         encoder = _default_encoder  # noqa: E731
