@@ -63,12 +63,12 @@ def _msgpack_ext_unpack(code, data, custom_decoder=None):
     """Messagepack decoders for custom types.
     
     Args:
-        code
-        data
-        custom_decoder
+        code: Data type encoded as 1 (complex), 2 (tuple), 3 (set), or 4 (frozen set)
+        data: Byte array to unpack
+        custom_decoder: Optional argument to specify custom decoder
     
     Returns:
-        A Messagepack decoder based on type
+        A Messagepack decoder function based on custom data type
     """
     if custom_decoder is None:
         custom_decoder = lambda x: x  # noqa: E731
@@ -105,6 +105,7 @@ def serialize(*args, encoder=None, **kwargs):
     Args:
         *args: Arguments to pass to serialize, e.g.: input object to serialize
         encoder: Optional argument to specify Messagepack encoder
+        kwargs: Keyword arguments to be passed to serialize
     
     Returns:
         Serialized object encoded using provided or default Messagepack encoder
@@ -121,7 +122,6 @@ def serialize(*args, encoder=None, **kwargs):
         encode_hook = lambda x: _default_encoder(  # noqa: E731
             x, custom_encoder=encoder
         )
-    print("encode_hook", encode_hook)
     return msgpack.packb(x, default=encode_hook, strict_types=True)
 
 
@@ -130,11 +130,12 @@ def deserialize(serdio_bytes, decoder=None, as_signature=False):
     Unpacks bytes to an object
 
     Args:
-        *args: Arguments to pass to deserialize, e.g.: a byte array to deserialize
+        serdio_bytes: Byte array to deserialize
         decoder: Optional argument to specify Messagepack decoder
+        as_signature: Optional argument
     
     Returns:
-        Serialized object decoded using provided or default Messagepack decoder
+        Deserialized object decoded using provided or default Messagepack decoder
     """
     ext_hook = _msgpack_ext_unpack
     if decoder is not None:
@@ -145,6 +146,7 @@ def deserialize(serdio_bytes, decoder=None, as_signature=False):
         ext_hook = lambda c, d: _msgpack_ext_unpack(  # noqa: E731
             c, d, custom_decoder=decoder
         )
+    
 
     unpacked = msgpack.unpackb(serdio_bytes, ext_hook=ext_hook, object_hook=decoder)
     unpacked_args = unpacked.get(ARGS_MARKER)
