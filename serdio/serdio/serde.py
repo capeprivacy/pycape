@@ -20,16 +20,16 @@ class _MsgpackExtType(enum.IntEnum):
 def _default_encoder(x, custom_encoder=None):
     """
     An extension of the default MessagePack encoder.
-    
+
     Supports Python types not usually handled by MessagePack (`complex`, `tuple`, `set`,
     `frozenset`), as well as optional user-supplied types.
 
     Args:
         x: input value
-        custom_encoder: optional callable that implements an encoder for user-defined types
-          that might be encountered inside collection types.
+        custom_encoder: optional callable that implements an encoder for user-defined
+            types that might be encountered inside collection types.
 
-    Returns: 
+    Returns:
         The extended MessagePack encoder.
     """
     if custom_encoder is None:
@@ -65,14 +65,14 @@ def _default_encoder(x, custom_encoder=None):
 
 def _msgpack_ext_unpack(code, data, custom_decoder=None):
     """An extension of the default MessagePack decoder.
-    
+
     This is the inverse of `_default_encoder`.
 
     Args:
         code: Data type encoded as 1 (complex), 2 (tuple), 3 (set), or 4 (frozen set)
         data: Byte array to unpack
-        custom_decoder: Optional callable that implements a decoder for user-defined types
-          that might be encountered inside collection types.
+        custom_decoder: Optional callable that implements a decoder for user-defined
+            types that might be encountered inside collection types.
 
     Returns:
         The extended MessagePack decoder.
@@ -137,15 +137,17 @@ def deserialize(serdio_bytes, decoder=None, as_signature=False):
 
     Args:
         serdio_bytes: Byte array to deserialize
-        decoder: Optional callable specifying Messagepack decoder for user-defined types.
-        as_signature: Optional boolean determining return format. If True, unpack the serialized
-            byte array into an `args` tuple and a `kwargs` dictionary. This argument is most useful
-            when the user is trying to serialize the inputs to a function of unknown arity.
+        decoder: Optional callable specifying Messagepack decoder for user-defined
+            types.
+        as_signature: Optional boolean determining return format. If True, unpack the
+            serialized byte array into an `args` tuple and a `kwargs` dictionary.
+            This argument is most useful when the user is trying to serialize the
+            inputs to a function of unknown arity.
 
     Returns:
-        The deserialized object. If as_signature=True, assumes the resulting object is a dictionary
-        with an `args` tuple and `kwargs` dict for values, and returns these two instead of the full
-        dictionary.
+        The deserialized object. If as_signature=True, assumes the resulting object is
+        a dictionary with an `args` tuple and `kwargs` dict for values, and returns
+        these two instead of the full dictionary.
     """
     ext_hook = _msgpack_ext_unpack
     if decoder is not None:
