@@ -404,7 +404,8 @@ def _handle_default_auth(auth_path: pathlib.Path):
 
 def _handle_expected_field(dictionary, field, *, fallback_err=None):
     """
-    Returns value of a provided key from dictionary
+    Returns value of a provided key from dictionary, optionally raising
+    a custom RuntimeError if it's missing.
     """
     v = dictionary.get(field, None)
     if v is None:
