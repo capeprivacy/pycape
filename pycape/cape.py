@@ -348,17 +348,26 @@ class FunctionAuth:
 
 # TODO What should be the length?
 def _generate_nonce(length=8):
+    """
+    Generates a string of digits between 0 and 9 of a given length
+    """
     nonce = "".join([str(random.randint(0, 9)) for i in range(length)])
     logger.debug(f"* Generated nonce: {nonce}")
     return nonce
 
 
 def _create_connection_request(nonce):
+    """
+    Returns a json string with nonce
+    """
     request = {"message": {"nonce": nonce}}
     return json.dumps(request)
 
 
 def _parse_wss_response(response):
+    """
+    Returns the inner message field received in a WebSocket message from enclave
+    """
     response = json.loads(response)
     if "error" in response:
         raise Exception(response["error"])
@@ -394,6 +403,10 @@ def _handle_default_auth(auth_path: pathlib.Path):
 
 
 def _handle_expected_field(dictionary, field, *, fallback_err=None):
+    """
+    Returns value of a provided key from dictionary, optionally raising
+    a custom RuntimeError if it's missing.
+    """
     v = dictionary.get(field, None)
     if v is None:
         if fallback_err is not None:
@@ -404,6 +417,9 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
 
 
 def _convert_to_function_ref(function_ref):
+    """
+    Returns a PyCape FunctionRef object that represents the Cape function
+    """
     if isinstance(function_ref, str):
         return FunctionRef(function_ref)
     elif isinstance(function_ref, FunctionRef):
