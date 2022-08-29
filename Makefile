@@ -66,3 +66,32 @@ bump-minor: bump-prep
 bump-major: bump-prep
 	bumpver update --major --tag=final
 	bumpver update --patch --tag=rc --no-tag-commit
+
+# Docs
+.PHONY: install-docs
+install-docs:
+	pip install -U sphinx myst-parser sphinx-book-theme
+
+.PHONY: docs-clean
+docs-clean:
+	find docs/source -name "*.rst" ! -name "index.rst" -exec rm {} \+
+	find docs/source -name "*.md" ! -name "walkthrough.md" -exec rm {} \+
+	cd docs && \
+	make clean && \
+	cd ..
+
+.PHONY: docs-prep
+docs-prep: install-docs install-release docs-clean
+	cp README.md docs/source/pycape-readme.md && \
+	cp serdio/README.md docs/source/serdio-readme.md && \
+	cd docs && \
+	sphinx-apidoc -f -o source ../pycape "../pycape/*_test*" --separate && \
+	sphinx-apidoc -f -o source ../serdio "../serdio/*_test*" --separate && \
+	rm source/modules.rst && \
+	cd ..
+
+.PHONY: docs
+docs: docs-prep
+	cd docs && \
+	make html && \
+	cd ..
