@@ -1,4 +1,4 @@
-# Pycape
+# PyCape
 
 The Cape SDK for Python is a library that provides a simple way to interact with the Cape Privacy API.
 
@@ -51,7 +51,7 @@ hash for security.
 
 Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/run_echo.py):
 
-```py
+```python
 from pycape import Cape
 from pycape import FunctionRef
 
@@ -61,7 +61,7 @@ function_hash = "cbca8c9f7ac41138935018c3f45cd16d1abfbe15a37b1fc09a11dfbc3d44b44
 f = FunctionRef(function_id, function_hash)
 result = client.run(f, b"Hello!")
 print(result.decode())
->> hello!
+# Hello!
 ```
 
 ### `invoke`
@@ -70,7 +70,7 @@ Invoke is used to run a function repeatedly with multiple inputs. It gives you m
 
 Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/invoke_echo.py):
 
-```py
+```python
 from pycape import Cape
 from pycape import FunctionRef
 
@@ -81,13 +81,13 @@ f = FunctionRef(function_id, function_hash)
 client.connect(f)
 result = client.invoke(b"Hello Alice!")
 print(result.decode())
->> Hello Alice!
+# Hello Alice!
 result = client.invoke(b"Hello Bob!")
 print(result.decode())
->> Hello Bob!
+# Hello Bob!
 result = client.invoke(b"Hello Carole!")
 print(result.decode())
->> Hello Carole!
+# Hello Carole!
 ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
