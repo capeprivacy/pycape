@@ -19,14 +19,18 @@ class _MsgpackExtType(enum.IntEnum):
 
 def _default_encoder(x, custom_encoder=None):
     """
-    Messagepack encoders for custom types
+    An extension of the default MessagePack encoder.
+    
+    Supports Python types not usually handled by MessagePack (`complex`, `tuple`, `set`,
+    `frozenset`), as well as optional user-supplied types.
 
     Args:
         x: input value
-        custom_encoder: optional argument that specifies a custom Messagepack encoding
+        custom_encoder: optional callable that implements an encoder for user-defined types
+          that might be encountered inside collection types.
 
-    Returns: Messagepack encoder function that packs objects of the following types into
-        bytes: complex, tuple, set, and frozen set
+    Returns: 
+        The extended MessagePack encoder.
     """
     if custom_encoder is None:
         encoder = _default_encoder  # noqa: E731
