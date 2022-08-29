@@ -349,7 +349,7 @@ class FunctionAuth:
 # TODO What should be the length?
 def _generate_nonce(length=8):
     """
-    Generates a string of digits between 0 and 9 of length 8
+    Generates a string of digits between 0 and 9 of a given length
     """
     nonce = "".join([str(random.randint(0, 9)) for i in range(length)])
     logger.debug(f"* Generated nonce: {nonce}")
