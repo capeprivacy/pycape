@@ -15,15 +15,23 @@ if __name__ == "__main__":
         function_ref = FunctionRef(function_id, function_hash)
 
     cape = Cape(url=url, access_token=token)
-    cape.connect(function_ref)
 
+    cape.connect(function_ref)
     result = cape.invoke("Hello Cape".encode())
     print(f"The result is: {result.decode()}")
-
     result = cape.invoke("Hello Gavin".encode())
     print(f"The result is: {result.decode()}")
-
     result = cape.invoke("Hello Hello".encode())
     print(f"The result is: {result.decode()}")
-
     cape.close()
+
+    # Note that instead you can use the connection_context
+    # context manager which will automatically close the
+    # connection and reset websocket connection's states.
+    with cape.connection_context(function_ref):
+        result = cape.invoke("Hello Cape".encode())
+        print(f"The result is: {result.decode()}")
+        result = cape.invoke("Hello Gavin".encode())
+        print(f"The result is: {result.decode()}")
+        result = cape.invoke("Hello Hello".encode())
+        print(f"The result is: {result.decode()}")
