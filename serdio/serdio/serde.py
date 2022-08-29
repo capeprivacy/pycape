@@ -126,16 +126,19 @@ def serialize(*args, encoder=None, **kwargs):
 
 
 def deserialize(serdio_bytes, decoder=None, as_signature=False):
-    """
-    Unpacks bytes to an object
+    """Unpacks serdio-serialized bytes to an object
 
     Args:
         serdio_bytes: Byte array to deserialize
-        decoder: Optional argument to specify Messagepack decoder
-        as_signature: Optional argument
+        decoder: Optional callable specifying Messagepack decoder for user-defined types.
+        as_signature: Optional boolean determining return format. If True, unpack the serialized
+            byte array into an `args` tuple and a `kwargs` dictionary. This argument is most useful
+            when the user is trying to serialize the inputs to a function of unknown arity.
 
     Returns:
-        Deserialized object decoded using provided or default Messagepack decoder
+        The deserialized object. If as_signature=True, assumes the resulting object is a dictionary
+        with an `args` tuple and `kwargs` dict for values, and returns these two instead of the full
+        dictionary.
     """
     ext_hook = _msgpack_ext_unpack
     if decoder is not None:
