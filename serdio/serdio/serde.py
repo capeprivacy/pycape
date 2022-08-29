@@ -99,16 +99,16 @@ def _msgpack_ext_unpack(code, data, custom_decoder=None):
 
 
 def serialize(*args, encoder=None, **kwargs):
-    """
-    Serializes an input object into a byte array
+    """Serializes a set of args and kwargs into bytes with MessagePack.
 
     Args:
         *args: Arguments to pass to serialize, e.g.: input object to serialize
         encoder: Optional argument to specify Messagepack encoder
-        kwargs: Keyword arguments to be passed to serialize
+        kwargs: Keyword arguments to serialize
 
     Returns:
-        Serialized object encoded using provided or default Messagepack encoder
+        Dictionary of `args` and `kwargs`, serialized with MessagePack and optional
+        custom `encoder`.
     """
     x = {ARGS_MARKER: args}
     if len(kwargs) > 0:
