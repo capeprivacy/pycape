@@ -60,15 +60,18 @@ def _default_encoder(x, custom_encoder=None):
 
 
 def _msgpack_ext_unpack(code, data, custom_decoder=None):
-    """Messagepack decoders for custom types.
+    """An extension of the default MessagePack decoder.
+    
+    This is the inverse of `_default_encoder`.
 
     Args:
         code: Data type encoded as 1 (complex), 2 (tuple), 3 (set), or 4 (frozen set)
         data: Byte array to unpack
-        custom_decoder: Optional argument to specify custom decoder
+        custom_decoder: Optional callable that implements a decoder for user-defined types
+          that might be encountered inside collection types.
 
     Returns:
-        A Messagepack decoder function based on custom data type
+        The extended MessagePack decoder.
     """
     if custom_decoder is None:
         custom_decoder = lambda x: x  # noqa: E731
