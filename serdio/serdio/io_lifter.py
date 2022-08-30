@@ -6,22 +6,21 @@ executes the original function on those inputs, and then serializes outputs w/ m
 Custom types are handled by user-supplied encode_hook and decode_hook functions,
 bundled into a SerdeHookBundle dataclass.
 
-
-Basic usage in app.py:
+Basic usage in app.py: ::
 
     @serdio.lift_io(as_handler=True)
     def cape_handler(x: int, y: float) -> float:
         return x * y
 
-Then with Cape.run:
-    function_id = <noted during `cape deploy`>
+Then with Cape.run: ::
+
+    function_id = "1s25hd1s28f12"
     cape = Cape()
     z = cape.run(function_id, 2, 3.0, use_serdio=True)
     print(z)
-    >> 6.0
+    # 6.0
 
-
-Usage with custom types:
+Usage with custom types: ::
 
     @dataclasses.dataclass
     class MyCoolResult:
@@ -52,16 +51,15 @@ Usage with custom types:
                 return MyCoolResult(**obj["fields"])
         return obj
 
-
     @serdio.lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
     def my_cool_function(x: MyCoolClass) -> MyCoolResult:
         return x.mul()
 
     cape_handler = my_cool_function.as_cape_handler()
 
-Then with Cape.run:
+Then with Cape.run: ::
 
-    my_cool_function_id = <noted during `cape deploy`>
+    my_cool_function_id = "9af98r1c52nt735yg"
     input = MyCoolClass(2, 3.0)  # input data we want to run with
 
     # the serde hook bundle, specifies how msgpack can deal w/ MyCoolClass/MyCoolResult
@@ -73,7 +71,7 @@ Then with Cape.run:
     cape = Cape()
     my_cool_result = cape.run(my_cool_function_id, input, serde_hooks=hook_bundle)
     print(my_cool_result.cool_result)
-    >> 6.0
+    # 6.0
 """
 import functools as ft
 import inspect

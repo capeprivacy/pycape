@@ -6,7 +6,10 @@ function in Python and deploying it with the CLI, before being able to run it fr
 Cape client.
 
 Usage:
-    FUNCTION_ID = < given by CLI after `cape deploy` >
+
+::
+
+    FUNCTION_ID = "9712r5dynf57l1rcns2"
     cape = Cape(url="wss://enclave.capeprivacy.com")
     cape.connect(FUNCTION_ID)
 
@@ -17,6 +20,7 @@ Usage:
     print(c2)  # 13
 
     cape.close()  # release the websocket connection
+
 """
 
 import asyncio

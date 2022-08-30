@@ -1,3 +1,9 @@
+# ignore some generated sphinx files 
+docs/source/*.rst
+docs/source/*.md
+!docs/source/index.rst
+!docs/source/walkthrough.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

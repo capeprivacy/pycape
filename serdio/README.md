@@ -6,7 +6,7 @@ Automatic serialization of function inputs and outputs using MessagePack.
 ## Why Serdio?
 Remotely executing Python code is complicated. A common pattern is to wrap the code into a function that maps serialized data to serialized data, however this leads to heavy amounts of boilerplate related to serialization of native and custom Python types.
 
-Serdio makes this easy by handling this serialization boilerplate for you as much as possible. For any custom types, it only requires the user to provide a encoder/decoder helpers that break the types down into Python-native components. An example can be found [below](#using-serdio-with-custom-types).
+Serdio makes this easy by handling this serialization boilerplate for you as much as possible. For any custom types, it only requires the user to provide a encoder/decoder helpers that break the types down into Python-native components. An example can be found <a href="#using-serdio-with-custom-types">below</a>.
 
 ## Installation
 
@@ -30,7 +30,7 @@ zbytes = my_cool_function(xyb_bytes)
 z = serdio.deserialize(zbytes)
 
 print(z)
->> 8.0
+# 8.0
 ```
 
 ### Using Serdio with Custom Types
@@ -77,12 +77,14 @@ def my_cool_function(a: MyCoolClass, b: float = 1.0) -> MyCoolResult:
     x: MyCoolResult = a.mul()
     return x.shift(b)
 
+my_handler = my_cool_function.as_bytes_handler()
+
 a = MyCoolClass(2, 3.0)
 ab_bytes = serdio.serialize(a, b=2.0, encoder=my_cool_function.encoder)
-c_bytes = handler(ab_bytes)
+c_bytes = my_handler(ab_bytes)
 c = serdio.deserialize(c_bytes, my_cool_function.decoder)
 
 assert c == my_cool_function(a, b=2.0)
 print(c.cool_result)
->> 8.0
+# 8.0
 ```

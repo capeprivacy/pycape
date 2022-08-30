@@ -5,6 +5,9 @@ It is generally created from user-supplied metadata, which is given to the user
 as output of the Cape CLI's `deploy` command.
 
 Usage:
+
+::
+
     fid = "asdf231lkg1324afdg"
     fhash = str(b"2l1h21jhgb2k1jh3".hex())
     fref = FunctionRef(fid, fhash)
