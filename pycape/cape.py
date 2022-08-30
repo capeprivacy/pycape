@@ -141,11 +141,8 @@ class Cape:
             Exception if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        function_ref = _convert_to_function_ref(function_ref)
         try:
-            yield self._loop.run_until_complete(
-                self._connect(function_ref, function_token)
-            )
+            yield self.connect(function_ref, function_token)
         finally:
             self._public_key = ""
             self._root_cert = None
