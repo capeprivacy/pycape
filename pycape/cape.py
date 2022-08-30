@@ -21,6 +21,8 @@ Usage:
 
 import asyncio
 import base64
+import dataclasses
+import enum
 import json
 import logging
 import os
@@ -82,7 +84,7 @@ class Cape:
         """Closes the enclave connection."""
         self._loop.run_until_complete(self._close())
 
-    def connect(self, function_ref):
+    def connect(self, function_ref, function_token=None):
         """Connects to the enclave hosting the function denoted by `function_ref`.
 
         Note that this method creates a stateful websocket connection, which is a
@@ -95,6 +97,9 @@ class Cape:
                 Cape function. If a FunctionRef, can also include the function hash,
                 which  allows the user to verify that the enclave is hosting the same
                 function they deployed.
+            function_token: Optional string containing a Cape function token generated
+                by the Cape CLI during `cape token`. If None, the Cape access token
+                will be used instead.
 
         Raises:
             RuntimeError if the websocket response or the enclave attestation doc is
@@ -104,7 +109,7 @@ class Cape:
                 connection request.
         """
         function_ref = _convert_to_function_ref(function_ref)
-        self._loop.run_until_complete(self._connect(function_ref))
+        self._loop.run_until_complete(self._connect(function_ref, function_token))
 
     def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
         """Invokes a function call from the currently connected websocket.
@@ -145,7 +150,15 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def run(self, function_ref, *args, serde_hooks=None, use_serdio=False, **kwargs):
+    def run(
+        self,
+        function_ref,
+        *args,
+        function_token=None,
+        serde_hooks=None,
+        use_serdio=False,
+        **kwargs,
+    ):
         """Single-shot version of connect + invoke.
 
         This method takes care of establishing a websocket connection via self.connect,
@@ -163,6 +176,9 @@ class Cape:
                 Otherwise, these arguments should match the positional arguments
                 of the undecorated Cape handler, and they will be auto-serialized by
                 serdio before being sent in the request.
+            function_token: Optional string containing a Cape function token generated
+                by the Cape CLI during `cape token`. If None, the Cape access token
+                will be used instead.
             serde_hooks: An optional pair of serdio encoder/decoder hooks convertible
                 to serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
                 have any custom (non-native) types that can't be handled by vanilla
@@ -188,16 +204,29 @@ class Cape:
             self._run(
                 *args,
                 function_ref=function_ref,
+                function_token=function_token,
                 serde_hooks=serde_hooks,
                 use_serdio=use_serdio,
                 **kwargs,
             )
         )
 
-    async def _connect(self, function_ref):
+    async def _connect(self, function_ref, function_token):
         function_id = function_ref.get_id()
         function_hash = function_ref.get_hash()
         endpoint = f"{self._url}/v1/run/{function_id}"
+
+        if function_token is None:
+            function_auth = FunctionAuth(FunctionAuthType.AUTH0, self._auth_token)
+        else:
+            function_auth = FunctionAuth(
+                FunctionAuthType.FUNCTION_TOKEN, function_token
+            )
+
+        if function_auth.Type == FunctionAuthType.AUTH0:
+            auth_protocol_type = "cape.runtime"
+        else:
+            auth_protocol_type = "cape.function"
 
         ctx = ssl.create_default_context()
 
@@ -209,7 +238,7 @@ class Cape:
         self._websocket = await websockets.connect(
             endpoint,
             ssl=ctx,
-            subprotocols=["cape.runtime", self._auth_token],
+            subprotocols=[auth_protocol_type, function_auth.token],
             max_size=None,
         )
         logger.debug("* Websocket connection established")
@@ -297,26 +326,48 @@ class Cape:
     async def _close(self):
         await self._websocket.close()
 
-    async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
-        await self._connect(function_ref)
+    async def _run(
+        self, *args, function_ref, function_token, serde_hooks, use_serdio, **kwargs
+    ):
+        await self._connect(function_ref, function_token)
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         await self._close()
         return result
 
 
+class FunctionAuthType(enum.Enum):
+    AUTH0 = 1
+    FUNCTION_TOKEN = 2
+
+
+@dataclasses.dataclass
+class FunctionAuth:
+    Type: FunctionAuthType
+    token: str
+
+
 # TODO What should be the length?
 def _generate_nonce(length=8):
+    """
+    Generates a string of digits between 0 and 9 of a given length
+    """
     nonce = "".join([str(random.randint(0, 9)) for i in range(length)])
     logger.debug(f"* Generated nonce: {nonce}")
     return nonce
 
 
 def _create_connection_request(nonce):
+    """
+    Returns a json string with nonce
+    """
     request = {"message": {"nonce": nonce}}
     return json.dumps(request)
 
 
 def _parse_wss_response(response):
+    """
+    Returns the inner message field received in a WebSocket message from enclave
+    """
     response = json.loads(response)
     if "error" in response:
         raise Exception(response["error"])
@@ -352,6 +403,10 @@ def _handle_default_auth(auth_path: pathlib.Path):
 
 
 def _handle_expected_field(dictionary, field, *, fallback_err=None):
+    """
+    Returns value of a provided key from dictionary, optionally raising
+    a custom RuntimeError if it's missing.
+    """
     v = dictionary.get(field, None)
     if v is None:
         if fallback_err is not None:
@@ -362,6 +417,9 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
 
 
 def _convert_to_function_ref(function_ref):
+    """
+    Returns a PyCape FunctionRef object that represents the Cape function
+    """
     if isinstance(function_ref, str):
         return FunctionRef(function_ref)
     elif isinstance(function_ref, FunctionRef):
