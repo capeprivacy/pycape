@@ -119,7 +119,7 @@ class Cape:
         self._loop.run_until_complete(self._connect(function_ref, function_token))
 
     @contextlib.contextmanager
-    def connection_context(self, function_ref, function_token=None):
+    def function_context(self, function_ref, function_token=None):
         """Context manager to connect to the enclave hosting the function denoted
         by `function_ref`.
 

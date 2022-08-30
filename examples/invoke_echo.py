@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # Note that instead you can use the connection_context
     # context manager which will automatically close the
     # connection and reset websocket connection's states.
-    with cape.connection_context(function_ref):
+    with cape.function_context(function_ref):
         result = cape.invoke("Hello Cape".encode())
         print(f"The result is: {result.decode()}")
         result = cape.invoke("Hello Gavin".encode())
