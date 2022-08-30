@@ -11,7 +11,7 @@ To automatically deploy and run an example function that performs `echo`, run:
 python3 deploy_run_echo.py
 ```
 
-Alternatively, you can `cape login` and `cape deploy` with Cape's CLI and set the following environment variables as follows. 
+Alternatively, you can use the Cape CLI directly via `cape login` and `cape deploy` as follows. 
 Once you have logged into Cape with `cape login` deploy the echo functions by running:
 ```
 cape deploy echo/
