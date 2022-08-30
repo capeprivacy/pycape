@@ -87,6 +87,8 @@ class Cape:
 
     def close(self):
         """Closes the enclave connection."""
+        self._public_key = ""
+        self._root_cert = None
         self._loop.run_until_complete(self._close())
 
     def connect(self, function_ref, function_token=None):
@@ -144,8 +146,6 @@ class Cape:
         try:
             yield self.connect(function_ref, function_token)
         finally:
-            self._public_key = ""
-            self._root_cert = None
             self.close()
 
     def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
