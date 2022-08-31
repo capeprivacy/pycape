@@ -25,6 +25,7 @@ class FunctionAuthType(enum.Enum):
     The auth type determines how :class:`.Cape` will supply authentication info for
     requests involving a particular function.
     """
+
     AUTH0 = 1
     TOKEN = 2
 

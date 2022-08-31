@@ -32,7 +32,8 @@ import os
 import pathlib
 import random
 import ssl
-from typing import Any, Union
+from typing import Any
+from typing import Union
 
 import websockets
 
@@ -192,8 +193,8 @@ class Cape:
         preferred when the caller doesn't need to invoke a Cape function more than once.
 
         Args:
-            function_ref: A function ID string or :class:`pycape.FunctionRef` representing a
-                deployed Cape function.
+            function_ref: A function ID string or :class:`pycape.FunctionRef`
+                representing a deployed Cape function.
             *args: Arguments to pass to the connected Cape function. If
                 use_serdio=False, we expect a single argument of type `bytes`.
                 Otherwise, these arguments should match the positional arguments
