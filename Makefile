@@ -95,3 +95,8 @@ docs: docs-prep
 	cd docs && \
 	make html && \
 	cd ..
+
+.PHONY: md-docs
+md-docs:
+	lazydocs --output-path md_docs/pycape pycape --overview-file="README.md"
+	lazydocs --output-path md_docs/serdio serdio --overview-file="README.md"
