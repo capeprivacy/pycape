@@ -263,12 +263,12 @@ class Cape:
         logger.debug("* Waiting for attestation document...")
         msg = await self._websocket.recv()
         logger.debug("< Auth completed. Received attestation document.")
-        attestation_doc = _parse_wss_response(msg)
         self._root_cert = self._root_cert or attest.download_root_cert()
-        self._public_key, user_data = attest.parse_attestation(
-            attestation_doc, self._root_cert
+        attestation_doc = attest.parse_attestation(
+            _parse_wss_response(msg), self._root_cert
         )
-
+        self._public_key = attestation_doc["public_key"]
+        user_data = attestation_doc.get("user_data")
         function_hash = function_ref.hash
         if function_hash is not None and user_data is None:
             # Close the connection explicitly before throwing exception
