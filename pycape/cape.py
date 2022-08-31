@@ -25,6 +25,7 @@ Usage:
 
 import asyncio
 import base64
+import contextlib
 import dataclasses
 import enum
 import json
@@ -86,6 +87,8 @@ class Cape:
 
     def close(self):
         """Closes the enclave connection."""
+        self._public_key = ""
+        self._root_cert = None
         self._loop.run_until_complete(self._close())
 
     def connect(self, function_ref, function_token=None):
@@ -114,6 +117,36 @@ class Cape:
         """
         function_ref = _convert_to_function_ref(function_ref)
         self._loop.run_until_complete(self._connect(function_ref, function_token))
+
+    @contextlib.contextmanager
+    def function_context(self, function_ref, function_token=None):
+        """Context manager to connect to the enclave hosting the function denoted
+        by `function_ref`.
+
+        Note that this context manager accomplishes the same functionality as
+        the connect method except it will automatically close the connection and
+        reset internal websocket connection's states when exiting the context.
+
+        Args:
+            function_ref: A function ID string or FunctionRef representing a deployed
+                Cape function. If a FunctionRef, can also include the function hash,
+                which  allows the user to verify that the enclave is hosting the same
+                function they deployed.
+            function_token: Optional string containing a Cape function token generated
+                by the Cape CLI during `cape token`. If None, the Cape access token
+                will be used instead.
+
+        Raises:
+            RuntimeError if the websocket response or the enclave attestation doc is
+                malformed, or if the enclave fails to return a function hash matching
+                our own.
+            Exception if the enclave threw an error while trying to fulfill the
+                connection request.
+        """
+        try:
+            yield self.connect(function_ref, function_token)
+        finally:
+            self.close()
 
     def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
         """Invokes a function call from the currently connected websocket.
