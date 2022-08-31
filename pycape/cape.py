@@ -26,8 +26,6 @@ Usage:
 import asyncio
 import base64
 import contextlib
-import dataclasses
-import enum
 import json
 import logging
 import os
@@ -100,10 +98,8 @@ class Cape:
         finished.
 
         Args:
-            function_ref: A function ID string or FunctionRef representing a deployed
-                Cape function. If a FunctionRef, can also include the function hash,
-                which  allows the user to verify that the enclave is hosting the same
-                function they deployed.
+            function_ref: A function ID string or ~pycape.function_ref.FunctionRef
+                representing a deployed Cape function.
 
         Raises:
             RuntimeError if the websocket response or the enclave attestation doc is
@@ -125,10 +121,8 @@ class Cape:
         reset internal websocket connection's states when exiting the context.
 
         Args:
-            function_ref: A function ID string or FunctionRef representing a deployed
-                Cape function. If a FunctionRef, can also include the function hash,
-                which  allows the user to verify that the enclave is hosting the same
-                function they deployed.
+            function_ref: A function ID string or ~pycape.function_ref.FunctionRef
+                representing a deployed Cape function.
 
         Raises:
             RuntimeError if the websocket response or the enclave attestation doc is
@@ -148,8 +142,8 @@ class Cape:
         This method assumes that the client is currently maintaining an open websocket
         connection to an enclave hosting a particular Cape function. Care should be
         taken to ensure that the function_red that spawned the connection is the
-        correct one. The connection should be closed with self.close() once the caller
-        is finished with their invocations.
+        correct one. The connection should be closed with ~pycape.cape.Cape.close once
+        the caller is finished with their invocations.
 
         Args:
             *args: Arguments to pass to the connected Cape function. If
@@ -158,7 +152,7 @@ class Cape:
                 of the undecorated Cape handler, and they will be auto-serialized by
                 serdio before being sent in the request.
             serde_hooks: An optional pair of serdio encoder/decoder hooks convertible
-                to serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
+                to ~serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
                 have any custom (non-native) types that can't be handled by vanilla
                 msgpack.
             use_serdio: Boolean controlling whether or not the inputs should be
@@ -191,23 +185,22 @@ class Cape:
     ):
         """Single-shot version of connect + invoke.
 
-        This method takes care of establishing a websocket connection via self.connect,
-        invoking it via self.invoke, and then finally closing the connection with
-        self.close. `run` should be preferred when the caller doesn't need to invoke a
-        Cape function more than once.
+        This method takes care of establishing a websocket connection via
+        ~pycape.cape.Cape.connect, invoking it via ~pycape.cape.Cape.invoke, and then
+        finally closing the connection with ~pycape.cape.Cape.close. This method should
+        be preferred when the caller doesn't need to invoke a Cape function more than
+        once.
 
         Args:
-            function_ref: A function ID string or FunctionRef representing a deployed
-                Cape function. If a FunctionRef, can also include the function hash,
-                which  allows the user to verify that the enclave is hosting the same
-                function they deployed.
+            function_ref: A function ID string or ~pycape.function_ref.FunctionRef
+                representing a deployed Cape function.
             *args: Arguments to pass to the connected Cape function. If
                 use_serdio=False, we expect a single argument of type `bytes`.
                 Otherwise, these arguments should match the positional arguments
                 of the undecorated Cape handler, and they will be auto-serialized by
                 serdio before being sent in the request.
             serde_hooks: An optional pair of serdio encoder/decoder hooks convertible
-                to serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
+                to ~serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
                 have any custom (non-native) types that can't be handled by vanilla
                 msgpack.
             use_serdio: Boolean controlling whether or not the inputs should be
@@ -345,9 +338,7 @@ class Cape:
     async def _close(self):
         await self._websocket.close()
 
-    async def _run(
-        self, *args, function_ref, serde_hooks, use_serdio, **kwargs
-    ):
+    async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
         await self._connect(function_ref)
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         await self._close()
