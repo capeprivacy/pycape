@@ -7,20 +7,19 @@ Cape client.
 
 Usage:
 
-::
+```
+FUNCTION_ID = "9712r5dynf57l1rcns2"
+cape = Cape(url="wss://enclave.capeprivacy.com")
+cape.connect(FUNCTION_ID)
 
-    FUNCTION_ID = "9712r5dynf57l1rcns2"
-    cape = Cape(url="wss://enclave.capeprivacy.com")
-    cape.connect(FUNCTION_ID)
+c1 = cape.invoke(3, 4, use_serdio=True)
+print(c1)  # 5
 
-    c1 = cape.invoke(3, 4, use_serdio=True)
-    print(c1)  # 5
+c2 = cape.invoke(5, 12, use_serdio=True)
+print(c2)  # 13
 
-    c2 = cape.invoke(5, 12, use_serdio=True)
-    print(c2)  # 13
-
-    cape.close()  # release the websocket connection
-
+cape.close()  # release the websocket connection
+```
 """
 
 import asyncio

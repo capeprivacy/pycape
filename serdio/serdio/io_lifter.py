@@ -20,58 +20,61 @@ Then with Cape.run: ::
     print(z)
     # 6.0
 
-Usage with custom types: ::
+Usage with custom types:
 
-    @dataclasses.dataclass
-    class MyCoolResult:
-        cool_result: float
+```
+@dataclasses.dataclass
+class MyCoolResult:
+    cool_result: float
 
-    @dataclasses.dataclass
-    class MyCoolClass:
-        cool_int: float
-        cool_float: int
+@dataclasses.dataclass
+class MyCoolClass:
+    cool_int: float
+    cool_float: int
 
-        def mul(self):
-            return MyCoolResult(self.cool_int * self.cool_float)
+    def mul(self):
+        return MyCoolResult(self.cool_int * self.cool_float)
 
-    def my_cool_encoder(x):
-        if dataclasses.is_dataclass(x):
-            return {
-                "__type__": x.__class__.__name__,
-                "fields": dataclasses.asdict(x)
-            }
-        return x
+def my_cool_encoder(x):
+    if dataclasses.is_dataclass(x):
+        return {
+            "__type__": x.__class__.__name__,
+            "fields": dataclasses.asdict(x)
+        }
+    return x
 
-    def my_cool_decoder(obj):
-        if "__type__" in obj:
-            obj_type = obj["__type__"]
-            if obj_type == "MyCoolClass":
-                return MyCoolClass(**obj["fields"])
-            elif obj_type == "MyCoolResult":
-                return MyCoolResult(**obj["fields"])
-        return obj
+def my_cool_decoder(obj):
+    if "__type__" in obj:
+        obj_type = obj["__type__"]
+        if obj_type == "MyCoolClass":
+            return MyCoolClass(**obj["fields"])
+        elif obj_type == "MyCoolResult":
+            return MyCoolResult(**obj["fields"])
+    return obj
 
-    @serdio.lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
-    def my_cool_function(x: MyCoolClass) -> MyCoolResult:
-        return x.mul()
+@serdio.lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
+def my_cool_function(x: MyCoolClass) -> MyCoolResult:
+    return x.mul()
 
-    cape_handler = my_cool_function.as_cape_handler()
+cape_handler = my_cool_function.as_cape_handler()
+```
 
-Then with Cape.run: ::
+Then with Cape.run:
+```
+my_cool_function_id = "9af98r1c52nt735yg"
+input = MyCoolClass(2, 3.0)  # input data we want to run with
 
-    my_cool_function_id = "9af98r1c52nt735yg"
-    input = MyCoolClass(2, 3.0)  # input data we want to run with
+# the serde hook bundle, specifies how msgpack can deal w/ MyCoolClass/MyCoolResult
+# hook_bundle = SerdeHookBundle(my_cool_encoder, my_cool_decoder)
+# we can also pull it from the lifted function, since we already specified it there:
+from app import my_cool_function
+hook_bundle = my_cool_function.hook_bundle
 
-    # the serde hook bundle, specifies how msgpack can deal w/ MyCoolClass/MyCoolResult
-    # hook_bundle = SerdeHookBundle(my_cool_encoder, my_cool_decoder)
-    # we can also pull it from the lifted function, since we already specified it there:
-    from app import my_cool_function
-    hook_bundle = my_cool_function.hook_bundle
-
-    cape = Cape()
-    my_cool_result = cape.run(my_cool_function_id, input, serde_hooks=hook_bundle)
-    print(my_cool_result.cool_result)
-    # 6.0
+cape = Cape()
+my_cool_result = cape.run(my_cool_function_id, input, serde_hooks=hook_bundle)
+print(my_cool_result.cool_result)
+# 6.0
+```
 """
 import functools as ft
 import inspect
