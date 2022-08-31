@@ -14,19 +14,19 @@ Usage:
 
     cape = Cape()
     cape.connect(fref)
-
-    fref2 = FunctionRef(fid)
-    fref2.set_hash(fhash)
-
-    assert fref == fref2
 """
 import enum
 from typing import Optional
 
 
 class FunctionAuthType(enum.Enum):
+    """Enum representing the auth type for a function.
+
+    The auth type determines how :class:`.Cape` will supply authentication info for
+    requests involving a particular function.
+    """
     AUTH0 = 1
-    FUNCTION_TOKEN = 2
+    TOKEN = 2
 
 
 class FunctionRef:
@@ -37,7 +37,7 @@ class FunctionRef:
         id: str,
         hash: Optional[str] = None,
         token: Optional[str] = None,
-    ) -> "FunctionRef":
+    ):
         """Instantiate a FunctionRef.
 
         Args:
@@ -47,10 +47,11 @@ class FunctionRef:
             hash: Optional string denoting the function hash of the deployed
                 Cape function. If supplied, the Cape client will attempt to verify that
                 enclave responses include a matching function hash whenever this
-                FunctionRef is included in Cape requests.
+                :class:`~.FunctionRef` is included in Cape requests.
             token: Optional string containing a Cape function token generated
                 by the Cape CLI during `cape token`. If None, the Cape access token
-                will be used by `Cape.connect`/`Cape.run` instead.
+                provided to :class:`.Cape` will be used by :meth:`.Cape.connect` /
+                :meth:`.Cape.run` instead.
         """
         id_ = id
         hash_ = hash

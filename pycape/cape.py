@@ -32,6 +32,7 @@ import os
 import pathlib
 import random
 import ssl
+from typing import Any, Union
 
 import websockets
 
@@ -177,32 +178,31 @@ class Cape:
 
     def run(
         self,
-        function_ref,
-        *args,
+        function_ref: Union[str, fref.FunctionRef],
+        *args: Any,
         serde_hooks=None,
-        use_serdio=False,
-        **kwargs,
-    ):
-        """Single-shot version of connect + invoke.
+        use_serdio: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        """Single-shot version of connect + invoke + close.
 
         This method takes care of establishing a websocket connection via
-        ~pycape.cape.Cape.connect, invoking it via ~pycape.cape.Cape.invoke, and then
-        finally closing the connection with ~pycape.cape.Cape.close. This method should
-        be preferred when the caller doesn't need to invoke a Cape function more than
-        once.
+        :meth:`.Cape.connect`, invoking it via :meth:`.Cape.invoke`, and then finally
+        closing the connection with :meth:`.Cape.close`. This method should be
+        preferred when the caller doesn't need to invoke a Cape function more than once.
 
         Args:
-            function_ref: A function ID string or ~pycape.function_ref.FunctionRef
-                representing a deployed Cape function.
+            function_ref: A function ID string or :class:`pycape.FunctionRef` representing a
+                deployed Cape function.
             *args: Arguments to pass to the connected Cape function. If
                 use_serdio=False, we expect a single argument of type `bytes`.
                 Otherwise, these arguments should match the positional arguments
                 of the undecorated Cape handler, and they will be auto-serialized by
                 serdio before being sent in the request.
             serde_hooks: An optional pair of serdio encoder/decoder hooks convertible
-                to ~serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
-                have any custom (non-native) types that can't be handled by vanilla
-                msgpack.
+                to :class:`serdio.SerdeHookBundle`. The hooks are necessary if the
+                args / kwargs have any custom (non-native) types that can't be handled
+                by vanilla msgpack.
             use_serdio: Boolean controlling whether or not the inputs should be
                 auto-serialized by serdio.
             kwargs: Keyword arguments to be passed to the connected Cape function.
