@@ -26,21 +26,21 @@ Usage:
 import asyncio
 import base64
 import contextlib
-import dataclasses
-import enum
 import json
 import logging
 import os
 import pathlib
 import random
 import ssl
+from typing import Any
+from typing import Union
 
 import websockets
 
 import serdio
 from pycape import attestation as attest
 from pycape import enclave_encrypt
-from pycape.function_ref import FunctionRef
+from pycape import function_ref as fref
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
 _DISABLE_SSL = os.environ.get("CAPEDEV_DISABLE_SSL", False)
@@ -91,7 +91,7 @@ class Cape:
         self._root_cert = None
         self._loop.run_until_complete(self._close())
 
-    def connect(self, function_ref, function_token=None):
+    def connect(self, function_ref):
         """Connects to the enclave hosting the function denoted by `function_ref`.
 
         Note that this method creates a stateful websocket connection, which is a
@@ -100,13 +100,8 @@ class Cape:
         finished.
 
         Args:
-            function_ref: A function ID string or FunctionRef representing a deployed
-                Cape function. If a FunctionRef, can also include the function hash,
-                which  allows the user to verify that the enclave is hosting the same
-                function they deployed.
-            function_token: Optional string containing a Cape function token generated
-                by the Cape CLI during `cape token`. If None, the Cape access token
-                will be used instead.
+            function_ref: A function ID string or ~pycape.function_ref.FunctionRef
+                representing a deployed Cape function.
 
         Raises:
             RuntimeError if the websocket response or the enclave attestation doc is
@@ -116,10 +111,10 @@ class Cape:
                 connection request.
         """
         function_ref = _convert_to_function_ref(function_ref)
-        self._loop.run_until_complete(self._connect(function_ref, function_token))
+        self._loop.run_until_complete(self._connect(function_ref))
 
     @contextlib.contextmanager
-    def function_context(self, function_ref, function_token=None):
+    def function_context(self, function_ref):
         """Context manager to connect to the enclave hosting the function denoted
         by `function_ref`.
 
@@ -128,13 +123,8 @@ class Cape:
         reset internal websocket connection's states when exiting the context.
 
         Args:
-            function_ref: A function ID string or FunctionRef representing a deployed
-                Cape function. If a FunctionRef, can also include the function hash,
-                which  allows the user to verify that the enclave is hosting the same
-                function they deployed.
-            function_token: Optional string containing a Cape function token generated
-                by the Cape CLI during `cape token`. If None, the Cape access token
-                will be used instead.
+            function_ref: A function ID string or ~pycape.function_ref.FunctionRef
+                representing a deployed Cape function.
 
         Raises:
             RuntimeError if the websocket response or the enclave attestation doc is
@@ -144,7 +134,7 @@ class Cape:
                 connection request.
         """
         try:
-            yield self.connect(function_ref, function_token)
+            yield self.connect(function_ref)
         finally:
             self.close()
 
@@ -154,8 +144,8 @@ class Cape:
         This method assumes that the client is currently maintaining an open websocket
         connection to an enclave hosting a particular Cape function. Care should be
         taken to ensure that the function_red that spawned the connection is the
-        correct one. The connection should be closed with self.close() once the caller
-        is finished with their invocations.
+        correct one. The connection should be closed with ~pycape.cape.Cape.close once
+        the caller is finished with their invocations.
 
         Args:
             *args: Arguments to pass to the connected Cape function. If
@@ -164,7 +154,7 @@ class Cape:
                 of the undecorated Cape handler, and they will be auto-serialized by
                 serdio before being sent in the request.
             serde_hooks: An optional pair of serdio encoder/decoder hooks convertible
-                to serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
+                to ~serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
                 have any custom (non-native) types that can't be handled by vanilla
                 msgpack.
             use_serdio: Boolean controlling whether or not the inputs should be
@@ -189,37 +179,31 @@ class Cape:
 
     def run(
         self,
-        function_ref,
-        *args,
-        function_token=None,
+        function_ref: Union[str, fref.FunctionRef],
+        *args: Any,
         serde_hooks=None,
-        use_serdio=False,
-        **kwargs,
-    ):
-        """Single-shot version of connect + invoke.
+        use_serdio: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        """Single-shot version of connect + invoke + close.
 
-        This method takes care of establishing a websocket connection via self.connect,
-        invoking it via self.invoke, and then finally closing the connection with
-        self.close. `run` should be preferred when the caller doesn't need to invoke a
-        Cape function more than once.
+        This method takes care of establishing a websocket connection via
+        :meth:`.Cape.connect`, invoking it via :meth:`.Cape.invoke`, and then finally
+        closing the connection with :meth:`.Cape.close`. This method should be
+        preferred when the caller doesn't need to invoke a Cape function more than once.
 
         Args:
-            function_ref: A function ID string or FunctionRef representing a deployed
-                Cape function. If a FunctionRef, can also include the function hash,
-                which  allows the user to verify that the enclave is hosting the same
-                function they deployed.
+            function_ref: A function ID string or :class:`pycape.FunctionRef`
+                representing a deployed Cape function.
             *args: Arguments to pass to the connected Cape function. If
                 use_serdio=False, we expect a single argument of type `bytes`.
                 Otherwise, these arguments should match the positional arguments
                 of the undecorated Cape handler, and they will be auto-serialized by
                 serdio before being sent in the request.
-            function_token: Optional string containing a Cape function token generated
-                by the Cape CLI during `cape token`. If None, the Cape access token
-                will be used instead.
             serde_hooks: An optional pair of serdio encoder/decoder hooks convertible
-                to serdio.SerdeHookBundle. The hooks are necessary if the args / kwargs
-                have any custom (non-native) types that can't be handled by vanilla
-                msgpack.
+                to :class:`serdio.SerdeHookBundle`. The hooks are necessary if the
+                args / kwargs have any custom (non-native) types that can't be handled
+                by vanilla msgpack.
             use_serdio: Boolean controlling whether or not the inputs should be
                 auto-serialized by serdio.
             kwargs: Keyword arguments to be passed to the connected Cape function.
@@ -241,29 +225,19 @@ class Cape:
             self._run(
                 *args,
                 function_ref=function_ref,
-                function_token=function_token,
                 serde_hooks=serde_hooks,
                 use_serdio=use_serdio,
                 **kwargs,
             )
         )
 
-    async def _connect(self, function_ref, function_token):
-        function_id = function_ref.get_id()
-        function_hash = function_ref.get_hash()
-        endpoint = f"{self._url}/v1/run/{function_id}"
+    async def _connect(self, function_ref):
+        endpoint = f"{self._url}/v1/run/{function_ref.id}"
 
-        if function_token is None:
-            function_auth = FunctionAuth(FunctionAuthType.AUTH0, self._auth_token)
+        if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
+            function_token = self._auth_token
         else:
-            function_auth = FunctionAuth(
-                FunctionAuthType.FUNCTION_TOKEN, function_token
-            )
-
-        if function_auth.Type == FunctionAuthType.AUTH0:
-            auth_protocol_type = "cape.runtime"
-        else:
-            auth_protocol_type = "cape.function"
+            function_token = function_ref.token
 
         ctx = ssl.create_default_context()
 
@@ -275,7 +249,7 @@ class Cape:
         self._websocket = await websockets.connect(
             endpoint,
             ssl=ctx,
-            subprotocols=[auth_protocol_type, function_auth.token],
+            subprotocols=[function_ref.auth_protocol, function_token],
             max_size=None,
         )
         logger.debug("* Websocket connection established")
@@ -294,6 +268,8 @@ class Cape:
         self._public_key, user_data = attest.parse_attestation(
             attestation_doc, self._root_cert
         )
+
+        function_hash = function_ref.hash
         if function_hash is not None and user_data is None:
             # Close the connection explicitly before throwing exception
             await self._close()
@@ -363,24 +339,11 @@ class Cape:
     async def _close(self):
         await self._websocket.close()
 
-    async def _run(
-        self, *args, function_ref, function_token, serde_hooks, use_serdio, **kwargs
-    ):
-        await self._connect(function_ref, function_token)
+    async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
+        await self._connect(function_ref)
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         await self._close()
         return result
-
-
-class FunctionAuthType(enum.Enum):
-    AUTH0 = 1
-    FUNCTION_TOKEN = 2
-
-
-@dataclasses.dataclass
-class FunctionAuth:
-    Type: FunctionAuthType
-    token: str
 
 
 # TODO What should be the length?
@@ -458,8 +421,8 @@ def _convert_to_function_ref(function_ref):
     Returns a PyCape FunctionRef object that represents the Cape function
     """
     if isinstance(function_ref, str):
-        return FunctionRef(function_ref)
-    elif isinstance(function_ref, FunctionRef):
+        return fref.FunctionRef(function_ref)
+    elif isinstance(function_ref, fref.FunctionRef):
         return function_ref
     else:
         raise TypeError(

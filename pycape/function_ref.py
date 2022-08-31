@@ -14,39 +14,81 @@ Usage:
 
     cape = Cape()
     cape.connect(fref)
-
-    fref2 = FunctionRef(fid)
-    fref2.set_hash(fhash)
-
-    assert fref == fref2
 """
+import enum
+from typing import Optional
+
+
+class FunctionAuthType(enum.Enum):
+    """Enum representing the auth type for a function.
+
+    The auth type determines how :class:`.Cape` will supply authentication info for
+    requests involving a particular function.
+    """
+
+    AUTH0 = 1
+    TOKEN = 2
 
 
 class FunctionRef:
     """A structured reference to a Cape function."""
 
-    def __init__(self, function_id, function_hash=None):
+    def __init__(
+        self,
+        id: str,
+        hash: Optional[str] = None,
+        token: Optional[str] = None,
+    ):
         """Instantiate a FunctionRef.
 
         Args:
-            function_id: Required string denoting the function ID of the deployed Cape
+            id: Required string denoting the function ID of the deployed Cape
                 function. This is typically given in the output of the Cape CLI's
                 `deploy` command.
-            function_hash: Optional string denoting the function hash of the deployed
+            hash: Optional string denoting the function hash of the deployed
                 Cape function. If supplied, the Cape client will attempt to verify that
                 enclave responses include a matching function hash whenever this
-                FunctionRef is included in Cape requests.
+                :class:`~.FunctionRef` is included in Cape requests.
+            token: Optional string containing a Cape function token generated
+                by the Cape CLI during `cape token`. If None, the Cape access token
+                provided to :class:`.Cape` will be used by :meth:`.Cape.connect` /
+                :meth:`.Cape.run` instead.
         """
-        if function_id is None:
+        id_ = id
+        hash_ = hash
+        if id_ is None:
             raise ValueError("Function id was not provided.")
-        self._function_id = function_id
-        self._function_hash = function_hash
+        self._id = id_
+        self._hash = hash_
+        self._token = token
+        if token is None:
+            self.set_auth_type(FunctionAuthType.AUTH0)
+        else:
+            self.set_auth_type(FunctionAuthType.TOKEN)
 
-    def get_id(self):
-        return self._function_id
+    @property
+    def id(self):
+        return self._id
 
-    def get_hash(self):
-        return self._function_hash
+    @property
+    def hash(self):
+        return self._hash
 
-    def set_hash(self, function_hash):
-        self._function_hash = function_hash
+    @property
+    def token(self):
+        return self._token
+
+    @property
+    def auth_type(self):
+        return self._auth_type
+
+    @property
+    def auth_protocol(self):
+        return self._auth_protocol
+
+    def set_auth_type(self, auth_type: FunctionAuthType):
+        self._auth_type = auth_type
+        if auth_type == FunctionAuthType.AUTH0:
+            self._auth_protocol = "cape.runtime"
+        else:
+            self._auth_protocol = "cape.function"
