@@ -18,7 +18,9 @@ encoding/decoding of user-defined types.
 """
 import dataclasses
 import enum
-from typing import Callable, Dict, Tuple
+from typing import Callable
+from typing import Dict
+from typing import Tuple
 
 import msgpack
 
