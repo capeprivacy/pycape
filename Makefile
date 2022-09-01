@@ -100,3 +100,5 @@ docs: docs-prep
 md-docs:
 	lazydocs --output-path md_docs/pycape pycape --overview-file="README.md"
 	lazydocs --output-path md_docs/serdio serdio --overview-file="README.md"
+	find . -name '*_test.md' -type f -exec rm {} \;
+	find . -name '*.md' -type f -exec python md_docs/postprocess_mddocs.py {} {} \;

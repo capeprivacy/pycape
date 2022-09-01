@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-<a href="../../serdio/serdio/io_lifter.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../serdio/serdio/io_lifter.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 # <kbd>module</kbd> `serdio.io_lifter`
 Tools for lifting normal Python functions into Cape handlers. 
@@ -76,7 +76,7 @@ print(my_cool_result.cool_result)
 
 ---
 
-<a href="../../serdio/serdio/io_lifter.py#L88"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../serdio/serdio/io_lifter.py#L88"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>function</kbd> `lift_io`
 
@@ -122,14 +122,14 @@ This decorator expects at most one of these sets of kwargs to be specified:
 
 ---
 
-<a href="../../serdio/serdio/io_lifter.py#L141"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../serdio/serdio/io_lifter.py#L141"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>class</kbd> `IOLifter`
 
 
 
 
-<a href="../../serdio/serdio/io_lifter.py#L142"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../serdio/serdio/io_lifter.py#L142"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -170,7 +170,7 @@ __init__(f: Callable, hook_bundle: Optional[SerdeHookBundle])
 
 ---
 
-<a href="../../serdio/serdio/io_lifter.py#L156"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../serdio/serdio/io_lifter.py#L156"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `as_bytes_handler`
 
@@ -184,7 +184,7 @@ as_bytes_handler()
 
 ---
 
-<a href="../../serdio/serdio/io_lifter.py#L153"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../serdio/serdio/io_lifter.py#L153"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `as_cape_handler`
 

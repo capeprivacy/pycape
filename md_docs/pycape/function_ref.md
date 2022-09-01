@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-<a href="../../pycape/function_ref.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../pycape/function_ref.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 # <kbd>module</kbd> `function_ref`
 A structured representation of a deployed Cape function. 
@@ -22,7 +22,7 @@ cape.connect(fref)
 
 ---
 
-<a href="../../pycape/function_ref.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../pycape/function_ref.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>class</kbd> `FunctionAuthType`
 Enum representing the auth type for a function. 
@@ -35,12 +35,12 @@ The auth type determines how :class:`.Cape` will supply authentication info for 
 
 ---
 
-<a href="../../pycape/function_ref.py#L33"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../pycape/function_ref.py#L33"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>class</kbd> `FunctionRef`
 A structured reference to a Cape function. 
 
-<a href="../../pycape/function_ref.py#L36"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../pycape/function_ref.py#L36"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -106,7 +106,7 @@ Instantiate a FunctionRef.
 
 ---
 
-<a href="../../pycape/function_ref.py#L89"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../../pycape/function_ref.py#L89"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `set_auth_type`
 
