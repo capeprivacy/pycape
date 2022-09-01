@@ -31,6 +31,7 @@ author = "Cape Privacy"
 extensions = [
     "sphinx.ext.napoleon",
     "myst_parser",
+    "sphinx_autodoc_typehints",
 ]
 
 napoleon_include_init_with_doc = True

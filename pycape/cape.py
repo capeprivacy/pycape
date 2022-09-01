@@ -34,6 +34,7 @@ import random
 import ssl
 import weakref
 from typing import Any
+from typing import Optional
 from typing import Union
 
 import websockets
@@ -58,7 +59,10 @@ class Cape:
     """
 
     def __init__(
-        self, url="wss://enclave.capeprivacy.com", access_token=None, verbose=False
+        self,
+        url: str = "wss://enclave.capeprivacy.com",
+        access_token: Optional[str] = None,
+        verbose: bool = False,
     ):
         """Cape client constructor.
 
@@ -90,7 +94,7 @@ class Cape:
         self._loop.run_until_complete(self._close())
         self._ctx = None
 
-    def connect(self, function_ref):
+    def connect(self, function_ref: Union[str, fref.FunctionRef]):
         """Connects to the enclave hosting the function denoted by `function_ref`.
 
         Note that this method creates a stateful websocket connection, which is a
@@ -113,7 +117,7 @@ class Cape:
         self._loop.run_until_complete(self._connect(function_ref))
 
     @contextlib.contextmanager
-    def function_context(self, function_ref):
+    def function_context(self, function_ref: Union[str, fref.FunctionRef]):
         """Context manager to connect to the enclave hosting the function denoted
         by `function_ref`.
 
@@ -137,7 +141,9 @@ class Cape:
         finally:
             self.close()
 
-    def invoke(self, *args, serde_hooks=None, use_serdio=False, **kwargs):
+    def invoke(
+        self, *args: Any, serde_hooks=None, use_serdio: bool = False, **kwargs: Any
+    ) -> Any:
         """Invokes a function call from the currently connected websocket.
 
         This method assumes that the client is currently maintaining an open websocket
