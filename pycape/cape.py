@@ -32,6 +32,7 @@ import os
 import pathlib
 import random
 import ssl
+import weakref
 from typing import Any
 from typing import Union
 
@@ -75,9 +76,8 @@ class Cape:
             cape_auth_path = _CAPE_CONFIG_PATH / "auth"
             access_token = _handle_default_auth(cape_auth_path)
         self._auth_token = access_token
-        self._websocket = ""
-        self._public_key = ""
         self._root_cert = None
+        self._ctx = None
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         self._loop = loop
@@ -86,10 +86,9 @@ class Cape:
             logger.setLevel(logging.DEBUG)
 
     def close(self):
-        """Closes the enclave connection."""
-        self._public_key = ""
-        self._root_cert = None
+        """Closes the current enclave connection."""
         self._loop.run_until_complete(self._close())
+        self._ctx = None
 
     def connect(self, function_ref):
         """Connects to the enclave hosting the function denoted by `function_ref`.
@@ -232,47 +231,26 @@ class Cape:
         )
 
     async def _connect(self, function_ref):
-        endpoint = f"{self._url}/v1/run/{function_ref.id}"
-
         if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
             function_token = self._auth_token
         else:
             function_token = function_ref.token
 
-        ctx = ssl.create_default_context()
-
-        if _DISABLE_SSL:
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-
-        logger.debug(f"* Dialing {self._url}")
-        self._websocket = await websockets.connect(
-            endpoint,
-            ssl=ctx,
-            subprotocols=[function_ref.auth_protocol, function_token],
-            max_size=None,
-        )
-        logger.debug("* Websocket connection established")
-
-        nonce = _generate_nonce()
-        request = _create_connection_request(nonce)
-
-        logger.debug("\n> Sending auth request...")
-        await self._websocket.send(request)
-
-        logger.debug("* Waiting for attestation document...")
-        msg = await self._websocket.recv()
-        logger.debug("< Auth completed. Received attestation document.")
-        attestation_doc = _parse_wss_response(msg)
         self._root_cert = self._root_cert or attest.download_root_cert()
-        self._public_key, user_data = attest.parse_attestation(
-            attestation_doc, self._root_cert
+        self._ctx = _EnclaveContext(
+            cape_url=self._url,
+            function_id=function_ref.id,
+            auth_protocol=function_ref.auth_protocol,
+            auth_token=function_token,
+            root_cert=self._root_cert,
         )
+        attestation_doc = await self._ctx.bootstrap()
 
+        user_data = attestation_doc.get("user_data")
         function_hash = function_ref.hash
         if function_hash is not None and user_data is None:
             # Close the connection explicitly before throwing exception
-            await self._close()
+            await self._ctx.close()
             raise RuntimeError(
                 f"No function hash received from enclave, expected{function_hash}."
             )
@@ -284,12 +262,15 @@ class Cape:
             received_hash = str(base64.b64decode(received_hash).hex())
             if str(function_hash) != str(received_hash):
                 # Close the connection explicitly before throwing exception
-                await self._close()
+                await self._ctx.close()
                 raise RuntimeError(
                     "Returned function hash did not match provided, "
                     f"got: {received_hash}, want: {function_hash}."
                 )
         return
+
+    async def _close(self):
+        await self._ctx.close()
 
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and/or kwargs are supplied to the Cape function through
@@ -323,27 +304,78 @@ class Cape:
                 "with Serdio."
             )
 
-        input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
-
-        logger.debug("> Sending encrypted inputs")
-        await self._websocket.send(input_ciphertext)
-        response = await self._websocket.recv()
-        logger.debug("< Received function results")
-        result = _parse_wss_response(response)
+        result = await self._ctx.invoke(inputs)
 
         if use_serdio:
             result = serdio.deserialize(result, decoder=decoder_hook)
 
         return result
 
-    async def _close(self):
-        await self._websocket.close()
-
     async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
         await self._connect(function_ref)
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         await self._close()
+        self._ctx = None
         return result
+
+
+class _EnclaveContext:
+    """A context managing a connection to a particular enclave instance."""
+
+    def __init__(self, cape_url, function_id, auth_protocol, auth_token, root_cert):
+        self._endpoint = f"{cape_url}/v1/run/{function_id}"
+        self._auth_token = auth_token
+        self._auth_protocol = auth_protocol
+        self._root_cert = weakref.ref(root_cert)
+        ssl_ctx = ssl.create_default_context()
+        if _DISABLE_SSL:
+            ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl.CERT_NONE
+        self._ssl_ctx = ssl_ctx
+
+        # state to be explicitly created/destroyed by callers via bootstrap/close
+        self._websocket = None
+        self._public_key = None
+
+    async def bootstrap(self):
+        logger.debug(f"* Dialing {self._endpoint}")
+        self._websocket = await websockets.connect(
+            self._endpoint,
+            ssl=self._ssl_ctx,
+            subprotocols=[self._auth_protocol, self._auth_token],
+            max_size=None,
+        )
+        logger.debug("* Websocket connection established")
+
+        auth_response = await self.authenticate()
+        attestation_doc = attest.parse_attestation(auth_response, self._root_cert)
+        self._public_key = attestation_doc["public_key"]
+
+        return attestation_doc
+
+    async def invoke(self, inputs: bytes) -> bytes:
+        input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
+
+        logger.debug("> Sending encrypted inputs")
+        await self._websocket.send(input_ciphertext)
+        invoke_response = await self._websocket.recv()
+        logger.debug("< Received function results")
+
+        return _parse_wss_response(invoke_response)
+
+    async def authenticate(self):
+        nonce = _generate_nonce()
+        request = _create_connection_request(nonce)
+        logger.debug("\n> Sending authentication request...")
+        await self._websocket.send(request)
+        logger.debug("* Waiting for attestation document...")
+        msg = await self._websocket.recv()
+        logger.debug("< Auth completed. Received attestation document.")
+        return _parse_wss_response(msg)
+
+    async def close(self):
+        await self._websocket.close()
+        self._public_key = None
 
 
 # TODO What should be the length?

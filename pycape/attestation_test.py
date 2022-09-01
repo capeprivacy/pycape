@@ -33,9 +33,11 @@ class TestAttestation:
         doc_bytes = create_attestation_doc(root_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
-        public_key, user_data = attest.parse_attestation(
+        attestation_doc = attest.parse_attestation(
             attestation, root_cert.public_bytes(Encoding.PEM)
         )
+        public_key = attestation_doc["public_key"]
+        user_data = attestation_doc.get("user_data")
         expected_user_data = json.dumps({"func_hash": "stuff"})
         assert user_data == expected_user_data
         assert len(public_key) == 32
