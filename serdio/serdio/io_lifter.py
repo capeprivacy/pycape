@@ -1,77 +1,25 @@
-"""Tools for lifting normal Python functions into Cape handlers.
+"""Tools for lifting arbitrary functions into functions mapping bytes to bytes.
 
-We automatically convert between Python functions and Cape handlers by decorating
-a given Python function with a version that deserializes inputs from msgpack-ed bytes,
-executes the original function on those inputs, and then serializes outputs w/ msgpack.
-Custom types are handled by user-supplied encode_hook and decode_hook functions,
-bundled into a SerdeHookBundle dataclass.
+This module deals with automatically converting between arbitrary functions and
+"byte-handlers", i.e. functions mapping bytes to bytes. The :func:`.lift_io` decorator
+allows a user to convert an arbitrary function to a bytes-handler. :func:`.lift_io`
+returns an :class:`.IOLifter`, a Callable class that wraps an arbitrary function with
+the machinery needed to convert it into a byte-handler via
+:meth:`.IOLifter.as_bytes_handler`. :class:`.IOLifter` does not otherwise change the
+function's call-behavior.
 
-Basic usage in app.py: ::
+**Usage** ::
 
-    @serdio.lift_io(as_handler=True)
-    def cape_handler(x: int, y: float) -> float:
-        return x * y
+    @serdio.lift_io
+    def my_cool_function(x: int, y: float, b: float = 1.0) -> float:
+        z = x * y
+        z += b
+        return z
 
-Then with Cape.run: ::
+    bytes_handler: Callable[bytes, bytes] = my_cool_function.as_bytes_handler()
 
-    function_id = "1s25hd1s28f12"
-    cape = Cape()
-    z = cape.run(function_id, 2, 3.0, use_serdio=True)
-    print(z)
-    # 6.0
-
-Usage with custom types: ::
-
-    @dataclasses.dataclass
-    class MyCoolResult:
-        cool_result: float
-
-    @dataclasses.dataclass
-    class MyCoolClass:
-        cool_int: float
-        cool_float: int
-
-        def mul(self):
-            return MyCoolResult(self.cool_int * self.cool_float)
-
-    def my_cool_encoder(x):
-        if dataclasses.is_dataclass(x):
-            return {
-                "__type__": x.__class__.__name__,
-                "fields": dataclasses.asdict(x)
-            }
-        return x
-
-    def my_cool_decoder(obj):
-        if "__type__" in obj:
-            obj_type = obj["__type__"]
-            if obj_type == "MyCoolClass":
-                return MyCoolClass(**obj["fields"])
-            elif obj_type == "MyCoolResult":
-                return MyCoolResult(**obj["fields"])
-        return obj
-
-    @serdio.lift_io(encoder_hook=my_cool_encoder, decoder_hook=my_cool_decoder)
-    def my_cool_function(x: MyCoolClass) -> MyCoolResult:
-        return x.mul()
-
-    cape_handler = my_cool_function.as_cape_handler()
-
-Then with Cape.run: ::
-
-    my_cool_function_id = "9af98r1c52nt735yg"
-    input = MyCoolClass(2, 3.0)  # input data we want to run with
-
-    # the serde hook bundle, specifies how msgpack can deal w/ MyCoolClass/MyCoolResult
-    # hook_bundle = SerdeHookBundle(my_cool_encoder, my_cool_decoder)
-    # we can also pull it from the lifted function, since we already specified it there:
-    from app import my_cool_function
-    hook_bundle = my_cool_function.hook_bundle
-
-    cape = Cape()
-    my_cool_result = cape.run(my_cool_function_id, input, serde_hooks=hook_bundle)
-    print(my_cool_result.cool_result)
-    # 6.0
+    z = my_cool_function(2, 3.0)
+    assert z == 7.0
 """
 import functools as ft
 import inspect

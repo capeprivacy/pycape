@@ -1,3 +1,21 @@
+"""The Serdio serialization and deserialization implementation.
+
+The ``serdio.serde`` spec is an extension of MessagePack that can handle some extra
+Python types, while also allowing users to supply their own hooks fo seamless
+encoding/decoding of user-defined types.
+
+**Usage** ::
+
+    xyb_bytes = serdio.serialize(2, 3.0, b=2.0)
+
+    x, y = serdio.deserialize(xyb_bytes)
+    print(f"{x}, {y}")
+    # 2, 3.0
+
+    args, kwargs = serdio.deserialize(xyb_bytes, as_signature=True)
+    print(f"{args[0]}, {args[1]}, b={kwargs["b"]}")
+    # 2, 3.0, b=2.0
+"""
 import dataclasses
 import enum
 from typing import Callable
