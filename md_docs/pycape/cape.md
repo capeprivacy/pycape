@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-<a href="../../pycape/cape.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/cape.py#L0"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 # <kbd>module</kbd> `cape`
 The Cape Python client. 
@@ -27,14 +27,14 @@ cape.close()  # release the websocket connection
 
 ---
 
-<a href="../../pycape/cape.py#L51"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/cape.py#L51"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>class</kbd> `Cape`
 A websocket client for interacting with enclaves hosting Cape functions. 
 
 This is the main interface for interacting with Cape functions from Python. See module documentation for usage example. 
 
-<a href="../../pycape/cape.py#L58"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/cape.py#L58"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -57,7 +57,7 @@ Cape client constructor.
 
 ---
 
-<a href="../../pycape/cape.py#L87"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/cape.py#L87"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `close`
 
@@ -69,7 +69,7 @@ Closes the enclave connection.
 
 ---
 
-<a href="../../pycape/cape.py#L93"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/cape.py#L93"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `connect`
 
@@ -94,7 +94,7 @@ Note that this method creates a stateful websocket connection, which is a necess
 
 ---
 
-<a href="../../cape/function_context#L115"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../cape/function_context#L115"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `function_context`
 
@@ -119,7 +119,7 @@ Note that this context manager accomplishes the same functionality as the connec
 
 ---
 
-<a href="../../pycape/cape.py#L140"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/cape.py#L140"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `invoke`
 
@@ -152,7 +152,7 @@ This method assumes that the client is currently maintaining an open websocket c
 
 ---
 
-<a href="../../pycape/cape.py#L179"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/cape.py#L179"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ### <kbd>method</kbd> `run`
 

@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-<a href="../../pycape/attestation.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/attestation.py#L0"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 # <kbd>module</kbd> `attestation`
 
@@ -10,7 +10,7 @@
 
 ---
 
-<a href="../../pycape/attestation.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/attestation.py#L21"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>function</kbd> `download_root_cert`
 
@@ -25,7 +25,7 @@ download_root_cert()
 
 ---
 
-<a href="../../pycape/attestation.py#L33"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/attestation.py#L33"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>function</kbd> `parse_attestation`
 
@@ -40,7 +40,7 @@ parse_attestation(attestation, root_cert)
 
 ---
 
-<a href="../../pycape/attestation.py#L54"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/attestation.py#L54"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>function</kbd> `verify_cert_chain`
 
@@ -55,7 +55,7 @@ verify_cert_chain(root_cert, cabundle, cert)
 
 ---
 
-<a href="../../pycape/attestation.py#L80"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
+<a href="../../pycape/attestation.py#L80"><img align="right" style={{ float: 'right' }} src="https://img.shields.io/badge/-source-cccccc?style=flat-square" /></a>
 
 ## <kbd>function</kbd> `verify_attestation_signature`
 
