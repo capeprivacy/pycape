@@ -18,7 +18,7 @@ encoding/decoding of user-defined types.
 """
 import dataclasses
 import enum
-from typing import Callable
+from typing import Callable, Dict, Tuple
 
 import msgpack
 
@@ -84,7 +84,7 @@ def _default_encoder(x, custom_encoder=None):
 def _msgpack_ext_unpack(code, data, custom_decoder=None):
     """An extension of the default MessagePack decoder.
 
-    This is the inverse of `_default_encoder`.
+    This is the inverse of ``_default_encoder``.
 
     Args:
         code: Data type encoded as 1 (complex), 2 (tuple), 3 (set), or 4 (frozen set)
@@ -123,17 +123,22 @@ def _msgpack_ext_unpack(code, data, custom_decoder=None):
     return msgpack.ExtType(code, data)
 
 
-def serialize(*args, encoder=None, **kwargs):
+def serialize(*args, encoder: Callable = None, **kwargs) -> bytes:
     """Serializes a set of args and kwargs into bytes with MessagePack.
 
     Args:
         *args: Arguments to pass to serialize, e.g.: input object to serialize
-        encoder: Optional argument to specify Messagepack encoder
+        encoder: Optional callable specifying MessagePack encoder for user-defined
+            types. See :class:`.SerdioHookBundle` for details.
         kwargs: Keyword arguments to serialize
 
     Returns:
-        Dictionary of `args` and `kwargs`, serialized with MessagePack and optional
-        custom `encoder`.
+        Dictionary of ``args`` and ``kwargs``, serialized with MessagePack and optional
+        custom ``encoder``.
+
+    Raises:
+        TypeError if ``encoder`` is not callable. Other errors can be raised by
+            MessagePack during packing.
     """
     x = {ARGS_MARKER: args}
     if len(kwargs) > 0:
@@ -150,22 +155,24 @@ def serialize(*args, encoder=None, **kwargs):
     return msgpack.packb(x, default=encode_hook, strict_types=True)
 
 
-def deserialize(serdio_bytes, decoder=None, as_signature=False):
+def deserialize(
+    serdio_bytes: bytes, decoder: Callable = None, as_signature: bool = False
+):
     """Unpacks serdio-serialized bytes to an object
 
     Args:
-        serdio_bytes: Byte array to deserialize
+        serdio_bytes: Byte array to deserialize.
         decoder: Optional callable specifying Messagepack decoder for user-defined
-            types.
+            types. See :class:`.SerdioHookBundle` for details.
         as_signature: Optional boolean determining return format. If True, unpack the
-            serialized byte array into an `args` tuple and a `kwargs` dictionary.
+            serialized byte array into an ``args`` tuple and a ``kwargs`` dictionary.
             This argument is most useful when the user is trying to serialize the
             inputs to a function of unknown arity.
 
     Returns:
-        The deserialized object. If as_signature=True, assumes the resulting object is
-        a dictionary with an `args` tuple and `kwargs` dict for values, and returns
-        these two instead of the full dictionary.
+        The deserialized object. If ``as_signature=True``, assumes the resulting object
+        is a dictionary with an ``args`` tuple and ``kwargs`` dict for values, and
+        returns these two instead of the full dictionary.
     """
     ext_hook = _msgpack_ext_unpack
     if decoder is not None:
@@ -190,17 +197,57 @@ def deserialize(serdio_bytes, decoder=None, as_signature=False):
 
 @dataclasses.dataclass
 class SerdeHookBundle:
+    """An encoder-decoder hook pair for user-defined types.
+
+    The ``encoder_hook`` and ``decoder_hook`` specify how to convert from a user-defined
+    type into an equivalent collection of Python-native values and back. Thus for any
+    object ``X`` of user-defined type ``T``, the following relationship should hold: ::
+
+        hook_bundle = SerdioHookBundle(f, g)
+        native_X = hook_bundle.encoder_hook(X)  # f(X)
+        Y = hook_bundle.decoder_hook(native_X)  # g(native_X)
+        assert X == Y
+
+    Note that ``native_X`` above needs to be some collection of native Python values,
+    e.g. a simple dataclass can be represented as a dictionary of attributes mapping to
+    values.
+
+    Args:
+        encoder_hook: An encoder function specifying how :func:`.serdio.serd.serialize`
+            should break down any custom types into Python native types.
+        decoder_hook: The inverse of ``encoder_hook``, specifying how
+            :func:`.serdio.serd.deserialize` should re-assemble the ``encoder_hook``
+            output into user-defined types.
+    """
+
     encoder_hook: Callable
     decoder_hook: Callable
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
+        """Return the encoder-decoder hook pair as a dictionary."""
         return dataclasses.asdict(self)
 
-    def unbundle(self):
+    def unbundle(self) -> Tuple:
+        """Return the encoder-decoder hook pair as a tuple."""
         return dataclasses.astuple(self)
 
 
 def bundle_serde_hooks(hook_bundle):
+    """Helper to lift an encoder-decoder hook pair into a :class:`.SerdeHookBundle`.
+
+    Args:
+        hook_bundle: A tuple, list, dict or :class:`.SerdeHookBundle` containing an
+            encoder-decoder hook pair, to be packaged up into a SerdeHookBundle.
+            If a tuple or list, the encoder_hook must come first.
+            If a dictionary, must have exactly two keys ``"encoder_hook"`` and
+            ``"decoder_hook"``.
+
+    Returns:
+        A :class:`.SerdeHookBundle` encapsulating the encoder-decoder hook pair.
+
+    Raises:
+        ValueError if the ``hook_bundle`` dictionary is malformed.
+    """
     if isinstance(hook_bundle, (tuple, list)):
         hook_bundle = SerdeHookBundle(*hook_bundle)
     elif isinstance(hook_bundle, dict):
