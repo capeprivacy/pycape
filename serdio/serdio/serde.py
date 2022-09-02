@@ -126,20 +126,20 @@ def _msgpack_ext_unpack(code, data, custom_decoder=None):
 
 
 def serialize(*args, encoder: Callable = None, **kwargs) -> bytes:
-    """Serializes a set of args and kwargs into bytes with MessagePack.
+    """Serializes a set of ``args` and ``kwargs`` into bytes with MessagePack.
 
     Args:
-        *args: Arguments to pass to serialize, e.g.: input object to serialize
+        *args: Positional arguments to include in the serialized bytes
         encoder: Optional callable specifying MessagePack encoder for user-defined
             types. See :class:`.SerdeHookBundle` for details.
-        kwargs: Keyword arguments to serialize
+        kwargs: Keyword arguments to include in the serialized bytes
 
     Returns:
         Dictionary of ``args`` and ``kwargs``, serialized with MessagePack and optional
         custom ``encoder``.
 
     Raises:
-        TypeError if ``encoder`` is not callable. Other errors can be raised by
+        TypeError: if ``encoder`` is not callable. Other errors can be raised by
             MessagePack during packing.
     """
     x = {ARGS_MARKER: args}
@@ -248,7 +248,7 @@ def bundle_serde_hooks(hook_bundle):
         A :class:`.SerdeHookBundle` encapsulating the encoder-decoder hook pair.
 
     Raises:
-        ValueError if the ``hook_bundle`` dictionary is malformed.
+        ValueError: if the ``hook_bundle`` dictionary is malformed.
     """
     if isinstance(hook_bundle, (tuple, list)):
         hook_bundle = SerdeHookBundle(*hook_bundle)
