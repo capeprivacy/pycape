@@ -64,7 +64,7 @@ print(result.decode())
 
 ### `invoke`
 
-Invoke is used to run a function repeatedly with multiple inputs. The connection to your Cape function is not terminated between invocations. It gives you more control over the lifecycle, and can be more efficient. Prior to calling `invoke`, `connect` to your function and then `close` it when you are finished.
+Invoke is used to run a function repeatedly with multiple inputs. The connection to your Cape function is not terminated between invocations. It gives you more control over the lifecycle, and can be more efficient. Prior to calling `invoke`, `connect` to your function and then `close` it when you are finished. You can also call `invoke` inside of a `Cape.function_context`, which will handle connecting and closing the connection for you. See the [docs](https://pydocs.capeprivacy.com/pycape.html#pycape.Cape.function_context) for a usage example.
 
 Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/invoke_echo.py):
 
