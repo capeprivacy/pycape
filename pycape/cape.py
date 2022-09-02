@@ -120,7 +120,7 @@ class Cape:
         Note that this context manager accomplishes the same functionality as
         :meth:`~Cape.connect`, except that it will also automatically
         :meth:`~Cape.close` the connection when exiting the context.
-        
+
         **Usage** ::
 
             cape = Cape(url="wss://enclave.capeprivacy.com")
@@ -230,7 +230,8 @@ class Cape:
         Returns:
             If ``use_serdio=True``, returns the auto-deserialized result of calling the
             connected Cape function on the given ``args`` / ``kwargs``.
-            If ``use_serdio=False``, returns the output of the Cape function as raw bytes.
+            If ``use_serdio=False``, returns the output of the Cape function as raw
+            bytes.
 
         Raises:
             RuntimeError: if serialized inputs could not be HPKE-encrypted, or if
