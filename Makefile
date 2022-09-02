@@ -70,7 +70,7 @@ bump-major: bump-prep
 # Docs
 .PHONY: install-docs
 install-docs:
-	pip install -U sphinx myst-parser sphinx-book-theme
+	pip install -U sphinx myst-parser sphinx-book-theme sphinx-copybutton
 
 .PHONY: docs-clean
 docs-clean:

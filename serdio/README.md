@@ -17,20 +17,28 @@ pip install serdio
 ## Usage
 
 ### Basic
-Here, we use serdio to lift a function that performs some simple math on Python native numbers.
+Here, we use Serdio to lift a function that performs some simple math on native Python numbers.
 ```python
-@serdio.lift_io(as_handler=True)
+@serdio.lift_io
 def my_cool_function(x: int, y: float, b: float = 1.0) -> float:
     z = x * y
     z += b
     return z
 
-xyb_bytes = serdio.serialize(2, 3.0, b=2.0)
-zbytes = my_cool_function(xyb_bytes)
-z = serdio.deserialize(zbytes)
+bytes_handler: Callable[bytes, bytes] = my_cool_function.as_bytes_handler()
 
-print(z)
-# 8.0
+z = my_cool_function(2, 3.0)
+assert z == 7.0
+```
+
+Now we can use the `bytes_handler` function on Serdio-encoded bytes:
+
+```python
+xyb_bytes = serdio.serialize(2, 3.0, b=2.0)
+zbytes = bytes_handler(xyb_bytes)
+
+z = serdio.deserialize(zbytes)
+assert z == 8.0
 ```
 
 ### Using Serdio with Custom Types
