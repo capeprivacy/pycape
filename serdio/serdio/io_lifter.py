@@ -31,7 +31,12 @@ from serdio import serde
 
 
 def lift_io(
-    f=None, *, encoder_hook=None, decoder_hook=None, hook_bundle=None, as_handler=False
+    f: Callable = None,
+    *,
+    encoder_hook: Optional[Callable] = None,
+    decoder_hook: Optional[Callable] = None,
+    hook_bundle=None,
+    as_handler: bool = False,
 ):
     """Lift a function into an :class:`.IOLifter`.
 

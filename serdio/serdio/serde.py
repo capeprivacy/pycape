@@ -18,6 +18,7 @@ encoding/decoding of user-defined types.
 """
 import dataclasses
 import enum
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Tuple
@@ -125,7 +126,7 @@ def _msgpack_ext_unpack(code, data, custom_decoder=None):
     return msgpack.ExtType(code, data)
 
 
-def serialize(*args, encoder: Callable = None, **kwargs) -> bytes:
+def serialize(*args: Any, encoder: Callable = None, **kwargs: Any) -> bytes:
     """Serializes a set of ``args` and ``kwargs`` into bytes with MessagePack.
 
     Args:
@@ -159,7 +160,7 @@ def serialize(*args, encoder: Callable = None, **kwargs) -> bytes:
 
 def deserialize(
     serdio_bytes: bytes, decoder: Callable = None, as_signature: bool = False
-):
+) -> Any:
     """Unpacks serdio-serialized bytes to an object
 
     Args:
