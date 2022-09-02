@@ -239,7 +239,7 @@ def bundle_serde_hooks(hook_bundle):
 
     Args:
         hook_bundle: A tuple, list, dict or :class:`.SerdeHookBundle` containing an
-            encoder-decoder hook pair, to be packaged up into a SerdeHookBundle.
+            encoder-decoder hook pair.
             If a tuple or list, the encoder_hook must come first.
             If a dictionary, must have exactly two keys ``"encoder_hook"`` and
             ``"decoder_hook"``.
