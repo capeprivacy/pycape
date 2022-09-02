@@ -8,7 +8,7 @@ Welcome to PyCape's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Overview Docs
+   :caption: Overview
 
    pycape-readme
    walkthrough

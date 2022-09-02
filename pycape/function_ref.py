@@ -31,7 +31,21 @@ class FunctionAuthType(enum.Enum):
 
 
 class FunctionRef:
-    """A structured reference to a Cape function."""
+    """A structured reference to a Cape function.
+
+    Args:
+        id: Required string denoting the function ID of the deployed Cape
+            function. This is typically given in the output of the Cape CLI's
+            `deploy` command.
+        hash: Optional string denoting the function hash of the deployed
+            Cape function. If supplied, the Cape client will attempt to verify that
+            enclave responses include a matching function hash whenever this
+            :class:`~.FunctionRef` is included in Cape requests.
+        token: Optional string containing a Cape function token generated
+            by the Cape CLI during `cape token`. If None, the Cape access token
+            provided to :class:`.Cape` will be used by :meth:`.Cape.connect` /
+            :meth:`.Cape.run` instead.
+    """
 
     def __init__(
         self,
@@ -39,21 +53,6 @@ class FunctionRef:
         hash: Optional[str] = None,
         token: Optional[str] = None,
     ):
-        """Instantiate a FunctionRef.
-
-        Args:
-            id: Required string denoting the function ID of the deployed Cape
-                function. This is typically given in the output of the Cape CLI's
-                `deploy` command.
-            hash: Optional string denoting the function hash of the deployed
-                Cape function. If supplied, the Cape client will attempt to verify that
-                enclave responses include a matching function hash whenever this
-                :class:`~.FunctionRef` is included in Cape requests.
-            token: Optional string containing a Cape function token generated
-                by the Cape CLI during `cape token`. If None, the Cape access token
-                provided to :class:`.Cape` will be used by :meth:`.Cape.connect` /
-                :meth:`.Cape.run` instead.
-        """
         id_ = id
         hash_ = hash
         if id_ is None:

@@ -147,4 +147,4 @@ print(f"The mean is equal to: {result}")
 cape.close()
 ```
 
-In fact, the `Cape.run` that we used before is simply a convenienc function rolling these three commands into one: `Cape.run` = `Cape.connect` + `Cape.invoke` + `Cape.close`.
+In fact, the `Cape.run` that we used before is simply a convenience function rolling these three commands into one: `Cape.run` = `Cape.connect` + `Cape.invoke` + `Cape.close`.

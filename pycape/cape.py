@@ -56,6 +56,15 @@ class Cape:
 
     This is the main interface for interacting with Cape functions from Python.
     See module documentation for usage example.
+
+    Args:
+        url: The Cape platform websocket URL, which is responsible for forwarding
+            client requests to the proper enclave instances.
+        access_token: Optional string containing a Cape access token generated
+            by the Cape CLI during `cape login`. If None, tries to load the access
+            token from a JSON at "$HOME/.config/cape/auth" (or OS-equivalent path).
+        verbose: Boolean controlling verbose logging for the "pycape" logger.
+            If True, sets log-level to DEBUG.
     """
 
     def __init__(
@@ -64,17 +73,6 @@ class Cape:
         access_token: Optional[str] = None,
         verbose: bool = False,
     ):
-        """Cape client constructor.
-
-        Args:
-            url: The Cape platform websocket URL, which is responsible for forwarding
-                client requests to the proper enclave instances.
-            access_token: Optional string containing a Cape access token generated
-                by the Cape CLI during `cape login`. If None, tries to load the access
-                token from a JSON at "$HOME/.config/cape/auth" (or OS-equivalent path).
-            verbose: Boolean controlling verbose logging for the "pycape" logger.
-                If True, sets log-level to DEBUG.
-        """
         self._url = url
         if access_token is None:
             cape_auth_path = _CAPE_CONFIG_PATH / "auth"
