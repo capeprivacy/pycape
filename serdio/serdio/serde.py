@@ -1,7 +1,7 @@
 """The Serdio serialization and deserialization implementation.
 
 The ``serdio.serde`` spec is an extension of MessagePack that can handle some extra
-Python types, while also allowing users to supply their own hooks fo seamless
+Python types, while also allowing users to supply their own hooks for seamless
 encoding/decoding of user-defined types.
 
 **Usage** ::
@@ -131,7 +131,7 @@ def serialize(*args, encoder: Callable = None, **kwargs) -> bytes:
     Args:
         *args: Arguments to pass to serialize, e.g.: input object to serialize
         encoder: Optional callable specifying MessagePack encoder for user-defined
-            types. See :class:`.SerdioHookBundle` for details.
+            types. See :class:`.SerdeHookBundle` for details.
         kwargs: Keyword arguments to serialize
 
     Returns:
@@ -165,7 +165,7 @@ def deserialize(
     Args:
         serdio_bytes: Byte array to deserialize.
         decoder: Optional callable specifying Messagepack decoder for user-defined
-            types. See :class:`.SerdioHookBundle` for details.
+            types. See :class:`.SerdeHookBundle` for details.
         as_signature: Optional boolean determining return format. If True, unpack the
             serialized byte array into an ``args`` tuple and a ``kwargs`` dictionary.
             This argument is most useful when the user is trying to serialize the
@@ -215,10 +215,10 @@ class SerdeHookBundle:
     values.
 
     Args:
-        encoder_hook: An encoder function specifying how :func:`.serdio.serd.serialize`
+        encoder_hook: An encoder function specifying how :func:`.serdio.serde.serialize`
             should break down any custom types into Python native types.
         decoder_hook: The inverse of ``encoder_hook``, specifying how
-            :func:`.serdio.serd.deserialize` should re-assemble the ``encoder_hook``
+            :func:`.serdio.serde.deserialize` should re-assemble the ``encoder_hook``
             output into user-defined types.
     """
 
