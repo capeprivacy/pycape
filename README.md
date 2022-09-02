@@ -43,7 +43,7 @@ Before running a function, you need to first get an access token with the [Cape 
 
 ### `run`
 
-Run is used to invoke a function once with a single input. A connection to a Cape function is created, then terminated upon completion (no set up or tear down is required). If you wish to invoke the same function multiple times without terminating the connection between calls, please see [invoke](https://github.com/capeprivacy/pycape/#invoke). If the `function_hash` attribute is None, then verification of the function hash will not occur. It is encouraged to always provide the function hash for better security. By default, inputs and outputs are expected to be bytes.
+Run is used to invoke a function once with a single input. A connection to a Cape function is created, then terminated upon completion (no set up or tear down is required). If you wish to invoke the same function multiple times without terminating the connection between calls, please see [invoke](#invoke). If the `function_hash` attribute is None, then verification of the function hash will not occur. It is encouraged to always provide the function hash for better security. By default, inputs and outputs are expected to be bytes.
 
 > Note: You can optionally can use [Serdio](https://github.com/capeprivacy/pycape/tree/main/serdio) to help with serialization and deserialization of inputs and outputs. To learn more, please check out [this example](https://github.com/capeprivacy/pycape/tree/main/examples#mean-running-functions-on-python-types).
 
