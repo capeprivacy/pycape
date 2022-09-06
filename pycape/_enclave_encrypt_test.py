@@ -3,11 +3,11 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding
 
-from pycape.attestation import parse_attestation
-from pycape.attestation_test import create_attestation_doc
-from pycape.attestation_test import create_certs
-from pycape.attestation_test import create_cose_1_sign_msg
-from pycape.enclave_encrypt import encrypt
+from pycape._attestation import parse_attestation
+from pycape._attestation_test import create_attestation_doc
+from pycape._attestation_test import create_certs
+from pycape._attestation_test import create_cose_1_sign_msg
+from pycape._enclave_encrypt import encrypt
 
 
 class TestEnclaveEncryption:

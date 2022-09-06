@@ -36,8 +36,7 @@ def parse_attestation(attestation, root_cert):
     payload = cbor2.loads(attestation)
     doc = cbor2.loads(payload[2])
     _check_wellformed_attestation(
-        doc,
-        expected_keys=["certificate", "cabundle", "public_key"],
+        doc, expected_keys=["certificate", "cabundle", "public_key"],
     )
     doc_cert = doc["certificate"]
     cabundle = doc["cabundle"]

@@ -39,8 +39,8 @@ from typing import Union
 import websockets
 
 import serdio
-from pycape import attestation as attest
-from pycape import enclave_encrypt
+from pycape import _attestation as attest
+from pycape import _enclave_encrypt as enclave_encrypt
 from pycape import function_ref as fref
 
 _CAPE_CONFIG_PATH = pathlib.Path.home() / ".config" / "cape"
