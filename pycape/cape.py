@@ -25,12 +25,15 @@ deploying it from the CLI.
 import asyncio
 import base64
 import contextlib
+import hashlib
+import io
 import json
 import logging
 import os
 import pathlib
 import random
 import ssl
+import zipfile
 from typing import Any
 from typing import Optional
 from typing import Union
@@ -112,6 +115,12 @@ class Cape:
         """
         function_ref = _convert_to_function_ref(function_ref)
         self._loop.run_until_complete(self._connect(function_ref))
+
+    def deploy(self, function_path) -> fref.FunctionRef:
+        """Deploy function to an enclave"""
+        function_path = pathlib.Path(function_path)
+
+        return self._loop.run_until_complete(self._deploy(function_path))
 
     @contextlib.contextmanager
     def function_context(self, function_ref: Union[str, fref.FunctionRef]):
@@ -325,6 +334,29 @@ class Cape:
     async def _close(self):
         await self._ctx.close()
 
+    async def _deploy(self, function_path):
+        zipped_function = _prepare_deployment_folder(function_path)
+        checksum = hashlib.sha256()
+        checksum.update(zipped_function)
+
+        fn_endpoint = f"{self._url}/v1/deploy"
+
+        self._root_cert = self._root_cert or attest.download_root_cert()
+        self._ctx = _EnclaveContext(
+            endpoint=fn_endpoint,
+            auth_protocol="cape.runtime",
+            auth_token=self._auth_token,
+            root_cert=self._root_cert,
+        )
+
+        await self._ctx.bootstrap()
+        await self._ctx.send_func_token_public_key()
+
+        deploy_response = await self._ctx.deploy(zipped_function)
+        return fref.FunctionRef(
+            id=deploy_response.get("id"), checksum=checksum.hexdigest()
+        )
+
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and/or kwargs are supplied to the Cape function through
         # Cape.run or Cape.invoke, before serialization, we pack them
@@ -414,7 +446,7 @@ class _EnclaveContext:
 
     async def authenticate(self):
         nonce = _generate_nonce()
-        request = _create_connection_request(nonce)
+        request = _create_connection_request(nonce, self._auth_token)
         logger.debug("\n> Sending authentication request...")
         await self._websocket.send(request)
         logger.debug("* Waiting for attestation document...")
@@ -449,8 +481,83 @@ class _EnclaveContext:
         await self._websocket.send(input_ciphertext)
         invoke_response = await self._websocket.recv()
         logger.debug("< Received function results")
-
         return _parse_wss_response(invoke_response)
+
+
+class _DeployContext:
+    """A context managing a connection to a particular enclave instance."""
+
+    def __init__(self, cape_url, auth_protocol, auth_token, root_cert):
+        self._endpoint = f"{cape_url}/v1/deploy"
+        self._auth_token = auth_token
+        self._auth_protocol = auth_protocol
+        self._root_cert = root_cert
+        ssl_ctx = ssl.create_default_context()
+        if _DISABLE_SSL:
+            ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl.CERT_NONE
+        self._ssl_ctx = ssl_ctx
+
+        # state to be explicitly created/destroyed by callers via bootstrap/close
+        self._websocket = None
+        self._public_key = None
+
+    async def invoke(self, inputs: bytes) -> bytes:
+        hash256 = hashlib.new("sha256")
+        hash256.update(inputs)
+        plaintext = hash256.digest()
+        print(plaintext)
+
+        input_ciphertext = enclave_encrypt.encrypt(self._public_key, plaintext)
+        logger.debug("> Sending encrypted inputs")
+        await self._websocket.send(input_ciphertext)
+        invoke_response = await self._websocket.recv()
+        print(invoke_response)
+
+    async def deploy(self, inputs: bytes) -> bytes:
+        input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
+        logger.debug("> Sending encrypted function")
+
+        await self._websocket.send(input_ciphertext)
+        deploy_response = await self._websocket.recv()
+        logger.debug("< Received function id")
+        return _parse_wss_response(deploy_response, inner_msg=False)
+
+    async def bootstrap(self):
+        logger.debug(f"* Dialing {self._endpoint}")
+        self._websocket = await websockets.connect(
+            self._endpoint,
+            ssl=self._ssl_ctx,
+            subprotocols=[self._auth_protocol, self._auth_token],
+            max_size=None,
+        )
+        logger.debug("* Websocket connection established")
+
+        auth_response = await self.authenticate()
+        attestation_doc = attest.parse_attestation(auth_response, self._root_cert)
+        self._public_key = attestation_doc["public_key"]
+
+        return attestation_doc
+
+    async def authenticate(self):
+        nonce = _generate_nonce()
+        request = _create_connection_request(nonce)
+        logger.debug("\n> Sending authentication request...")
+        await self._websocket.send(request)
+        logger.debug("* Waiting for attestation document...")
+        msg = await self._websocket.recv()
+        logger.debug("< Auth completed. Received attestation document.")
+        return _parse_wss_response(msg)
+
+    async def close(self):
+        await self._websocket.close()
+        self._public_key = None
+
+    async def send_func_token_public_key(self):
+
+        public_key_pem = _get_func_token_public_key_pem()
+
+        await self._websocket.send(json.dumps({"function_token_pk": public_key_pem}))
 
 
 # TODO What should be the length?
@@ -463,15 +570,15 @@ def _generate_nonce(length=8):
     return nonce
 
 
-def _create_connection_request(nonce):
+def _create_connection_request(nonce, token):
     """
     Returns a json string with nonce
     """
-    request = {"message": {"nonce": nonce}}
+    request = {"message": {"nonce": nonce, "auth_token": token}}
     return json.dumps(request)
 
 
-def _parse_wss_response(response):
+def _parse_wss_response(response, inner_msg=True):
     """
     Returns the inner message field received in a WebSocket message from enclave
     """
@@ -483,14 +590,17 @@ def _parse_wss_response(response):
         "message",
         fallback_err="Missing 'message' field in websocket response.",
     )
-    inner_msg = _handle_expected_field(
-        response_msg,
-        "message",
-        fallback_err=(
-            "Malformed websocket response contents: missing inner 'message' field."
-        ),
-    )
-    return base64.b64decode(inner_msg)
+    if inner_msg:
+        inner_msg = _handle_expected_field(
+            response_msg,
+            "message",
+            fallback_err=(
+                "Malformed websocket response contents: missing inner 'message' field."
+            ),
+        )
+        return base64.b64decode(inner_msg)
+    else:
+        return response_msg
 
 
 def _handle_default_auth(auth_path: pathlib.Path):
@@ -551,3 +661,51 @@ async def _persist_cape_key(cape_key, key_path: pathlib.Path):
     key_path.parent.mkdir(parents=True, exist_ok=True)
     with open(key_path, "w") as f:
         f.write(cape_key)
+
+
+def _prepare_deployment_folder(folder_path):
+    if folder_path.is_dir():
+        zipped_function, folder_size = _make_zipfile(folder_path)
+    elif folder_path.suffix == ".zip":
+        folder_size = _get_zip_size(folder_path)
+        with open(folder_path, "rb") as z:
+            zipped_function = z.read()
+    else:
+        raise RuntimeError(
+            f"Your deployment path ({folder_path}) should point"
+            "to a folder or a zip file containing your function (app.py)"
+        )
+
+    if folder_size > cape_config.STORED_FUNCTION_MAX_BYTES:
+        raise RuntimeError(
+            f"Deployment folder size ({folder_size} bytes) exceeds size "
+            "limit of {cape_config.STORED_FUNCTION_MAX_BYTES} bytes"
+        )
+    return zipped_function
+
+
+def _make_zipfile(folder_path):
+    folder_size = 0
+    if not zipfile.is_zipfile(folder_path):
+        zipped_function = io.BytesIO()
+        with zipfile.ZipFile(zipped_function, "w") as z:
+            for folder_name, _, filenames in os.walk(folder_path):
+                for filename in filenames:
+                    filepath = os.path.join(folder_name, filename)
+                    z.write(filepath, filepath)
+                    folder_size += os.path.getsize(filepath)
+    return zipped_function.getvalue(), folder_size
+
+
+def _get_zip_size(zip_path):
+    z = zipfile.ZipFile(zip_path)
+    z_size = sum([zinfo.file_size for zinfo in z.filelist])
+    return z_size
+
+
+def _get_func_token_public_key_pem():
+    pem_file = pathlib.Path(cape_config.LOCAL_CONFIG_DIR) / "token.pub.pem"
+    with open(pem_file, "r") as f:
+        public_key_pem = f.read()
+
+    return public_key_pem

@@ -11,6 +11,7 @@ _CAPE_ENVVAR_DEFAULTS = {
     "LOCAL_AUTH_FILENAME": "auth",
     "LOCAL_CAPE_KEY_FILENAME": "capekey.pub.der",
     "LOCAL_CONFIG_DIR": str(pathlib.Path.home() / ".config" / "cape"),
+    "STORED_FUNCTION_MAX_BYTES": 1000000000,
 }
 
 
