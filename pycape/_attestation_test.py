@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import NameOID
 
-from pycape import attestation as attest
+from pycape import _attestation as attest
 
 
 class TestAttestation:
