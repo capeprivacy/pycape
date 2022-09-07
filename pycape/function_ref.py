@@ -47,7 +47,10 @@ class FunctionRef:
     """
 
     def __init__(
-        self, id: str, hash: Optional[str] = None, token: Optional[str] = None,
+        self,
+        id: str,
+        hash: Optional[str] = None,
+        token: Optional[str] = None,
     ):
         id_ = id
         hash_ = hash

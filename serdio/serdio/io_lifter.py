@@ -104,7 +104,9 @@ class IOLifter:
     """
 
     def __init__(
-        self, f: Callable, hook_bundle: Optional[serde.SerdeHookBundle],
+        self,
+        f: Callable,
+        hook_bundle: Optional[serde.SerdeHookBundle],
     ):
         self._func = f
         self._hook_bundle = hook_bundle
