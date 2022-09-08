@@ -53,11 +53,10 @@ class FunctionRef:
         token: Optional[str] = None,
     ):
         id_ = id
-        checksum_ = checksum
         if not isinstance(id_, str):
             raise TypeError(f"Function id must be a string, found {type(id_)}.")
         self._id = id_
-        self._checksum = checksum_
+        self._checksum = checksum
         self._token = token
         if token is None:
             self.set_auth_type(FunctionAuthType.AUTH0)
