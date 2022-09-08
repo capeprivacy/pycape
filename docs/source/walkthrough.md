@@ -42,13 +42,13 @@ Then deploy this folder by calling `cape deploy mean`, per the [“Deploying Fun
 
 ### Running our first function
 
-Once we’ve deployed the Cape function successfully, we’ll have a function ID and hash that we can use to reference it elsewhere. We'll use this reference to call the function from PyCape as follows:
+Once we’ve deployed the Cape function successfully, we’ll have a function ID and checksum that we can use to reference it elsewhere. We'll use this reference to call the function from PyCape as follows:
 
 ```python
 cape = Cape()
 function_id = "4akLQwrqydyXYdyqn9qpSK"
-function_hash = "8d3559c4d22df470be639aedbbb32c0857d3aca45c78e98be24c8a31fe051f75"
-function_ref = FunctionRef(function_id, function_hash)
+checksum = "8d3559c4d22df470be639aedbbb32c0857d3aca45c78e98be24c8a31fe051f75"
+function_ref = FunctionRef(function_id, checksum)
 x_bytes = json.dumps([1, 2, 3, 4]).encode()
 result_bytes = cape.run(function_ref, x_bytes)
 print("Mean of x is:", json.loads(result_bytes.decode()))
@@ -97,7 +97,7 @@ pip install serdio --target mean/
 For more complicated Python dependencies that include C extension modules, this step will download and/or compile platform- and architecture-specific binaries. Therefore, running the installation step inside a Docker container like `python:3.9-slim-bullseye` is heavily recommended by the [third-party dependency guide](https://docs.capeprivacy.com/reference/functions#adding-3rd-party-dependencies).
 ```
 
-Finally, re-deploy this code with `cape deploy mean`, and make note of the function ID and hash.
+Finally, re-deploy this code with `cape deploy mean`, and make note of the function ID and checksum.
 
 ### Running Mean v2 with PyCape
 
@@ -105,8 +105,8 @@ After re-deploying this code, we can call it from PyCape like we did before.
 ```python
 cape = Cape(url=url)
 function_id = "iHWCTH2hWZ9tUAhAnQpwWL"
-function_hash = "8f0cf0cc7d4c6bdd6459d0be9cb090668f80f6a1313d3f4cfb97efb8ba80d6cb"
-function_ref = FunctionRef(function_id, function_hash)
+checksum = "8f0cf0cc7d4c6bdd6459d0be9cb090668f80f6a1313d3f4cfb97efb8ba80d6cb"
+function_ref = FunctionRef(function_id, checksum)
 x = [1, 2, 3, 4]
 result = cape.run(function_ref, x, use_serdio=True)
 print(f"The mean of x is: {result}")
@@ -122,8 +122,8 @@ If we want to invoke the same Cape function more than once in a Python applicati
 ```python
 cape = Cape(url=url)
 function_id = "iHWCTH2hWZ9tUAhAnQpwWL"
-function_hash = "8f0cf0cc7d4c6bdd6459d0be9cb090668f80f6a1313d3f4cfb97efb8ba80d6cb"
-function_ref = FunctionRef(function_id, function_hash)
+checksum = "8f0cf0cc7d4c6bdd6459d0be9cb090668f80f6a1313d3f4cfb97efb8ba80d6cb"
+function_ref = FunctionRef(function_id, checksum)
 cape.connect(function_ref)
 low_list = [1, 2, 3, 4]
 result = cape.invoke(low_list, use_serdio=True)

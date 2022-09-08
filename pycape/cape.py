@@ -105,7 +105,7 @@ class Cape:
 
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
-                malformed, or if the enclave fails to return a function hash matching
+                malformed, or if the enclave fails to return a checksum matching
                 our own.
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
@@ -141,7 +141,7 @@ class Cape:
 
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
-                malformed, or if the enclave fails to return a function hash matching
+                malformed, or if the enclave fails to return a checksum matching
                 our own.
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
@@ -267,25 +267,25 @@ class Cape:
         attestation_doc = await self._ctx.bootstrap()
 
         user_data = attestation_doc.get("user_data")
-        function_hash = function_ref.hash
-        if function_hash is not None and user_data is None:
+        checksum = function_ref.checksum
+        if checksum is not None and user_data is None:
             # Close the connection explicitly before throwing exception
             await self._ctx.close()
             raise RuntimeError(
-                f"No function hash received from enclave, expected{function_hash}."
+                f"No checksum received from enclave, expected{checksum}."
             )
 
         user_data_dict = json.loads(user_data)
-        received_hash = user_data_dict.get("func_hash")
-        if function_hash is not None:
-            # Function hash is hex encoded, we manipulate it to string for comparison
-            received_hash = str(base64.b64decode(received_hash).hex())
-            if str(function_hash) != str(received_hash):
+        received_checksum = user_data_dict.get("func_hash")
+        if checksum is not None:
+            # Checksum is hex encoded, we manipulate it to string for comparison
+            received_checksum = str(base64.b64decode(received_checksum).hex())
+            if str(checksum) != str(received_checksum):
                 # Close the connection explicitly before throwing exception
                 await self._ctx.close()
                 raise RuntimeError(
-                    "Returned function hash did not match provided, "
-                    f"got: {received_hash}, want: {function_hash}."
+                    "Returned checksum did not match provided, "
+                    f"got: {received_checksum}, want: {checksum}."
                 )
         return
 

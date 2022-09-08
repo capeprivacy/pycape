@@ -7,12 +7,12 @@ if __name__ == "__main__":
     token = os.environ.get("CAPE_TOKEN", None)
     url = os.environ.get("CAPE_HOST", "wss://enclave.capeprivacy.com")
     function_id = os.environ.get("CAPE_FUNCTION_ID", "VNgMtygWv8wCwwjbbQ2kH6")
-    function_hash = os.environ.get("CAPE_FUNCTION_HASH", None)
+    checksum = os.environ.get("CAPE_CHECKSUM", None)
 
-    if function_hash is None:
+    if checksum is None:
         function_ref = function_id
     else:
-        function_ref = FunctionRef(function_id, function_hash)
+        function_ref = FunctionRef(function_id, checksum)
 
     cape = Cape(url=url, access_token=token)
 
