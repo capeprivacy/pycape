@@ -31,7 +31,6 @@ import os
 import pathlib
 import random
 import ssl
-import weakref
 from typing import Any
 from typing import Optional
 from typing import Union
@@ -346,7 +345,7 @@ class _EnclaveContext:
         self._endpoint = f"{cape_url}/v1/run/{function_id}"
         self._auth_token = auth_token
         self._auth_protocol = auth_protocol
-        self._root_cert = weakref.ref(root_cert)
+        self._root_cert = root_cert
         ssl_ctx = ssl.create_default_context()
         if _DISABLE_SSL:
             ssl_ctx.check_hostname = False
