@@ -9,12 +9,12 @@ if __name__ == "__main__":
     function_id = os.environ.get(
         "CAPE_FUNCTION_ID", "e4c2a674-9c7f-42d3-8ade-63791c16c3c7"
     )
-    function_hash = os.environ.get("CAPE_FUNCTION_HASH", None)
+    checksum = os.environ.get("CAPE_CHECKSUM", None)
 
-    if function_hash is None:
+    if checksum is None:
         function_ref = function_id
     else:
-        function_ref = FunctionRef(function_id, function_hash)
+        function_ref = FunctionRef(function_id, checksum)
 
     cape = Cape(url=url, access_token=token)
 
