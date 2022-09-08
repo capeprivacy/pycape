@@ -73,7 +73,7 @@ class Cape:
         self._url = url or cape_config.ENCLAVE_HOST
         if access_token is None:
             config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
-            cape_auth_path = config_dir / "auth"
+            cape_auth_path = config_dir / cape_config.LOCAL_AUTH_FILENAME
             access_token = _handle_default_auth(cape_auth_path)
         self._auth_token = access_token
         self._root_cert = None
