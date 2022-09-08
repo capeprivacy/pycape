@@ -27,6 +27,7 @@ import base64
 import contextlib
 import json
 import logging
+import os
 import pathlib
 import random
 import ssl
@@ -193,6 +194,39 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
+    def key(self, key_path: Optional[Union[str, os.PathLike]] = None):
+        """Load a Cape key from disk or download and persist an enclave-generated one.
+
+        Args:
+            key_path: The path to the Cape key file. If the file already exists, the key
+                will be read from disk and returned. Otherwise, a Cape key will be
+                requested from the Cape platform and written to this location.
+                If None, the default path is ``"$HOME/.config/cape/capekey.pub.der"``,
+                or alternatively whatever path is specified by expanding the env
+                variables ``CAPE_LOCAL_CONFIG_DIR / CAPE_LOCAL_CAPE_KEY_FILENAME``.
+
+        Returns:
+            A string containing the Cape key. The key is also cached on disk for later
+            use.
+
+        Raises:
+            RuntimeError: if the enclave attestation doc does not contain a Cape key,
+                if the websocket response or the attestation doc is malformed.
+            Exception: if the enclave threw an error while trying to fulfill the
+                connection request.
+        """
+        if key_path is None:
+            config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
+            key_path = config_dir / cape_config.LOCAL_CAPE_KEY_FILENAME
+        else:
+            key_path = pathlib.Path(key_path)
+        if key_path.exists():
+            with open(key_path, "r") as f:
+                cape_key = f.read()
+        else:
+            cape_key = self._loop.run_until_complete(self._key(key_path))
+        return cape_key
+
     def run(
         self,
         function_ref: Union[str, fref.FunctionRef],
@@ -329,6 +363,27 @@ class Cape:
             result = serdio.deserialize(result, decoder=decoder_hook)
 
         return result
+
+    async def _key(self, key_path: pathlib.Path):
+        key_endpoint = f"{self._url}/v1/key"
+        auth_protocol = fref.get_auth_protocol(fref.FunctionAuthType.AUTH0)
+        self._root_cert = self._root_cert or attest.download_root_cert()
+        key_ctx = _EnclaveContext(
+            key_endpoint,
+            auth_protocol=auth_protocol,
+            auth_token=self._auth_token,
+            root_cert=self._root_cert,
+        )
+        attestation_doc = await key_ctx.bootstrap()
+        await key_ctx.close()  # we have the attestation doc, no longer any need for ctx
+        user_data = attestation_doc.get("user_data")
+        cape_key = user_data.get("cape_key")
+        if cape_key is None:
+            raise RuntimeError(
+                "Enclave response did not include a Cape key in attestation user data."
+            )
+        await _persist_cape_key(cape_key, key_path)
+        return cape_key
 
     async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
         await self._connect(function_ref)
@@ -489,3 +544,9 @@ def _maybe_get_single_input(args, kwargs):
         return args[0]
     elif single_kwarg:
         return kwargs.items()[0][1]
+
+
+async def _persist_cape_key(cape_key, key_path: pathlib.Path):
+    key_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(key_path, "w") as f:
+        f.write(cape_key)
