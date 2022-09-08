@@ -30,6 +30,16 @@ class FunctionAuthType(enum.Enum):
     TOKEN = 2
 
 
+def get_auth_protocol(auth_type: FunctionAuthType):
+    if not isinstance(auth_type, FunctionAuthType):
+        raise TypeError(f"Expected FunctionAuthType, found {type(auth_type)}.")
+    if auth_type == FunctionAuthType.AUTH0:
+        return "cape.runtime"
+    elif auth_type == FunctionAuthType.TOKEN:
+        return "cape.function"
+    raise ValueError(f"Unrecognized FunctionAuthType variant: {auth_type}.")
+
+
 class FunctionRef:
     """A reference to a Cape function.
 
@@ -86,7 +96,4 @@ class FunctionRef:
     def set_auth_type(self, auth_type: FunctionAuthType):
         """Set the :class:`FunctionAuthType` for :attr:`token`."""
         self._auth_type = auth_type
-        if auth_type == FunctionAuthType.AUTH0:
-            self._auth_protocol = "cape.runtime"
-        else:
-            self._auth_protocol = "cape.function"
+        self._auth_protocol = get_auth_protocol(auth_type)
