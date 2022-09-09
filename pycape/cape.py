@@ -377,7 +377,8 @@ class Cape:
         attestation_doc = await key_ctx.bootstrap()
         await key_ctx.close()  # we have the attestation doc, no longer any need for ctx
         user_data = attestation_doc.get("user_data")
-        cape_key = user_data.get("cape_key")
+        user_data_dict = json.loads(user_data)
+        cape_key = user_data_dict.get("key")
         if cape_key is None:
             raise RuntimeError(
                 "Enclave response did not include a Cape key in attestation user data."
