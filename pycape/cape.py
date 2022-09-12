@@ -41,6 +41,7 @@ import serdio
 from pycape import _attestation as attest
 from pycape import _config as cape_config
 from pycape import _enclave_encrypt as enclave_encrypt
+from pycape import cape_encrypt
 from pycape import function_ref as fref
 
 logging.basicConfig(format="%(message)s")
@@ -112,6 +113,18 @@ class Cape:
         """
         function_ref = _convert_to_function_ref(function_ref)
         self._loop.run_until_complete(self._connect(function_ref))
+
+    def encrypt(
+        self,
+        message: bytes,
+        key: Optional[str] = None,
+        key_path: Optional[Union[str, os.PathLike]] = None,
+    ):
+        cape_key = key or self.key(key_path)
+        ctxt = cape_encrypt.encrypt(message, cape_key.encode())
+        # cape-encrypted ctxt must be b64-encoded and tagged
+        ctxt = base64.b64encode(ctxt)
+        return f"cape:{str(ctxt)}"
 
     @contextlib.contextmanager
     def function_context(self, function_ref: Union[str, fref.FunctionRef]):
@@ -194,7 +207,7 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def key(self, key_path: Optional[Union[str, os.PathLike]] = None):
+    def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> str:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
         Args:
