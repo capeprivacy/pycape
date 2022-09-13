@@ -41,6 +41,7 @@ import serdio
 from pycape import _attestation as attest
 from pycape import _config as cape_config
 from pycape import _enclave_encrypt as enclave_encrypt
+from pycape import cape_encrypt
 from pycape import function_ref as fref
 
 logging.basicConfig(format="%(message)s")
@@ -112,6 +113,47 @@ class Cape:
         """
         function_ref = _convert_to_function_ref(function_ref)
         self._loop.run_until_complete(self._connect(function_ref))
+
+    def encrypt(
+        self,
+        input: bytes,
+        key: Optional[bytes] = None,
+        key_path: Optional[Union[str, os.PathLike]] = None,
+    ) -> bytes:
+        """Encrypts inputs to Cape functions in Cape's encryption format.
+
+        The encrypted value can be used as input to Cape handlers by other callers of
+        :meth:`~Cape.invoke` or :meth:`~Cape.run` without giving them plaintext access
+        to it. The core encryption functionality uses envelope encryption; the value is
+        AES-encrypted with an ephemeral AES key, which is itself encrypted with the Cape
+        user's assigned RSA public key. The corresponding RSA private key is only
+        accessible from within a Cape enclave, which guarantees secrecy of the encrypted
+        value. See the Cape encrypt docs for further detail.
+
+        Args:
+            input: Input bytes to encrypt.
+            key: Optional bytes for the Cape key. If None, will delegate to calling
+                :meth:`Cape.key` w/ the given ``key_path`` to retrieve the user's Cape
+                key.
+            key_path: Optional path to a locally-cached Cape key. Used to call
+                :meth:`Cape.key` when an explicit ``key`` argument is not provided.
+
+        Returns:
+            Tagged ciphertext representing a base64-encoded Cape encryption of the
+            ``input``.
+
+        Raises:
+            ValueError: if Cape key is not a properly-formatted RSA public key.
+            RuntimeError: if the enclave attestation doc does not contain a Cape key,
+                if the websocket response or the attestation doc is malformed.
+            Exception: if the enclave threw an error while trying to fulfill the
+                connection request.
+        """
+        cape_key = key or self.key(key_path)
+        ctxt = cape_encrypt.encrypt(input, cape_key)
+        # cape-encrypted ctxt must be b64-encoded and tagged
+        ctxt = base64.b64encode(ctxt)
+        return b"cape:" + ctxt
 
     @contextlib.contextmanager
     def function_context(self, function_ref: Union[str, fref.FunctionRef]):
@@ -194,7 +236,7 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def key(self, key_path: Optional[Union[str, os.PathLike]] = None):
+    def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
         Args:
@@ -206,7 +248,7 @@ class Cape:
                 variables ``CAPE_LOCAL_CONFIG_DIR / CAPE_LOCAL_CAPE_KEY_FILENAME``.
 
         Returns:
-            A string containing the Cape key. The key is also cached on disk for later
+            Bytes containing the Cape key. The key is also cached on disk for later
             use.
 
         Raises:
@@ -221,7 +263,7 @@ class Cape:
         else:
             key_path = pathlib.Path(key_path)
         if key_path.exists():
-            with open(key_path, "r") as f:
+            with open(key_path, "rb") as f:
                 cape_key = f.read()
         else:
             cape_key = self._loop.run_until_complete(self._key(key_path))
@@ -364,7 +406,7 @@ class Cape:
 
         return result
 
-    async def _key(self, key_path: pathlib.Path):
+    async def _key(self, key_path: pathlib.Path) -> bytes:
         key_endpoint = f"{self._url}/v1/key"
         auth_protocol = fref.get_auth_protocol(fref.FunctionAuthType.AUTH0)
         self._root_cert = self._root_cert or attest.download_root_cert()
@@ -383,6 +425,7 @@ class Cape:
             raise RuntimeError(
                 "Enclave response did not include a Cape key in attestation user data."
             )
+        cape_key = base64.b64decode(cape_key)
         await _persist_cape_key(cape_key, key_path)
         return cape_key
 
@@ -547,7 +590,7 @@ def _maybe_get_single_input(args, kwargs):
         return kwargs.items()[0][1]
 
 
-async def _persist_cape_key(cape_key, key_path: pathlib.Path):
+async def _persist_cape_key(cape_key: str, key_path: pathlib.Path):
     key_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(key_path, "w") as f:
+    with open(key_path, "wb") as f:
         f.write(cape_key)

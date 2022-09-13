@@ -5,7 +5,7 @@ import hybrid_pke
 logger = logging.getLogger("pycape")
 
 
-def encrypt(public_key, input_bytes):
+def encrypt(public_key: bytes, input_bytes: bytes) -> bytes:
     logger.debug("* Encrypting inputs with Hybrid Public Key Encryption (HPKE)")
     hpke = hybrid_pke.default()
     info = b""
