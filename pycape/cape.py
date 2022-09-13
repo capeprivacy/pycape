@@ -44,6 +44,7 @@ import serdio
 from pycape import _attestation as attest
 from pycape import _config as cape_config
 from pycape import _enclave_encrypt as enclave_encrypt
+from pycape import _token as token
 from pycape import cape_encrypt
 from pycape import function_ref as fref
 
@@ -378,8 +379,8 @@ class Cape:
 
     async def _deploy(self, function_path):
         zipped_function = _prepare_deployment_folder(function_path)
-        checksum = hashlib.sha256()
-        checksum.update(zipped_function)
+        function_checksum = hashlib.sha256()
+        function_checksum.update(zipped_function)
 
         fn_endpoint = f"{self._url}/v1/deploy"
 
@@ -392,11 +393,12 @@ class Cape:
         )
 
         await self._ctx.bootstrap()
-        await self._ctx.send_func_token_public_key()
-
+        await self._ctx.send_function_token_public_key()
         deploy_response = await self._ctx.deploy(zipped_function)
+        await self._ctx.close()
+
         return fref.FunctionRef(
-            id=deploy_response.get("id"), checksum=checksum.hexdigest()
+            id=deploy_response.get("id"), checksum=function_checksum.hexdigest()
         )
 
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
@@ -535,11 +537,12 @@ class _EnclaveContext:
         logger.debug("< Received function id")
         return _parse_wss_response(deploy_response, inner_msg=False)
 
-    async def send_func_token_public_key(self):
-        public_key_pem = _get_function_token_public_key_pem()
+    async def send_function_token_public_key(self):
+        public_key_pem = token.get_function_token_public_key_pem()
         await self._websocket.send(
             _create_function_public_token_request(public_key_pem)
         )
+        logger.debug("Send function token public key")
 
 
 # TODO What should be the length?
@@ -684,47 +687,6 @@ def _get_zip_size(zip_path):
     z = zipfile.ZipFile(zip_path)
     z_size = sum([zinfo.file_size for zinfo in z.filelist])
     return z_size
-
-
-def _get_function_token_public_key_pem():
-    pubic_pem_file = pathlib.Path(cape_config.LOCAL_CONFIG_DIR) / "token.pub.pem"
-
-    if not pubic_pem_file.is_file():
-        _ = _generate_rsa_key_pair()
-
-    with open(pubic_pem_file, "r") as f:
-        public_key_pem = f.read()
-
-    return public_key_pem
-
-
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-
-
-def _generate_rsa_key_pair():
-    # Generate key pair
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    public_key = private_key.public_key()
-
-    # Convert private key to PKCS#1
-    pem_private_key = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
-    # Convert public key to SubjectPublicKeyInfo
-    pem_public_key = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    )
-
-    pem_folder = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
-    with open(pem_folder / "token.pem", "wb") as f:
-        f.write(pem_private_key)
-
-    with open(pem_folder / "token.pub.pem", "wb") as f:
-        f.write(pem_public_key)
 
 
 def _create_function_public_token_request(public_key_pem):
