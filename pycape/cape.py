@@ -105,8 +105,8 @@ class Cape:
 
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
-                malformed, or if the enclave fails to return a checksum matching
-                our own.
+                malformed, or if the enclave fails to return a function checksum
+                matching our own.
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
@@ -141,8 +141,8 @@ class Cape:
 
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
-                malformed, or if the enclave fails to return a checksum matching
-                our own.
+                malformed, or if the enclave fails to return a function checksum
+                matching our own.
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
@@ -305,11 +305,11 @@ class Cape:
             # Close the connection explicitly before throwing exception
             await self._ctx.close()
             raise RuntimeError(
-                f"No checksum received from enclave, expected{checksum}."
+                f"No function checksum received from enclave, expected{checksum}."
             )
 
         user_data_dict = json.loads(user_data)
-        received_checksum = user_data_dict.get("func_hash")
+        received_checksum = user_data_dict.get("func_checksum")
         if checksum is not None:
             # Checksum is hex encoded, we manipulate it to string for comparison
             received_checksum = str(base64.b64decode(received_checksum).hex())
