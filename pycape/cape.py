@@ -530,11 +530,11 @@ class _EnclaveContext:
 
     async def deploy(self, inputs: bytes) -> bytes:
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
-        logger.debug("> Sending encrypted function")
 
+        logger.debug("> Deploy encrypted function")
         await self._websocket.send(input_ciphertext)
         deploy_response = await self._websocket.recv()
-        logger.debug("< Received function id")
+        logger.debug("< Received function id and function checksum")
         return _parse_wss_response(deploy_response, inner_msg=False)
 
     async def send_function_token_public_key(self):
@@ -555,14 +555,25 @@ def _generate_nonce(length=8):
     return nonce
 
 
-def _create_connection_request(nonce, token):
+def _create_connection_request(nonce, token=None):
     """
     Returns a json string with nonce
     """
     # TODO Remove auth token from initial request! Added temporarily
-    # because deploy requires it but it's a bug
-    request = {"message": {"nonce": nonce, "auth_token": token}}
+    # because deploy requires it but it's a bug.
+    # https://capeprivacy.atlassian.net/browse/CAPE-979
+    if token:
+        request = {"message": {"nonce": nonce, "auth_token": token}}
+    else:
+        request = {"message": {"nonce": nonce}}
     return json.dumps(request)
+
+
+def _create_function_public_token_request(public_key_pem):
+    """
+    Returns a json string with function token public key
+    """
+    return json.dumps({"message": {"function_token_pk": public_key_pem}})
 
 
 def _parse_wss_response(response, inner_msg=True):
@@ -687,7 +698,3 @@ def _get_zip_size(zip_path):
     z = zipfile.ZipFile(zip_path)
     z_size = sum([zinfo.file_size for zinfo in z.filelist])
     return z_size
-
-
-def _create_function_public_token_request(public_key_pem):
-    return json.dumps({"message": {"function_token_pk": public_key_pem}})
