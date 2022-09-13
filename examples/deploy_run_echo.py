@@ -16,14 +16,14 @@ proc_deploy = subprocess.Popen(
 out_deploy, err_deploy = proc_deploy.communicate()
 err_deploy = err_deploy.decode()
 
-# Parse stderr to get CAPE_FUNCTION_ID and CAPE_CHECKSUM
+# Parse stderr to get function id & function checksum
 err_deploy = err_deploy.split("\n")
 function_id = function_checksum = None
 for i in err_deploy:
     if "Function ID" in i:
         id_output = i.split(" ")
         function_id = id_output[3]
-    elif "Function Checksum" in i:
+    elif "Checksum" in i:
         checksum_output = i.split(" ")
         function_checksum = checksum_output[2]
 
