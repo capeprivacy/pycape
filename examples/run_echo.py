@@ -15,8 +15,6 @@ if __name__ == "__main__":
         function_ref = FunctionRef(function_id, checksum)
 
     cape = Cape(url=url, access_token=token)
-    function_ref = cape.deploy("echo/")
-    # function_ref = cape.deploy("zipped_function.zip")
     input = "Welcome to Cape".encode()
     result = cape.run(function_ref, input)
 

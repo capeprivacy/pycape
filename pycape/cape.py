@@ -483,37 +483,6 @@ class _EnclaveContext:
         logger.debug("< Received function results")
         return _parse_wss_response(invoke_response)
 
-
-class _DeployContext:
-    """A context managing a connection to a particular enclave instance."""
-
-    def __init__(self, cape_url, auth_protocol, auth_token, root_cert):
-        self._endpoint = f"{cape_url}/v1/deploy"
-        self._auth_token = auth_token
-        self._auth_protocol = auth_protocol
-        self._root_cert = root_cert
-        ssl_ctx = ssl.create_default_context()
-        if _DISABLE_SSL:
-            ssl_ctx.check_hostname = False
-            ssl_ctx.verify_mode = ssl.CERT_NONE
-        self._ssl_ctx = ssl_ctx
-
-        # state to be explicitly created/destroyed by callers via bootstrap/close
-        self._websocket = None
-        self._public_key = None
-
-    async def invoke(self, inputs: bytes) -> bytes:
-        hash256 = hashlib.new("sha256")
-        hash256.update(inputs)
-        plaintext = hash256.digest()
-        print(plaintext)
-
-        input_ciphertext = enclave_encrypt.encrypt(self._public_key, plaintext)
-        logger.debug("> Sending encrypted inputs")
-        await self._websocket.send(input_ciphertext)
-        invoke_response = await self._websocket.recv()
-        print(invoke_response)
-
     async def deploy(self, inputs: bytes) -> bytes:
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
         logger.debug("> Sending encrypted function")
@@ -523,40 +492,8 @@ class _DeployContext:
         logger.debug("< Received function id")
         return _parse_wss_response(deploy_response, inner_msg=False)
 
-    async def bootstrap(self):
-        logger.debug(f"* Dialing {self._endpoint}")
-        self._websocket = await websockets.connect(
-            self._endpoint,
-            ssl=self._ssl_ctx,
-            subprotocols=[self._auth_protocol, self._auth_token],
-            max_size=None,
-        )
-        logger.debug("* Websocket connection established")
-
-        auth_response = await self.authenticate()
-        attestation_doc = attest.parse_attestation(auth_response, self._root_cert)
-        self._public_key = attestation_doc["public_key"]
-
-        return attestation_doc
-
-    async def authenticate(self):
-        nonce = _generate_nonce()
-        request = _create_connection_request(nonce)
-        logger.debug("\n> Sending authentication request...")
-        await self._websocket.send(request)
-        logger.debug("* Waiting for attestation document...")
-        msg = await self._websocket.recv()
-        logger.debug("< Auth completed. Received attestation document.")
-        return _parse_wss_response(msg)
-
-    async def close(self):
-        await self._websocket.close()
-        self._public_key = None
-
     async def send_func_token_public_key(self):
-
         public_key_pem = _get_func_token_public_key_pem()
-
         await self._websocket.send(json.dumps({"function_token_pk": public_key_pem}))
 
 
@@ -666,7 +603,7 @@ async def _persist_cape_key(cape_key, key_path: pathlib.Path):
 def _prepare_deployment_folder(folder_path):
     if folder_path.is_dir():
         zipped_function, folder_size = _make_zipfile(folder_path)
-    elif folder_path.suffix == ".zip":
+    elif zipfile.is_zipfile(folder_path):
         folder_size = _get_zip_size(folder_path)
         with open(folder_path, "rb") as z:
             zipped_function = z.read()
@@ -686,14 +623,13 @@ def _prepare_deployment_folder(folder_path):
 
 def _make_zipfile(folder_path):
     folder_size = 0
-    if not zipfile.is_zipfile(folder_path):
-        zipped_function = io.BytesIO()
-        with zipfile.ZipFile(zipped_function, "w") as z:
-            for folder_name, _, filenames in os.walk(folder_path):
-                for filename in filenames:
-                    filepath = os.path.join(folder_name, filename)
-                    z.write(filepath, filepath)
-                    folder_size += os.path.getsize(filepath)
+    zipped_function = io.BytesIO()
+    with zipfile.ZipFile(zipped_function, "w") as z:
+        for folder_name, _, filenames in os.walk(folder_path):
+            for filename in filenames:
+                filepath = os.path.join(folder_name, filename)
+                z.write(filepath, filepath)
+                folder_size += os.path.getsize(filepath)
     return zipped_function.getvalue(), folder_size
 
 
