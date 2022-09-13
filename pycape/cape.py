@@ -493,8 +493,10 @@ class _EnclaveContext:
         return _parse_wss_response(deploy_response, inner_msg=False)
 
     async def send_func_token_public_key(self):
-        public_key_pem = _get_func_token_public_key_pem()
-        await self._websocket.send(json.dumps({"function_token_pk": public_key_pem}))
+        public_key_pem = _get_function_token_public_key_pem()
+        await self._websocket.send(
+            _create_function_public_token_request(public_key_pem)
+        )
 
 
 # TODO What should be the length?
@@ -641,9 +643,46 @@ def _get_zip_size(zip_path):
     return z_size
 
 
-def _get_func_token_public_key_pem():
-    pem_file = pathlib.Path(cape_config.LOCAL_CONFIG_DIR) / "token.pub.pem"
-    with open(pem_file, "r") as f:
+def _get_function_token_public_key_pem():
+    pubic_pem_file = pathlib.Path(cape_config.LOCAL_CONFIG_DIR) / "token.pub.pem"
+
+    if not pubic_pem_file.is_file():
+        _ = _generate_rsa_key_pair()
+
+    with open(pubic_pem_file, "r") as f:
         public_key_pem = f.read()
 
     return public_key_pem
+
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
+
+def _generate_rsa_key_pair():
+    # Generate key pair
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_key = private_key.public_key()
+
+    # Convert private key to PKCS#1
+    pem_private_key = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    # Convert public key to SubjectPublicKeyInfo
+    pem_public_key = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+    pem_folder = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
+    with open(pem_folder / "token.pem", "wb") as f:
+        f.write(pem_private_key)
+
+    with open(pem_folder / "token.pub.pem", "wb") as f:
+        f.write(pem_public_key)
+
+
+def _create_function_public_token_request(public_key_pem):
+    return json.dumps({"message": {"function_token_pk": public_key_pem}})
