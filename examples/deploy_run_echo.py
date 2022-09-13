@@ -15,7 +15,7 @@ proc_deploy = subprocess.Popen(
 out_deploy, err_deploy = proc_deploy.communicate()
 err_deploy = err_deploy.decode()
 
-# Parse stderr to get CAPE_FUNCTION_ID and CAPE_CHECKSUM
+# Parse stderr to get CAPE_FUNCTION_ID and CAPE_FUNCTION_CHECKSUM
 err_deploy = err_deploy.split("\n")
 for i in err_deploy:
     if "Function ID" in i:
@@ -23,10 +23,10 @@ for i in err_deploy:
         CAPE_FUNCTION_ID = function_id[3]
     elif "Checksum" in i:
         checksum = i.split(" ")
-        CAPE_CHECKSUM = checksum[2]
+        CAPE_FUNCTION_CHECKSUM = checksum[2]
 
 # Run function
-function_ref = FunctionRef(CAPE_FUNCTION_ID, CAPE_CHECKSUM)
+function_ref = FunctionRef(CAPE_FUNCTION_ID, CAPE_FUNCTION_CHECKSUM)
 cape = Cape(url=CAPE_HOST)
 input = "Welcome to Cape".encode()
 result = cape.run(function_ref, input)
