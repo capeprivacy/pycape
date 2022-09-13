@@ -511,6 +511,8 @@ def _create_connection_request(nonce, token):
     """
     Returns a json string with nonce
     """
+    # TODO Remove auth token from initial request! Added temporarily
+    # because deploy requires it but it's a bug
     request = {"message": {"nonce": nonce, "auth_token": token}}
     return json.dumps(request)
 
