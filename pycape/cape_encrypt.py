@@ -1,3 +1,4 @@
+"""Utility functions supporting the Cape encrypt functionality."""
 import os
 from typing import Tuple
 
@@ -9,6 +10,25 @@ from cryptography.hazmat.primitives.ciphers import aead
 
 
 def encrypt(message: bytes, key: bytes) -> bytes:
+    """Encrypt a ``message`` with a Cape ``key``.
+
+    This function uses envelope encryption. The message is first AES-encrypted with an
+    ephemeral AES key, and then this key is itself encrypted with a given RSA public
+    key.
+
+    Args:
+        message: Bytes to encrypt.
+        key: Bytes representing the Cape key. Needs to be a valid, DEM-encoded RSA
+            public key.
+
+    Returns:
+        Bytes represeting the encryption of ``message``. The bytes are a concatenation
+        of the AES-ciphertext of ``message``, an AES nonce, and the RSA-ciphertext of
+        the AES key.
+
+    Raises:
+        ValueError: if the ``key`` is not a valid DEM-encoded RSA public key.
+    """
     # cape key is DEM-encoded RSA key
     rsa_key = _parse_rsa_key(key)
     # create ephemeral AES key

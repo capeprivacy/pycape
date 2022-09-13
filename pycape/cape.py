@@ -116,12 +116,41 @@ class Cape:
 
     def encrypt(
         self,
-        message: bytes,
+        input: bytes,
         key: Optional[bytes] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
     ) -> bytes:
+        """Encrypts inputs to Cape functions in Cape's encryption format.
+
+        The encrypted value can be used as input to Cape handlers by other callers of
+        :meth:`~Cape.invoke` or :meth:`~Cape.run` without giving them plaintext access
+        to it. The core encryption functionality uses envelope encryption; the value is
+        AES-encrypted with an ephemeral AES key, which is itself encrypted with the Cape
+        user's assigned RSA public key. The corresponding RSA private key is only
+        accessible from within a Cape enclave, which guarantees secrecy of the encrypted
+        value. See the Cape encrypt docs for further detail.
+
+        Args:
+            input: Input bytes to encrypt.
+            key: Optional bytes for the Cape key. If None, will delegate to calling
+                :meth:`Cape.key` w/ the given ``key_path`` to retrieve the user's Cape
+                key.
+            key_path: Optional path to a locally-cached Cape key. Used to call
+                :meth:`Cape.key` when an explicit ``key`` argument is not provided.
+
+        Returns:
+            Tagged ciphertext representing a base64-encoded Cape encryption of the
+            ``input``.
+
+        Raises:
+            ValueError: if Cape key is not a properly-formatted RSA public key.
+            RuntimeError: if the enclave attestation doc does not contain a Cape key,
+                if the websocket response or the attestation doc is malformed.
+            Exception: if the enclave threw an error while trying to fulfill the
+                connection request.
+        """
         cape_key = key or self.key(key_path)
-        ctxt = cape_encrypt.encrypt(message, cape_key)
+        ctxt = cape_encrypt.encrypt(input, cape_key)
         # cape-encrypted ctxt must be b64-encoded and tagged
         ctxt = base64.b64encode(ctxt)
         return b"cape:" + ctxt
