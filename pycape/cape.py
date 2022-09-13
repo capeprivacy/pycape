@@ -117,14 +117,14 @@ class Cape:
     def encrypt(
         self,
         message: bytes,
-        key: Optional[str] = None,
+        key: Optional[bytes] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
-    ):
+    ) -> bytes:
         cape_key = key or self.key(key_path)
-        ctxt = cape_encrypt.encrypt(message, cape_key.encode())
+        ctxt = cape_encrypt.encrypt(message, cape_key)
         # cape-encrypted ctxt must be b64-encoded and tagged
         ctxt = base64.b64encode(ctxt)
-        return f"cape:{str(ctxt)}"
+        return b"cape:" + ctxt
 
     @contextlib.contextmanager
     def function_context(self, function_ref: Union[str, fref.FunctionRef]):
@@ -207,7 +207,7 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> str:
+    def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
         Args:
@@ -219,7 +219,7 @@ class Cape:
                 variables ``CAPE_LOCAL_CONFIG_DIR / CAPE_LOCAL_CAPE_KEY_FILENAME``.
 
         Returns:
-            A string containing the Cape key. The key is also cached on disk for later
+            Bytes containing the Cape key. The key is also cached on disk for later
             use.
 
         Raises:
@@ -234,7 +234,7 @@ class Cape:
         else:
             key_path = pathlib.Path(key_path)
         if key_path.exists():
-            with open(key_path, "r") as f:
+            with open(key_path, "rb") as f:
                 cape_key = f.read()
         else:
             cape_key = self._loop.run_until_complete(self._key(key_path))
@@ -377,7 +377,7 @@ class Cape:
 
         return result
 
-    async def _key(self, key_path: pathlib.Path):
+    async def _key(self, key_path: pathlib.Path) -> bytes:
         key_endpoint = f"{self._url}/v1/key"
         auth_protocol = fref.get_auth_protocol(fref.FunctionAuthType.AUTH0)
         self._root_cert = self._root_cert or attest.download_root_cert()
@@ -396,6 +396,7 @@ class Cape:
             raise RuntimeError(
                 "Enclave response did not include a Cape key in attestation user data."
             )
+        cape_key = base64.b64decode(cape_key)
         await _persist_cape_key(cape_key, key_path)
         return cape_key
 
@@ -560,7 +561,7 @@ def _maybe_get_single_input(args, kwargs):
         return kwargs.items()[0][1]
 
 
-async def _persist_cape_key(cape_key, key_path: pathlib.Path):
+async def _persist_cape_key(cape_key: str, key_path: pathlib.Path):
     key_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(key_path, "w") as f:
+    with open(key_path, "wb") as f:
         f.write(cape_key)
