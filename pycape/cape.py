@@ -118,10 +118,32 @@ class Cape:
         function_ref = _convert_to_function_ref(function_ref)
         self._loop.run_until_complete(self._connect(function_ref))
 
-    def deploy(self, function_path) -> fref.FunctionRef:
-        """Deploy function to an enclave"""
-        function_path = pathlib.Path(function_path)
+    def deploy(self, function_path: Union[str, os.PathLike]) -> fref.FunctionRef:
+        """Deploy a directory or a zip file containing a Cape function declared in
+        an app.py script.
 
+        This method takes care of establishing a websocket connection, deploying a
+        Cape function, then returning a `~.function_ref.FunctionRef` representing
+        the deployed function. Note that the ``function_path`` has to point to
+        a directory or a zip file containing a Cape function declared in an app.py
+        file and the size of its content is currently limited to 1GB.
+
+        Args:
+            function_path: A path pointing to a directory or a zip file containing
+            a Cape function declared in an app.py script.
+
+        Returns:
+            A :class:`~.function_ref.FunctionRef` representing the deployed Cape
+            function.
+
+        Raises:
+            ValueError: If the function path is not pointing to a directory
+            or a zip file or if folder size exceeds 1GB.
+            RuntimeError: if the websocket response or the enclave attestation doc is
+                malformed.
+            Exception: if the enclave threw an error while trying to fulfill the
+                connection request.
+        """
         return self._loop.run_until_complete(self._deploy(function_path))
 
     def encrypt(
@@ -378,6 +400,8 @@ class Cape:
         await self._ctx.close()
 
     async def _deploy(self, function_path):
+        function_path = pathlib.Path(function_path)
+
         zipped_function = _prepare_deployment_folder(function_path)
         function_checksum = hashlib.sha256()
         function_checksum.update(zipped_function)
@@ -662,6 +686,11 @@ async def _persist_cape_key(cape_key: str, key_path: pathlib.Path):
 
 
 def _prepare_deployment_folder(folder_path):
+    """
+    Check if the folder path is pointing to a zip file. If not, zip the
+    folder before returning as bytes and also check if its content exceeds
+    ``cape_config.STORED_FUNCTION_MAX_BYTES``.
+    """
     if folder_path.is_dir():
         zipped_function, folder_size = _make_zipfile(folder_path)
     elif zipfile.is_zipfile(folder_path):
@@ -669,13 +698,13 @@ def _prepare_deployment_folder(folder_path):
         with open(folder_path, "rb") as z:
             zipped_function = z.read()
     else:
-        raise RuntimeError(
-            f"Your deployment path ({folder_path}) should point"
-            "to a folder or a zip file containing your function (app.py)"
+        raise ValueError(
+            f"Your deployment folder path ({folder_path}) should point"
+            "to a folder or a zip file containing your Cape function (app.py)"
         )
 
     if folder_size > cape_config.STORED_FUNCTION_MAX_BYTES:
-        raise RuntimeError(
+        raise ValueError(
             f"Deployment folder size ({folder_size} bytes) exceeds size "
             "limit of {cape_config.STORED_FUNCTION_MAX_BYTES} bytes"
         )
@@ -683,6 +712,9 @@ def _prepare_deployment_folder(folder_path):
 
 
 def _make_zipfile(folder_path):
+    """
+    Zip a folder and return it as bytes with the size of its content.
+    """
     folder_size = 0
     zipped_function = io.BytesIO()
     with zipfile.ZipFile(zipped_function, "w") as z:
