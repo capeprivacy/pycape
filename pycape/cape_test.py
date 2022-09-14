@@ -1,6 +1,10 @@
 import base64
 import json
+import os
+import pathlib
+import tempfile
 import unittest
+import zipfile
 from unittest.mock import Mock
 
 import pycape
@@ -8,6 +12,7 @@ from pycape.cape import _convert_to_function_ref
 from pycape.cape import _create_connection_request
 from pycape.cape import _generate_nonce
 from pycape.cape import _handle_expected_field
+from pycape.cape import _make_zipfile
 from pycape.cape import _parse_wss_response
 
 
@@ -61,6 +66,32 @@ class TestCape(unittest.TestCase):
             function_ref, input.encode()
         ).return_value = b"Welcome to Cape"
         self.assertEqual(result.decode(), input)
+
+
+class TestZip(unittest.TestCase):
+    def test_make_zip(self):
+        tmp_dir = tempfile.TemporaryDirectory()
+        tmp_dir_path = pathlib.Path(tmp_dir.name)
+        app_file_path = tmp_dir_path / "app.py"
+        dependency_folder_path = tmp_dir_path / "dependency"
+        dependency_file_path = dependency_folder_path / "numpy.py"
+        zipped_folder_path = tmp_dir_path / "function.zip"
+
+        with open(app_file_path, "w"):
+            pass
+
+        os.mkdir(dependency_folder_path)
+        with open(dependency_file_path, "w"):
+            pass
+
+        zipped_folder, _ = _make_zipfile(tmp_dir_path)
+
+        with open(zipped_folder_path, "wb") as z:
+            z.write(zipped_folder)
+
+        with zipfile.ZipFile(zipped_folder_path, "r") as archive:
+            assert str(app_file_path)[1:] in archive.namelist()
+            assert str(dependency_file_path)[1:] in archive.namelist()
 
 
 if __name__ == "__main__":
