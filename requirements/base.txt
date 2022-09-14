@@ -48,6 +48,8 @@ file:./serdio
     # via -r requirements/base.in
 six==1.16.0
     # via ecdsa
+synchronicity==0.2.8
+    # via -r requirements/base.in
 urllib3==1.26.10
     # via requests
 websockets==10.3

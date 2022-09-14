@@ -49,5 +49,5 @@ if __name__ == "__main__":
     cape = pycape.Cape()
     function_id, function_checksum = deploy_echo()
     function_ref = pycape.FunctionRef(function_id, function_checksum)
-    echo = asyncio.run(main(cape, function_ref, "Welcome to Cape, Vincent Law."))
+    echo = asyncio.run(main(cape, function_ref, "Welcome to Cape."))
     print(echo)

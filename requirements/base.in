@@ -5,3 +5,4 @@ websockets
 pyOpenSSL
 cose
 requests
+synchronicity

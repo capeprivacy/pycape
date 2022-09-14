@@ -5,6 +5,9 @@ user's deployed functions. Before being able to run functions from the Cape clie
 users must have gone through the process of developing a Cape function in Python and
 deploying it from the CLI.
 
+The majority of the :class:`Cape` client interface can be used in either synchronous or
+asynchronous contexts via asyncio.
+
 **Usage**
 
 ::
@@ -20,6 +23,12 @@ deploying it from the CLI.
     print(c2)  # 13
 
     cape.close()  # release the enclave connection
+
+    # similar invocation, but async
+    c3 = asyncio.run(
+        cape.run("9712r5dynf57l1rcns2", 8, 15, use_serdio=True)
+    )
+    print(c3)  # 17
 
 """
 import base64
@@ -422,13 +431,6 @@ class Cape:
         cape_key = base64.b64decode(cape_key)
         await _persist_cape_key(cape_key, key_path)
         return cape_key
-
-    async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
-        await self._connect(function_ref)
-        result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
-        await self._close()
-        self._ctx = None
-        return result
 
 
 class _EnclaveContext:
