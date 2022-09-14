@@ -6,6 +6,7 @@ import time
 import zipfile
 
 import cbor2
+import pytest
 import requests
 from cose.algorithms import Es384
 from cose.keys import EC2Key
@@ -80,6 +81,41 @@ class TestAttestation:
             root_cert = p.read()
 
         attest.verify_cert_chain(root_cert, doc["cabundle"], doc["certificate"])
+
+    def test_verify_pcrs(self):
+        crv = P384
+        root_private_key = ec.generate_private_key(
+            crv.curve_obj, backend=default_backend()
+        )
+        private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
+
+        root_cert, cert = create_certs(root_private_key, private_key)
+        doc_bytes = create_attestation_doc(root_cert, cert)
+        attestation = create_cose_1_sign_msg(doc_bytes, private_key)
+
+        attestation_doc = attest.parse_attestation(
+            attestation, root_cert.public_bytes(Encoding.PEM)
+        )
+
+        attest.verify_pcrs({"0": [b"pcrpcrpcr".hex()]}, attestation_doc)
+
+    def test_verify_pcrs_fail(self):
+        crv = P384
+        root_private_key = ec.generate_private_key(
+            crv.curve_obj, backend=default_backend()
+        )
+        private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
+
+        root_cert, cert = create_certs(root_private_key, private_key)
+        doc_bytes = create_attestation_doc(root_cert, cert)
+        attestation = create_cose_1_sign_msg(doc_bytes, private_key)
+
+        attestation_doc = attest.parse_attestation(
+            attestation, root_cert.public_bytes(Encoding.PEM)
+        )
+
+        with pytest.raises(Exception):
+            attest.verify_pcrs({"0": [b"pcrpcr".hex()]}, attestation_doc)
 
 
 def create_cose_1_sign_msg(payload, private_key):

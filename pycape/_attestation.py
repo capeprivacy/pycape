@@ -2,6 +2,8 @@ import io
 import logging
 import math
 import zipfile
+from typing import Dict
+from typing import List
 
 import cbor2
 import requests
@@ -32,7 +34,7 @@ def download_root_cert():
 
 def parse_attestation(attestation, root_cert):
     logger.debug("* Parsing attestation document...")
-    # TODO verifies the PCRs
+
     payload = cbor2.loads(attestation)
     doc = cbor2.loads(payload[2])
     _check_wellformed_attestation(
@@ -114,3 +116,17 @@ def _check_wellformed_attestation(doc, expected_keys):
             )
             logger.error(errmsg)
             raise RuntimeError(errmsg)
+
+
+def verify_pcrs(pcrs: Dict[str, List[str]], doc):
+    for key, val in pcrs.items():
+        h = doc["pcrs"][int(key)].hex()
+
+        found = False
+        for pcr in val:
+            if pcr == h:
+                found = True
+                break
+
+        if not found:
+            raise Exception(f"PCR {key} {h} does not match {val}")
