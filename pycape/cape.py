@@ -9,7 +9,7 @@ deploying it from the CLI.
 
 ::
 
-    cape = Cape(url="wss://enclave.capeprivacy.com")
+    cape = Cape()
 
     cape.connect("9712r5dynf57l1rcns2")
 
@@ -19,12 +19,10 @@ deploying it from the CLI.
     c2 = cape.invoke(5, 12, use_serdio=True)
     print(c2)  # 13
 
-    cape.close()  # release the websocket connection
+    cape.close()  # release the enclave connection
 
 """
-import asyncio
 import base64
-import contextlib
 import json
 import logging
 import os
@@ -35,6 +33,7 @@ from typing import Any
 from typing import Optional
 from typing import Union
 
+import synchronicity
 import websockets
 
 import serdio
@@ -45,7 +44,8 @@ from pycape import cape_encrypt
 from pycape import function_ref as fref
 
 logging.basicConfig(format="%(message)s")
-logger = logging.getLogger("pycape")
+_logger = logging.getLogger("pycape")
+_synchronizer = synchronicity.Synchronizer(multiwrap_warning=True)
 
 
 class Cape:
@@ -80,19 +80,18 @@ class Cape:
         self._auth_token = access_token
         self._root_cert = None
         self._ctx = None
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self._loop = loop
 
         if verbose:
-            logger.setLevel(logging.DEBUG)
+            _logger.setLevel(logging.DEBUG)
 
-    def close(self):
+    @_synchronizer
+    async def close(self):
         """Closes the current enclave connection."""
-        self._loop.run_until_complete(self._close())
+        await self._ctx.close()
         self._ctx = None
 
-    def connect(self, function_ref: Union[str, fref.FunctionRef]):
+    @_synchronizer
+    async def connect(self, function_ref: Union[str, fref.FunctionRef]):
         """Connects to the enclave hosting the function denoted by ``function_ref``.
 
         Note that this method creates a stateful websocket connection, which is a
@@ -112,9 +111,10 @@ class Cape:
                 connection request.
         """
         function_ref = _convert_to_function_ref(function_ref)
-        self._loop.run_until_complete(self._connect(function_ref))
+        await self._request_connection(function_ref)
 
-    def encrypt(
+    @_synchronizer
+    async def encrypt(
         self,
         input: bytes,
         key: Optional[bytes] = None,
@@ -149,14 +149,14 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        cape_key = key or self.key(key_path)
+        cape_key = key or await self.key(key_path)
         ctxt = cape_encrypt.encrypt(input, cape_key)
         # cape-encrypted ctxt must be b64-encoded and tagged
         ctxt = base64.b64encode(ctxt)
         return b"cape:" + ctxt
 
-    @contextlib.contextmanager
-    def function_context(self, function_ref: Union[str, fref.FunctionRef]):
+    @_synchronizer.asynccontextmanager
+    async def function_context(self, function_ref: Union[str, fref.FunctionRef]):
         """Creates a context manager for a given ``function_ref``'s enclave connection.
 
         Note that this context manager accomplishes the same functionality as
@@ -189,11 +189,12 @@ class Cape:
                 connection request.
         """
         try:
-            yield self.connect(function_ref)
+            yield await self.connect(function_ref)
         finally:
-            self.close()
+            await self.close()
 
-    def invoke(
+    @_synchronizer
+    async def invoke(
         self, *args: Any, serde_hooks=None, use_serdio: bool = False, **kwargs: Any
     ) -> Any:
         """Invokes a function call from the currently connected websocket.
@@ -232,11 +233,10 @@ class Cape:
         """
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
-        return self._loop.run_until_complete(
-            self._invoke(serde_hooks, use_serdio, *args, **kwargs)
-        )
+        return await self._request_invocation(serde_hooks, use_serdio, *args, **kwargs)
 
-    def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> bytes:
+    @_synchronizer
+    async def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
         Args:
@@ -266,10 +266,11 @@ class Cape:
             with open(key_path, "rb") as f:
                 cape_key = f.read()
         else:
-            cape_key = self._loop.run_until_complete(self._key(key_path))
+            cape_key = await self._request_key(key_path)
         return cape_key
 
-    def run(
+    @_synchronizer
+    async def run(
         self,
         function_ref: Union[str, fref.FunctionRef],
         *args: Any,
@@ -315,17 +316,13 @@ class Cape:
         function_ref = _convert_to_function_ref(function_ref)
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
-        return self._loop.run_until_complete(
-            self._run(
-                *args,
-                function_ref=function_ref,
-                serde_hooks=serde_hooks,
-                use_serdio=use_serdio,
-                **kwargs,
+        async with self.function_context(function_ref):
+            result = await self.invoke(
+                *args, serde_hooks=serde_hooks, use_serdio=use_serdio, **kwargs
             )
-        )
+        return result
 
-    async def _connect(self, function_ref):
+    async def _request_connection(self, function_ref):
         if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
             function_token = self._auth_token
         else:
@@ -364,10 +361,7 @@ class Cape:
                 )
         return
 
-    async def _close(self):
-        await self._ctx.close()
-
-    async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
+    async def _request_invocation(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and/or kwargs are supplied to the Cape function through
         # Cape.run or Cape.invoke, before serialization, we pack them
         # into a dictionary with the following keys:
@@ -406,7 +400,7 @@ class Cape:
 
         return result
 
-    async def _key(self, key_path: pathlib.Path) -> bytes:
+    async def _request_key(self, key_path: pathlib.Path) -> bytes:
         key_endpoint = f"{self._url}/v1/key"
         auth_protocol = fref.get_auth_protocol(fref.FunctionAuthType.AUTH0)
         self._root_cert = self._root_cert or attest.download_root_cert()
@@ -458,22 +452,22 @@ class _EnclaveContext:
     async def authenticate(self):
         nonce = _generate_nonce()
         request = _create_connection_request(nonce)
-        logger.debug("\n> Sending authentication request...")
+        _logger.debug("\n> Sending authentication request...")
         await self._websocket.send(request)
-        logger.debug("* Waiting for attestation document...")
+        _logger.debug("* Waiting for attestation document...")
         msg = await self._websocket.recv()
-        logger.debug("< Auth completed. Received attestation document.")
+        _logger.debug("< Auth completed. Received attestation document.")
         return _parse_wss_response(msg)
 
     async def bootstrap(self):
-        logger.debug(f"* Dialing {self._endpoint}")
+        _logger.debug(f"* Dialing {self._endpoint}")
         self._websocket = await websockets.connect(
             self._endpoint,
             ssl=self._ssl_ctx,
             subprotocols=[self._auth_protocol, self._auth_token],
             max_size=None,
         )
-        logger.debug("* Websocket connection established")
+        _logger.debug("* Websocket connection established")
 
         auth_response = await self.authenticate()
         attestation_doc = attest.parse_attestation(auth_response, self._root_cert)
@@ -488,10 +482,10 @@ class _EnclaveContext:
     async def invoke(self, inputs: bytes) -> bytes:
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
 
-        logger.debug("> Sending encrypted inputs")
+        _logger.debug("> Sending encrypted inputs")
         await self._websocket.send(input_ciphertext)
         invoke_response = await self._websocket.recv()
-        logger.debug("< Received function results")
+        _logger.debug("< Received function results")
 
         return _parse_wss_response(invoke_response)
 
@@ -502,7 +496,7 @@ def _generate_nonce(length=8):
     Generates a string of digits between 0 and 9 of a given length
     """
     nonce = "".join([str(random.randint(0, 9)) for i in range(length)])
-    logger.debug(f"* Generated nonce: {nonce}")
+    _logger.debug(f"* Generated nonce: {nonce}")
     return nonce
 
 
@@ -560,7 +554,7 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
     v = dictionary.get(field, None)
     if v is None:
         if fallback_err is not None:
-            logger.error(fallback_err)
+            _logger.error(fallback_err)
             raise RuntimeError(fallback_err)
         raise RuntimeError(f"Dictionary {dictionary} missing key {field}.")
     return v
