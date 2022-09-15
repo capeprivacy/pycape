@@ -164,6 +164,7 @@ class Cape:
         ctxt = base64.b64encode(ctxt)
         return b"cape:" + ctxt
 
+    @_synchronizer
     @_synchronizer.asynccontextmanager
     async def function_context(self, function_ref: Union[str, fref.FunctionRef]):
         """Creates a context manager for a given ``function_ref``'s enclave connection.
