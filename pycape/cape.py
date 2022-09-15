@@ -32,6 +32,8 @@ import pathlib
 import random
 import ssl
 from typing import Any
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -92,7 +94,11 @@ class Cape:
         self._loop.run_until_complete(self._close())
         self._ctx = None
 
-    def connect(self, function_ref: Union[str, fref.FunctionRef]):
+    def connect(
+        self,
+        function_ref: Union[str, fref.FunctionRef],
+        pcrs: Optional[Dict[str, List[str]]] = None,
+    ):
         """Connects to the enclave hosting the function denoted by ``function_ref``.
 
         Note that this method creates a stateful websocket connection, which is a
@@ -103,6 +109,7 @@ class Cape:
         Args:
             function_ref: A function ID string or :class:`~.function_ref.FunctionRef`
                 representing a deployed Cape function.
+            pcrs: A dictionary of PCR indexes to a list of potential values.
 
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
@@ -112,7 +119,7 @@ class Cape:
                 connection request.
         """
         function_ref = _convert_to_function_ref(function_ref)
-        self._loop.run_until_complete(self._connect(function_ref))
+        self._loop.run_until_complete(self._connect(function_ref, pcrs))
 
     def encrypt(
         self,
@@ -236,7 +243,11 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> bytes:
+    def key(
+        self,
+        key_path: Optional[Union[str, os.PathLike]] = None,
+        pcrs: Optional[Dict[str, List[str]]] = None,
+    ) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
         Args:
@@ -266,13 +277,14 @@ class Cape:
             with open(key_path, "rb") as f:
                 cape_key = f.read()
         else:
-            cape_key = self._loop.run_until_complete(self._key(key_path))
+            cape_key = self._loop.run_until_complete(self._key(key_path, pcrs=pcrs))
         return cape_key
 
     def run(
         self,
         function_ref: Union[str, fref.FunctionRef],
         *args: Any,
+        pcrs: Optional[Dict[str, List[str]]] = None,
         serde_hooks=None,
         use_serdio: bool = False,
         **kwargs: Any,
@@ -321,11 +333,12 @@ class Cape:
                 function_ref=function_ref,
                 serde_hooks=serde_hooks,
                 use_serdio=use_serdio,
+                pcrs=pcrs,
                 **kwargs,
             )
         )
 
-    async def _connect(self, function_ref):
+    async def _connect(self, function_ref, pcrs: Optional[Dict[str, List[str]]] = None):
         if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
             function_token = self._auth_token
         else:
@@ -339,7 +352,7 @@ class Cape:
             auth_token=function_token,
             root_cert=self._root_cert,
         )
-        attestation_doc = await self._ctx.bootstrap()
+        attestation_doc = await self._ctx.bootstrap(pcrs)
 
         user_data = attestation_doc.get("user_data")
         checksum = function_ref.checksum
@@ -406,7 +419,9 @@ class Cape:
 
         return result
 
-    async def _key(self, key_path: pathlib.Path) -> bytes:
+    async def _key(
+        self, key_path: pathlib.Path, pcrs: Optional[Dict[str, List[str]]] = None
+    ) -> bytes:
         key_endpoint = f"{self._url}/v1/key"
         auth_protocol = fref.get_auth_protocol(fref.FunctionAuthType.AUTH0)
         self._root_cert = self._root_cert or attest.download_root_cert()
@@ -416,7 +431,7 @@ class Cape:
             auth_token=self._auth_token,
             root_cert=self._root_cert,
         )
-        attestation_doc = await key_ctx.bootstrap()
+        attestation_doc = await key_ctx.bootstrap(pcrs)
         await key_ctx.close()  # we have the attestation doc, no longer any need for ctx
         user_data = attestation_doc.get("user_data")
         user_data_dict = json.loads(user_data)
@@ -429,8 +444,10 @@ class Cape:
         await _persist_cape_key(cape_key, key_path)
         return cape_key
 
-    async def _run(self, *args, function_ref, serde_hooks, use_serdio, **kwargs):
-        await self._connect(function_ref)
+    async def _run(
+        self, *args, function_ref, serde_hooks, use_serdio, pcrs=None, **kwargs
+    ):
+        await self._connect(function_ref, pcrs)
         result = await self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         await self._close()
         self._ctx = None
@@ -465,7 +482,7 @@ class _EnclaveContext:
         logger.debug("< Auth completed. Received attestation document.")
         return _parse_wss_response(msg)
 
-    async def bootstrap(self):
+    async def bootstrap(self, pcrs: Optional[Dict[str, List[str]]] = None):
         logger.debug(f"* Dialing {self._endpoint}")
         self._websocket = await websockets.connect(
             self._endpoint,
@@ -478,6 +495,9 @@ class _EnclaveContext:
         auth_response = await self.authenticate()
         attestation_doc = attest.parse_attestation(auth_response, self._root_cert)
         self._public_key = attestation_doc["public_key"]
+
+        if pcrs:
+            attest.verify_pcrs(pcrs, attestation_doc)
 
         return attestation_doc
 
