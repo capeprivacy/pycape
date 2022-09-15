@@ -94,7 +94,11 @@ class Cape:
         self._loop.run_until_complete(self._close())
         self._ctx = None
 
-    def connect(self, function_ref: Union[str, fref.FunctionRef], pcrs=None):
+    def connect(
+        self,
+        function_ref: Union[str, fref.FunctionRef],
+        pcrs: Optional[Dict[str, List[str]]] = None,
+    ):
         """Connects to the enclave hosting the function denoted by ``function_ref``.
 
         Note that this method creates a stateful websocket connection, which is a
@@ -239,7 +243,11 @@ class Cape:
             self._invoke(serde_hooks, use_serdio, *args, **kwargs)
         )
 
-    def key(self, key_path: Optional[Union[str, os.PathLike]] = None) -> bytes:
+    def key(
+        self,
+        key_path: Optional[Union[str, os.PathLike]] = None,
+        pcrs: Optional[Dict[str, List[str]]] = None,
+    ) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
         Args:
@@ -269,14 +277,14 @@ class Cape:
             with open(key_path, "rb") as f:
                 cape_key = f.read()
         else:
-            cape_key = self._loop.run_until_complete(self._key(key_path))
+            cape_key = self._loop.run_until_complete(self._key(key_path, pcrs=pcrs))
         return cape_key
 
     def run(
         self,
         function_ref: Union[str, fref.FunctionRef],
         *args: Any,
-        pcrs=None,
+        pcrs: Optional[Dict[str, List[str]]] = None,
         serde_hooks=None,
         use_serdio: bool = False,
         **kwargs: Any,
