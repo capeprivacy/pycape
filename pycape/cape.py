@@ -31,6 +31,7 @@ import os
 import pathlib
 import random
 import ssl
+import subprocess
 from typing import Any
 from typing import Dict
 from typing import List
@@ -120,6 +121,32 @@ class Cape:
         """
         function_ref = _convert_to_function_ref(function_ref)
         self._loop.run_until_complete(self._connect(function_ref, pcrs))
+
+    def deploy(self, deploy_path: Union[str, os.PathLike]) -> fref.FunctionRef:
+        """Deploy a directory or a zip file containing a Cape function declared in
+        an app.py script.
+
+        This method calls `cape deploy` from the Cape CLI to deploy a Cape function
+        then returns a `~.function_ref.FunctionRef` representingthe the deployed
+        function.  Note that the ``deploy_path`` has to point to a directory or a
+        zip file containing a Cape function declared in an app.py file and the size
+        of its content  is currently limited to 1GB.
+
+        Args:
+            deploy_path: A path pointing to a directory or a zip file containing
+            a Cape function declared in an app.py script.
+
+        Returns:
+            A :class:`~.function_ref.FunctionRef` representing the deployed Cape
+            function.
+
+        Raises:
+            RuntimeError: if the websocket response or the enclave attestation doc is
+                malformed, or if the function path is not pointing to a directory
+                or a zip file or if folder size exceeds 1GB, or if Cape CLI cannot
+                be found on the device.
+        """
+        return self._loop.run_until_complete(self._deploy(deploy_path))
 
     def encrypt(
         self,
@@ -380,6 +407,45 @@ class Cape:
     async def _close(self):
         await self._ctx.close()
 
+    async def _deploy(self, deploy_path):
+        deploy_path = pathlib.Path(deploy_path)
+        cmd_deploy = "cape deploy " + str(deploy_path)
+
+        _check_if_cape_cli_available()
+
+        # Cape deploy function
+        proc_deploy = subprocess.Popen(
+            cmd_deploy,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        _, err_deploy = proc_deploy.communicate()
+        err_deploy = err_deploy.decode()
+
+        # Parse stderr to get function id & function checksum and potential error
+        err_deploy = err_deploy.split("\n")
+        error_output = function_id = function_checksum = None
+
+        for i in err_deploy:
+            if "Error" in i:
+                error_output = i
+                error_msg = error_output.partition("Error:")[2]
+                raise RuntimeError(f"Cape deploy error - {error_msg}")
+            if "Function ID" in i:
+                id_output = i.split(" ")
+                function_id = id_output[3]
+            elif "Checksum" in i:
+                checksum_output = i.split(" ")
+                function_checksum = checksum_output[2]
+
+        if function_id is None:
+            raise RuntimeError(
+                f"Function ID not found in 'deploy' response: \n{err_deploy}"
+            )
+
+        return fref.FunctionRef(function_id, function_checksum)
+
     async def _invoke(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and/or kwargs are supplied to the Cape function through
         # Cape.run or Cape.invoke, before serialization, we pack them
@@ -614,3 +680,11 @@ async def _persist_cape_key(cape_key: str, key_path: pathlib.Path):
     key_path.parent.mkdir(parents=True, exist_ok=True)
     with open(key_path, "wb") as f:
         f.write(cape_key)
+
+
+def _check_if_cape_cli_available():
+    exitcode, output = subprocess.getstatusoutput("cape")
+    if exitcode != 0:
+        raise RuntimeError(
+            f"Please make sure Cape CLI is installed on your device: {output}"
+        )
