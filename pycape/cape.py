@@ -425,19 +425,10 @@ class Cape:
     async def _deploy(self, deploy_path):
         deploy_path = pathlib.Path(deploy_path)
         cmd_deploy = "cape deploy " + str(deploy_path)
-
-        _check_if_cape_cli_available()
-
-        # Cape deploy function
-        proc_deploy = subprocess.Popen(
-            cmd_deploy,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        _, err_deploy = proc_deploy.communicate()
+        _, err_deploy = _call_cape_cli(cmd_deploy)
         err_deploy = err_deploy.decode()
 
+        # TODO refactor parsing once https://github.com/capeprivacy/cli/pull/185 merged
         # Parse stderr to get function id & function checksum and potential error
         err_deploy = err_deploy.split("\n")
         error_output = function_id = function_checksum = None
@@ -456,7 +447,7 @@ class Cape:
 
         if function_id is None:
             raise RuntimeError(
-                f"Function ID not found in 'deploy' response: \n{err_deploy}"
+                f"Function ID not found in 'cape.deploy' response: \n{err_deploy}"
             )
 
         # TODO the function token should be set automatically with `self._token`.
@@ -534,24 +525,17 @@ class Cape:
 
     async def _token(self, function_id):
         cmd_token = "cape token " + str(function_id)
+        out_token, err_token = _call_cape_cli(cmd_token)
+        err_token = err_token.decode()
+        out_token = out_token.decode()
 
-        _check_if_cape_cli_available()
-
-        proc_deploy = subprocess.Popen(
-            cmd_token,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        out_deploy, err_deploy = proc_deploy.communicate()
-        err_deploy = err_deploy.decode()
-        out_deploy = out_deploy.decode()
-        # Parse stderr to get error
-
-        function_token = out_deploy.split("\n")[0]
-        err_deploy = err_deploy.split("\n")
+        # TODO refactor parsing once https://github.com/capeprivacy/cli/pull/185 merged
+        # Parse out_token to get function token
+        function_token = out_token.split("\n")[0]
+        err_deploy = err_token.split("\n")
         error_output = None
 
+        # Parse err_token to get potential errors
         for i in err_deploy:
             if "Error" in i:
                 error_output = i
@@ -560,7 +544,7 @@ class Cape:
 
         if function_token is None:
             raise RuntimeError(
-                f"Function token not found in 'token' response: \n{err_deploy}"
+                f"Function token not found in 'cape.token' response: \n{err_deploy}"
             )
 
         return function_token
@@ -734,3 +718,15 @@ def _check_if_cape_cli_available():
         raise RuntimeError(
             f"Please make sure Cape CLI is installed on your device: {output}"
         )
+
+
+def _call_cape_cli(cape_cmd):
+    _check_if_cape_cli_available()
+    proc = subprocess.Popen(
+        cape_cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = proc.communicate()
+    return out, err
