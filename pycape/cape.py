@@ -459,8 +459,13 @@ class Cape:
                 f"Function ID not found in 'deploy' response: \n{err_deploy}"
             )
 
-        function_token = await self._token(function_id)
-        # function_token = None
+        # TODO the function token should be set automatically with `self._token`.
+        # However we set it to None for now because if the input is encrypted
+        # with cape.encryp and the function is called with function token until
+        # this issue is completed: https://capeprivacy.atlassian.net/browse/CAPE-1004.
+        function_token = None
+        # function_token = await self._token(function_id)
+
         return fref.FunctionRef(function_id, function_checksum, function_token)
 
     async def _request_invocation(self, serde_hooks, use_serdio, *args, **kwargs):
