@@ -152,7 +152,7 @@ class Cape:
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
                 malformed, or if the function path is not pointing to a directory
-                or a zip file or if folder size exceeds 1GB, or if Cape CLI cannot
+                or a zip file or if folder size exceeds 1GB, or if the Cape CLI cannot
                 be found on the device.
         """
         return await self._deploy(deploy_path)
@@ -377,8 +377,26 @@ class Cape:
         return result
 
     @_synchronizer
-    async def token(self, function_id: str):
-        return await self._token(function_id)
+    async def token(self, function_id: str, expires: Optional[int] = None) -> str:
+        """Generate a function token (JSON Web Token) based on a function ID.
+
+        This method calls `cape token` from the Cape CLI to generate a function token
+        based on a function ID. Tokens can be created statically (long expiration and
+        bundled with your application) or created dynamically (short-lived) and have
+        an owner specified expiration. This function token is required in addition
+        to the function ID when calling a Cape function.
+
+        Args:
+            function_id: A function ID string representing a deployed Cape function.
+            exprires: Amount of time in seconds until the the function token expires.
+
+        Returns:
+            A function token (JSON Web Token) as a string.
+
+         Raises:
+            RuntimeError: if the Cape CLI cannot be found on the device.
+        """
+        return await self._token(function_id, expires)
 
     async def _request_connection(self, function_ref, pcrs=None):
         if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
@@ -428,7 +446,8 @@ class Cape:
         _, err_deploy = _call_cape_cli(cmd_deploy)
         err_deploy = err_deploy.decode()
 
-        # TODO refactor parsing once https://github.com/capeprivacy/cli/pull/185 merged
+        # TODO refactor parsing once https://github.com/capeprivacy/cli/pull/185
+        # is part of a new release.
         # Parse stderr to get function id & function checksum and potential error
         err_deploy = err_deploy.split("\n")
         error_output = function_id = function_checksum = None
@@ -523,13 +542,16 @@ class Cape:
         await _persist_cape_key(cape_key, key_path)
         return cape_key
 
-    async def _token(self, function_id):
-        cmd_token = "cape token " + str(function_id)
+    async def _token(self, function_id, expires=None):
+        if expires:
+            cmd_token = f"cape token {function_id} --expires {expires}"
+        else:
+            cmd_token = f"cape token {function_id}"
+
         out_token, err_token = _call_cape_cli(cmd_token)
         err_token = err_token.decode()
         out_token = out_token.decode()
 
-        # TODO refactor parsing once https://github.com/capeprivacy/cli/pull/185 merged
         # Parse out_token to get function token
         function_token = out_token.split("\n")[0]
         err_deploy = err_token.split("\n")
