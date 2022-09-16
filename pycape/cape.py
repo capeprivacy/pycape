@@ -376,6 +376,10 @@ class Cape:
             )
         return result
 
+    @_synchronizer
+    async def token(self, function_id: str):
+        return await self._token(function_id)
+
     async def _request_connection(self, function_ref, pcrs=None):
         if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
             function_token = self._auth_token
@@ -455,7 +459,9 @@ class Cape:
                 f"Function ID not found in 'deploy' response: \n{err_deploy}"
             )
 
-        return fref.FunctionRef(function_id, function_checksum)
+        function_token = await self._token(function_id)
+        # function_token = None
+        return fref.FunctionRef(function_id, function_checksum, function_token)
 
     async def _request_invocation(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and/or kwargs are supplied to the Cape function through
@@ -520,6 +526,39 @@ class Cape:
         cape_key = base64.b64decode(cape_key)
         await _persist_cape_key(cape_key, key_path)
         return cape_key
+
+    async def _token(self, function_id):
+        cmd_token = "cape token " + str(function_id)
+
+        _check_if_cape_cli_available()
+
+        proc_deploy = subprocess.Popen(
+            cmd_token,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out_deploy, err_deploy = proc_deploy.communicate()
+        err_deploy = err_deploy.decode()
+        out_deploy = out_deploy.decode()
+        # Parse stderr to get error
+
+        function_token = out_deploy.split("\n")[0]
+        err_deploy = err_deploy.split("\n")
+        error_output = None
+
+        for i in err_deploy:
+            if "Error" in i:
+                error_output = i
+                error_msg = error_output.partition("Error:")[2]
+                raise RuntimeError(f"Cape token error - {error_msg}")
+
+        if function_token is None:
+            raise RuntimeError(
+                f"Function token not found in 'token' response: \n{err_deploy}"
+            )
+
+        return function_token
 
 
 class _EnclaveContext:
