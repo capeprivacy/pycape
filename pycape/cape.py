@@ -110,9 +110,10 @@ class Cape:
         """Connects to the enclave hosting the function denoted by ``function_ref``.
 
         Note that this method creates a stateful websocket connection, which is a
-        necessary precondition for callers of :meth:`~Cape.invoke`. Care should be taken
-        to close the websocket connection with :meth:`~Cape.close` once all invocations
-        have finished.
+        necessary precondition for callers of :meth:`~Cape.invoke`. When using the
+        default Cape host, the enclave will terminate this websocket connection after
+        60s of inactivity. Care should be taken to close the websocket connection with
+        :meth:`~Cape.close` once all invocations have finished.
 
         Args:
             function_ref: A function ID string or :class:`~.function_ref.FunctionRef`
