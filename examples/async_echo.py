@@ -3,10 +3,11 @@ import os
 import pathlib
 
 import pycape
+from pycape.experimental import cli
 
 
 async def main(cape: pycape.Cape, deploy_path: os.PathLike, echo: str) -> str:
-    function_ref = await cape.deploy(deploy_path)
+    function_ref = await cli.deploy(deploy_path)
     echo_arg = echo.encode()
     echo_enc = await cape.encrypt(echo_arg)
     async with cape.function_context(function_ref):

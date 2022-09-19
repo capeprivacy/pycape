@@ -131,33 +131,6 @@ class Cape:
         await self._request_connection(function_ref, pcrs)
 
     @_synchronizer
-    async def deploy(self, deploy_path: Union[str, os.PathLike]) -> fref.FunctionRef:
-        """Deploy a directory or a zip file containing a Cape function declared in
-        an app.py script.
-
-        This method calls `cape deploy` from the Cape CLI to deploy a Cape function
-        then returns a `~.function_ref.FunctionRef` representingthe the deployed
-        function.  Note that the ``deploy_path`` has to point to a directory or a
-        zip file containing a Cape function declared in an app.py file and the size
-        of its content  is currently limited to 1GB.
-
-        Args:
-            deploy_path: A path pointing to a directory or a zip file containing
-            a Cape function declared in an app.py script.
-
-        Returns:
-            A :class:`~.function_ref.FunctionRef` representing the deployed Cape
-            function.
-
-        Raises:
-            RuntimeError: if the websocket response or the enclave attestation doc is
-                malformed, or if the function path is not pointing to a directory
-                or a zip file or if folder size exceeds 1GB, or if the Cape CLI cannot
-                be found on the device.
-        """
-        return await self._deploy(deploy_path)
-
-    @_synchronizer
     async def encrypt(
         self,
         input: bytes,
@@ -376,28 +349,6 @@ class Cape:
             )
         return result
 
-    @_synchronizer
-    async def token(self, function_id: str, expires: Optional[int] = None) -> str:
-        """Generate a function token (JSON Web Token) based on a function ID.
-
-        This method calls `cape token` from the Cape CLI to generate a function token
-        based on a function ID. Tokens can be created statically (long expiration and
-        bundled with your application) or created dynamically (short-lived) and have
-        an owner specified expiration. This function token is required in addition
-        to the function ID when calling a Cape function.
-
-        Args:
-            function_id: A function ID string representing a deployed Cape function.
-            exprires: Amount of time in seconds until the the function token expires.
-
-        Returns:
-            A function token (JSON Web Token) as a string.
-
-         Raises:
-            RuntimeError: if the Cape CLI cannot be found on the device.
-        """
-        return await self._token(function_id, expires)
-
     async def _request_connection(self, function_ref, pcrs=None):
         if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
             function_token = self._auth_token
@@ -541,35 +492,6 @@ class Cape:
         cape_key = base64.b64decode(cape_key)
         await _persist_cape_key(cape_key, key_path)
         return cape_key
-
-    async def _token(self, function_id, expires=None):
-        if expires:
-            cmd_token = f"cape token {function_id} --expires {expires}"
-        else:
-            cmd_token = f"cape token {function_id}"
-
-        out_token, err_token = _call_cape_cli(cmd_token)
-        err_token = err_token.decode()
-        out_token = out_token.decode()
-
-        # Parse out_token to get function token
-        function_token = out_token.split("\n")[0]
-        err_deploy = err_token.split("\n")
-        error_output = None
-
-        # Parse err_token to get potential errors
-        for i in err_deploy:
-            if "Error" in i:
-                error_output = i
-                error_msg = error_output.partition("Error:")[2]
-                raise RuntimeError(f"Cape token error - {error_msg}")
-
-        if function_token is None:
-            raise RuntimeError(
-                f"Function token not found in 'cape.token' response: \n{err_deploy}"
-            )
-
-        return function_token
 
 
 class _EnclaveContext:
@@ -732,23 +654,3 @@ async def _persist_cape_key(cape_key: str, key_path: pathlib.Path):
     key_path.parent.mkdir(parents=True, exist_ok=True)
     with open(key_path, "wb") as f:
         f.write(cape_key)
-
-
-def _check_if_cape_cli_available():
-    exitcode, output = subprocess.getstatusoutput("cape")
-    if exitcode != 0:
-        raise RuntimeError(
-            f"Please make sure Cape CLI is installed on your device: {output}"
-        )
-
-
-def _call_cape_cli(cape_cmd):
-    _check_if_cape_cli_available()
-    proc = subprocess.Popen(
-        cape_cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    out, err = proc.communicate()
-    return out, err
