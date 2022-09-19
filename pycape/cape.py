@@ -391,44 +391,6 @@ class Cape:
     async def _close(self):
         await self._ctx.close()
 
-    async def _deploy(self, deploy_path):
-        deploy_path = pathlib.Path(deploy_path)
-        cmd_deploy = "cape deploy " + str(deploy_path)
-        _, err_deploy = _call_cape_cli(cmd_deploy)
-        err_deploy = err_deploy.decode()
-
-        # TODO refactor parsing once https://github.com/capeprivacy/cli/pull/185
-        # is part of a new release.
-        # Parse stderr to get function id & function checksum and potential error
-        err_deploy = err_deploy.split("\n")
-        error_output = function_id = function_checksum = None
-
-        for i in err_deploy:
-            if "Error" in i:
-                error_output = i
-                error_msg = error_output.partition("Error:")[2]
-                raise RuntimeError(f"Cape deploy error - {error_msg}")
-            if "Function ID" in i:
-                id_output = i.split(" ")
-                function_id = id_output[3]
-            elif "Checksum" in i:
-                checksum_output = i.split(" ")
-                function_checksum = checksum_output[2]
-
-        if function_id is None:
-            raise RuntimeError(
-                f"Function ID not found in 'cape.deploy' response: \n{err_deploy}"
-            )
-
-        # TODO the function token should be set automatically with `self._token`.
-        # However we set it to None for now because if the input is encrypted
-        # with cape.encryp and the function is called with function token until
-        # this issue is completed: https://capeprivacy.atlassian.net/browse/CAPE-1004.
-        function_token = None
-        # function_token = await self._token(function_id)
-
-        return fref.FunctionRef(function_id, function_checksum, function_token)
-
     async def _request_invocation(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and/or kwargs are supplied to the Cape function through
         # Cape.run or Cape.invoke, before serialization, we pack them
