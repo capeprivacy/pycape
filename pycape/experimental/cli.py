@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 import subprocess
@@ -45,27 +46,26 @@ async def deploy(
     """
     url = url or cape_config.ENCLAVE_HOST
     deploy_path = pathlib.Path(deploy_path)
-    cmd_deploy = f"cape deploy {deploy_path} -u {url}"
+
+    cmd_deploy = f"cape deploy {deploy_path} -u {url} -o json"
     _, err_deploy = _call_cape_cli(cmd_deploy)
     err_deploy = err_deploy.decode()
 
-    # TODO refactor parsing once https://github.com/capeprivacy/cli/pull/185
-    # is part of a new release.
-    # Parse stderr to get function id & function checksum and potential error
     err_deploy = err_deploy.split("\n")
     error_output = function_id = function_checksum = None
 
-    for i in err_deploy:
-        if "Error" in i:
-            error_output = i
+    for msg in err_deploy:
+        if "Error" in msg:
+            error_output = msg
             error_msg = error_output.partition("Error:")[2]
             raise RuntimeError(f"Cape deploy error - {error_msg}")
-        if "Function ID" in i:
-            id_output = i.split(" ")
-            function_id = id_output[3]
-        elif "Checksum" in i:
-            checksum_output = i.split(" ")
-            function_checksum = checksum_output[2]
+        else:
+            msg = json.loads(msg)
+            function_id = msg.get("function_id")
+            function_checksum = msg.get("function_checksum")
+
+            if function_id and function_checksum:
+                break
 
     if function_id is None:
         raise RuntimeError(
