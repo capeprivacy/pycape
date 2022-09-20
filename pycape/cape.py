@@ -387,9 +387,6 @@ class Cape:
                 )
         return
 
-    async def _close(self):
-        await self._ctx.close()
-
     async def _request_invocation(self, serde_hooks, use_serdio, *args, **kwargs):
         # If multiple args and/or kwargs are supplied to the Cape function through
         # Cape.run or Cape.invoke, before serialization, we pack them
