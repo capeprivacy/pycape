@@ -107,7 +107,7 @@ async def token(function_id, expires=None, url: Optional[str] = None):
     if expires:
         cmd_token = f"cape token {function_id} --expires {expires} -u {url}"
     else:
-        cmd_token = f"cape token {function_id} - u {url}"
+        cmd_token = f"cape token {function_id} -u {url}"
 
     out_token, err_token = _call_cape_cli(cmd_token)
     err_token = err_token.decode()
