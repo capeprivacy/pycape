@@ -5,12 +5,9 @@ import subprocess
 from typing import Optional
 from typing import Union
 
-import synchronicity
-
 from pycape import _config as cape_config
 from pycape import function_ref as fref
-
-_synchronizer = synchronicity.Synchronizer(multiwrap_warning=True)
+from pycape.cape import _synchronizer
 
 
 @_synchronizer
