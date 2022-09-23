@@ -1,22 +1,17 @@
 import os
+import pathlib
 
 from pycape import Cape
 from pycape import FunctionRef
 
 if __name__ == "__main__":
-    token = os.environ.get("CAPE_TOKEN", None)
     url = os.environ.get("CAPE_HOST", "wss://enclave.capeprivacy.com")
-    function_id = os.environ.get(
-        "CAPE_FUNCTION_ID", "e4c2a674-9c7f-42d3-8ade-63791c16c3c7"
-    )
-    function_checksum = os.environ.get("CAPE_FUNCTION_CHECKSUM", None)
+    token_file = os.environ.get("TOKEN_FILE", "mean_token.json")
+    token_file = pathlib.Path(__file__).parent.absolute() / token_file
 
-    if function_checksum is None:
-        function_ref = function_id
-    else:
-        function_ref = FunctionRef(function_id, function_checksum)
+    function_ref = FunctionRef.from_json(token_file)
 
-    cape = Cape(url=url, access_token=token)
+    cape = Cape(url=url)
 
     x = [1, 2, 3, 4]
     result = cape.run(function_ref, x, use_serdio=True)

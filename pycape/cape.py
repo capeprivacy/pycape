@@ -80,15 +80,9 @@ class Cape:
     def __init__(
         self,
         url: Optional[str] = None,
-        access_token: Optional[str] = None,
         verbose: bool = False,
     ):
         self._url = url or cape_config.ENCLAVE_HOST
-        if access_token is None:
-            config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
-            cape_auth_path = config_dir / cape_config.LOCAL_AUTH_FILENAME
-            access_token = _handle_default_auth(cape_auth_path)
-        self._auth_token = access_token
         self._root_cert = None
         self._ctx = None
 
@@ -104,7 +98,7 @@ class Cape:
     @_synchronizer
     async def connect(
         self,
-        function_ref: Union[str, fref.FunctionRef],
+        function_ref: fref.FunctionRef,
         pcrs: Optional[Dict[str, List[str]]] = None,
     ):
         """Connects to the enclave hosting the function denoted by ``function_ref``.
@@ -127,7 +121,7 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        function_ref = _convert_to_function_ref(function_ref)
+        function_ref = _check_if_function_ref(function_ref)
         await self._request_connection(function_ref, pcrs)
 
     @_synchronizer
@@ -176,7 +170,7 @@ class Cape:
     @_synchronizer.asynccontextmanager
     async def function_context(
         self,
-        function_ref: Union[str, fref.FunctionRef],
+        function_ref: fref.FunctionRef,
         pcrs: Optional[Dict[str, List[str]]] = None,
     ):
         """Creates a context manager for a given ``function_ref``'s enclave connection.
@@ -298,7 +292,7 @@ class Cape:
     @_synchronizer
     async def run(
         self,
-        function_ref: Union[str, fref.FunctionRef],
+        function_ref: fref.FunctionRef,
         *args: Any,
         pcrs: Optional[Dict[str, List[str]]] = None,
         serde_hooks=None,
@@ -313,8 +307,8 @@ class Cape:
         preferred when the caller doesn't need to invoke a Cape function more than once.
 
         Args:
-            function_ref: A function ID string or :class:`~.function_ref.FunctionRef`
-                representing a deployed Cape function.
+            function_ref: A function :class:`~.function_ref.FunctionRef` representing
+                a deployed Cape function.
             *args: Arguments to pass to the connected Cape function. If
                 ``use_serdio=False``, we expect a single argument of type ``bytes``.
                 Otherwise, these arguments should match the positional arguments
@@ -340,7 +334,7 @@ class Cape:
             RuntimeError: if serialized inputs could not be HPKE-encrypted, or if
                 websocket response is malformed.
         """
-        function_ref = _convert_to_function_ref(function_ref)
+        function_ref = _check_if_function_ref(function_ref)
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         async with self.function_context(function_ref, pcrs):
@@ -350,17 +344,13 @@ class Cape:
         return result
 
     async def _request_connection(self, function_ref, pcrs=None):
-        if function_ref.auth_type == fref.FunctionAuthType.AUTH0:
-            function_token = self._auth_token
-        else:
-            function_token = function_ref.token
         fn_endpoint = f"{self._url}/v1/run/{function_ref.id}"
 
         self._root_cert = self._root_cert or attest.download_root_cert()
         self._ctx = _EnclaveContext(
             endpoint=fn_endpoint,
             auth_protocol=function_ref.auth_protocol,
-            auth_token=function_token,
+            auth_token=function_ref.token,
             root_cert=self._root_cert,
         )
         attestation_doc = await self._ctx.bootstrap(pcrs)
@@ -585,18 +575,15 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
     return v
 
 
-def _convert_to_function_ref(function_ref):
+def _check_if_function_ref(function_ref):
     """
-    Returns a PyCape FunctionRef object that represents the Cape function
+    Check if it's a FunctionRef object that represents the Cape function
     """
-    if isinstance(function_ref, str):
-        return fref.FunctionRef(function_ref)
-    elif isinstance(function_ref, fref.FunctionRef):
+    if isinstance(function_ref, fref.FunctionRef):
         return function_ref
     else:
         raise TypeError(
-            "`function_ref` arg must be a string function ID, "
-            f"or a FunctionRef object, found {type(function_ref)}"
+            f"`function_ref` a FunctionRef object found {type(function_ref)}"
         )
 
 

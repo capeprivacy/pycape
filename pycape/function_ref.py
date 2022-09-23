@@ -110,12 +110,12 @@ class FunctionRef:
                 "Couldn't find the token file with the provided "
                 f"path: {str(token_path)}"
             )
-        
-        function_id = token_config.get("function_id")
+
+        function_id = token_config.get("id")
         if function_id is None:
             raise ValueError("Couldn't find a `function_id` in the token file provided")
 
-        function_token = token_config.get("function_token")
+        function_token = token_config.get("token")
         if function_token is None:
             raise ValueError(
                 "Couldn't find a `fuction_token` in the token file provided"
