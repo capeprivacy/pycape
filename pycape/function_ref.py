@@ -103,13 +103,14 @@ class FunctionRef:
             token_path = pathlib.Path(token_path)
 
         if token_path.exists():
-            token_config = json.load(token_path)
+            with open(token_path, "r") as f:
+                token_config = json.load(f)
         else:
             raise ValueError(
                 "Couldn't find the token file with the provided "
                 f"path: {str(token_path)}"
             )
-
+        
         function_id = token_config.get("function_id")
         if function_id is None:
             raise ValueError("Couldn't find a `function_id` in the token file provided")
