@@ -3,7 +3,7 @@
 The :class:`Cape` client uses websockets to connect to Cape enclaves that are hosting a
 user's deployed functions. Before being able to run functions from the Cape client,
 users must have gone through the process of developing a Cape function in Python and
-deploying it from the CLI.
+deploying it from the CLI and generating a function token.
 
 The majority of the :class:`Cape` client interface can be used in either synchronous or
 asynchronous contexts via asyncio.
@@ -14,7 +14,8 @@ asynchronous contexts via asyncio.
 
     cape = Cape()
 
-    cape.connect("9712r5dynf57l1rcns2")
+    f = FunctionRef.from_json("function_token.json")
+    cape.connect()
 
     c1 = cape.invoke(3, 4, use_serdio=True)
     print(c1)  # 5
@@ -182,8 +183,9 @@ class Cape:
         **Usage** ::
 
             cape = Cape(url="wss://enclave.capeprivacy.com")
+            f = FunctionRef.from_json("function_token.json")
 
-            with cape.function_context("9712r5dynf57l1rcns2"):
+            with cape.function_context(f):
 
                 c1 = cape.invoke(3, 4, use_serdio=True)
                 print(c1)  # 5

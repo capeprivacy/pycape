@@ -39,7 +39,7 @@ make install-release
 
 ## Usage
 
-To run a function, you need to have a [function token](https://docs.capeprivacy.com/tutorials/tokens). A function token can be obtained by first deploying the function with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape deploy`. `cape deploy` will return a function ID and a checksum. Then this function ID will be used to generate a function token with `cape token`. When generating the function token, we recommend to include the function checksum, so Cape can perform additional validation that the function you are calling correspond to the function you have deployed.
+To run a function, you need to first deploy a function and generate a [function token](https://docs.capeprivacy.com/tutorials/tokens). You can deploy a function with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape deploy`. `cape deploy` will return a function ID and a checksum. Then this function ID will be used to generate a function token with `cape token`. When generating the function token, we recommend to include the function checksum, so Cape can perform additional validation that the function you are calling corresponds to the function you have deployed. You can checkout the [examples repository](https://github.com/capeprivacy/pycape/blob/main/examples/) to see the process end to end. 
 
 ### `run`
 

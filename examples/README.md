@@ -1,6 +1,6 @@
 # Examples
 
-To run a function, you need to have a [function token](https://docs.capeprivacy.com/tutorials/tokens). A function token can be obtained by first deploying the function with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape deploy`. `cape deploy` will return a function ID and a checksum. Then this function ID will be used to generate a function token with `cape token`. When generating the function token, we recommend to include the function checksum, so Cape can perform additional validation that the function you are calling correspond to the function you have deployed.  
+To run a function, you need to first deploy a function and generate a [function token](https://docs.capeprivacy.com/tutorials/tokens). You can deploy a function with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape deploy`. `cape deploy` will return a function ID and a checksum. Then this function ID will be used to generate a function token with `cape token`. When generating the function token, we recommend to include the function checksum, so Cape can perform additional validation that the function you are calling corresponds to the function you have deployed.   
 
 ## Echo: running functions on raw bytes
 
@@ -12,11 +12,21 @@ python3 deploy_run_echo.py
 ```
 
 Alternatively, you can use the Cape CLI directly via `cape deploy` and `cape token` as follows. 
-You can deploy the echo function and get a function token by running:
+You can deploy the echo function as follow:
 ```
-cape token -o json -j < (cape deploy echo -o json) > echo_token.json
+$ cape deploy echo
+
+Deploying function to Cape ...
+Success! Deployed function to Cape.
+Function ID ➜  <FUNCTION_ID>
+Function Checksum ➜  <FUNCTION_CHECKSUM>
 ```
-This command will return a json file including the function ID, function token and function checksum of your deployed function.
+
+Then generate a function token by running:
+```
+cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > echo_token.json
+```
+The `echo_token.json` json file will contain your function ID, function token and function checksum. This file will be later used to instantiate a `FunctionRef` object referencing your deployed function. Using a json file avoids you having to copy paste function ID, function token and function checksum from your terminal to the python script calling the function.
 
 After deploying the function, to run a function once, you can run the following example:
 ```
@@ -61,10 +71,20 @@ cp examples/mean/app.py $TARGET
 
 ### Step 3: Deploy function with dependencies
 ```sh
-cape token -o json -j < (cape deploy examples/mean/build --url $CAPE_HOST) > mean_token.json
+pushd examples/mean && cape deploy build --url $CAPE_HOST && popd
+
+Deploying function to Cape ...
+Success! Deployed function to Cape.
+Function ID ➜  <FUNCTION_ID>
+Function Checksum ➜  <FUNCTION_CHECKSUM>
 ```
 
-### Step 4: Use PyCape client to run the function in a Cape enclave
+### Step 4: Generate a function token
+```
+cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > mean_token.json
+```
+
+### Step 5: Use PyCape client to run the function in a Cape enclave
 Finally, run the function with the PyCape client:
 ```sh
 export CAPE_TOKEN_FILE=mean_token.json
