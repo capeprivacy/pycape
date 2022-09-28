@@ -2,7 +2,6 @@ import json
 import os
 import pathlib
 import subprocess
-from optparse import Option
 from typing import Optional
 from typing import Union
 
@@ -15,16 +14,17 @@ from pycape.cape import _synchronizer
 async def deploy(
     deploy_path: Union[str, os.PathLike],
     url: Optional[str] = None,
-    function_expiry: Optional[str] = None,
+    token_expiry: Optional[str] = None,
 ) -> fref.FunctionRef:
     """Deploy a directory or a zip file containing a Cape function declared in
     an app.py script.
 
-    This method calls `cape deploy` from the Cape CLI to deploy a Cape function
-    then returns a `~.function_ref.FunctionRef` representingthe the deployed
-    function.  Note that the ``deploy_path`` has to point to a directory or a
-    zip file containing a Cape function declared in an app.py file and the size
-    of its content  is currently limited to 1GB.
+    This method calls `cape deploy` and `cape token` from the Cape CLI to deploy
+    a Cape function then returns a `~.function_ref.FunctionRef` representing
+    the deployed function. This `~.function_ref.FunctionRef` will hold a function ID,
+    a function token and a function checksum. Note that the ``deploy_path`` has to
+    point to a directory or a zip file containing a Cape function declared in an app.py
+    file and the size of its content  is currently limited to 1GB.
 
     Args:
         deploy_path: A path pointing to a directory or a zip file containing
@@ -33,6 +33,7 @@ async def deploy(
             client requests to the proper enclave instances. If None, tries to load
             value from the ``CAPE_ENCLAVE_HOST`` environment variable. If no such
             variable value is supplied, defaults to ``"wss://enclave.capeprivacy.com"``.
+        token_expriry: Amount of time in seconds until the function token expires.
 
     Returns:
         A :class:`~.function_ref.FunctionRef` representing the deployed Cape
@@ -55,12 +56,14 @@ async def deploy(
     err_deploy = err_deploy.split("\n")
     error_output = None
 
+    # Parse err_token to get potential errors
     for msg in err_deploy:
         if "Error" in msg:
             error_output = msg
             error_msg = error_output.partition("Error:")[2]
             raise RuntimeError(f"Cape deploy error - {error_msg}")
 
+    # Parse out_deploy to get function ID and function checksum
     out_deploy = json.loads(out_deploy.split("\n")[0])
     function_id = out_deploy.get("function_id")
     function_checksum = out_deploy.get("function_checksum")
@@ -71,7 +74,7 @@ async def deploy(
         )
 
     function_reference = await token(
-        function_id, expiry=function_expiry, function_checksum=function_checksum
+        function_id, expiry=token_expiry, function_checksum=function_checksum
     )
 
     return function_reference
@@ -92,10 +95,11 @@ async def token(
 
     Args:
         function_id: A function ID string representing a deployed Cape function.
-        exprires: Amount of time in seconds until the the function token expires.
+        expriry: Amount of time in seconds until the function token expires.
 
     Returns:
-        A function token (JSON Web Token) as a string.
+        A :class:`~.function_ref.FunctionRef` representing the deployed Cape
+        function.
 
         Raises:
         RuntimeError: if the Cape CLI cannot be found on the device.
@@ -111,7 +115,6 @@ async def token(
     err_token = err_token.decode()
     out_token = out_token.decode()
 
-    # Parse out_token to get function token
     err_deploy = err_token.split("\n")
     error_output = None
     # Parse err_token to get potential errors
@@ -121,6 +124,7 @@ async def token(
             error_msg = error_output.partition("Error:")[2]
             raise RuntimeError(f"Cape token error - {error_msg}")
 
+    # Parse out_token to get function token
     function_token = json.loads(out_token.split("\n")[0]).get("function_token")
 
     if function_token is None:
