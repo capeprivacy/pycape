@@ -109,7 +109,7 @@ class FunctionRef:
         Returns:
             A :class:`~.function_ref.FunctionRef` representing the deployed Cape
             function.
-        
+
         Raises:
             ValueError: if the json token file doesn't exist or, the token file
             doesn't contain a `function_id` or a `function_token`.

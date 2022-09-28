@@ -122,7 +122,7 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        function_ref = _check_if_function_ref(function_ref)
+        function_ref = _check_function_ref(function_ref)
         await self._request_connection(function_ref, pcrs)
 
     @_synchronizer
@@ -336,7 +336,7 @@ class Cape:
             RuntimeError: if serialized inputs could not be HPKE-encrypted, or if
                 websocket response is malformed.
         """
-        function_ref = _check_if_function_ref(function_ref)
+        function_ref = _check_function_ref(function_ref)
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         async with self.function_context(function_ref, pcrs):
@@ -577,15 +577,25 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
     return v
 
 
-def _check_if_function_ref(function_ref):
+def _check_function_ref(function_ref):
     """
-    Check if it's a FunctionRef object that represents the Cape function
+    Check if the FunctionRef object contains a function ID and token.
     """
     if isinstance(function_ref, fref.FunctionRef):
+        if function_ref.id is None:
+            raise ValueError(
+                "The function ID in the function reference " "provided is empty."
+            )
+
+        if function_ref.token is None:
+            raise ValueError(
+                "The function token in the function reference " "provided is empty."
+            )
+
         return function_ref
     else:
         raise TypeError(
-            f"`function_ref` a FunctionRef object found {type(function_ref)}"
+            f"`function_ref` a FunctionRef object found {type(function_ref)}."
         )
 
 
