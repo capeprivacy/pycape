@@ -54,7 +54,7 @@ from pycape import Cape
 from pycape import FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
-function_id = "X9rgtUVm6yYrPMZamBWTZY"
+function_id = "2heeV48kLCAsvj6nYY87Fh"
 function_checksum = "cbca8c9f7ac41138935018c3f45cd16d1abfbe15a37b1fc09a11dfbc3d44b447"
 f = FunctionRef(function_id, function_checksum)
 result = client.run(f, b"Hello!")
@@ -73,7 +73,7 @@ from pycape import Cape
 from pycape import FunctionRef
 
 client = Cape(url="wss://enclave.capeprivacy.com")
-function_id = "X9rgtUVm6yYrPMZamBWTZY"
+function_id = "2heeV48kLCAsvj6nYY87Fh"
 function_checksum = "cbca8c9f7ac41138935018c3f45cd16d1abfbe15a37b1fc09a11dfbc3d44b447"
 f = FunctionRef(function_id, function_checksum)
 
