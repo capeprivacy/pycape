@@ -109,7 +109,6 @@ async def token(
             f"cape token {function_id} --function-checksum {function_checksum} "
             f"--expiry {expiry} -o json"
         )
-        # breakpoint()
     else:
         cmd_token = (
             f"cape token {function_id} --function-checksum {function_checksum} -o json"
