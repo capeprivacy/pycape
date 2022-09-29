@@ -126,17 +126,17 @@ class FunctionRef:
                 f"path: {str(token_path)}"
             )
 
-        function_id = token_config.get("id")
+        function_id = token_config.get("function_id")
         if function_id is None:
             raise ValueError("Couldn't find a `function_id` in the token file provided")
 
-        function_token = token_config.get("token")
+        function_token = token_config.get("function_token")
         if function_token is None:
             raise ValueError(
                 "Couldn't find a `function_token` in the token file provided"
             )
 
-        function_checksum = token_config.get("checksum")
+        function_checksum = token_config.get("function_checksum")
 
         return cls(function_id, function_token, function_checksum)
 
