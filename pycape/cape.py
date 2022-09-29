@@ -584,12 +584,12 @@ def _check_function_ref(function_ref):
     if isinstance(function_ref, fref.FunctionRef):
         if function_ref.id is None:
             raise ValueError(
-                "The function ID in the function reference " "provided is empty."
+                "The function ID in the provided FunctionRef is empty."
             )
 
         if function_ref.token is None:
             raise ValueError(
-                "The function token in the function reference " "provided is empty."
+                "The function token in the provided FunctionRef is empty."
             )
 
         return function_ref
