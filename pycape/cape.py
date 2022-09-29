@@ -309,7 +309,7 @@ class Cape:
         preferred when the caller doesn't need to invoke a Cape function more than once.
 
         Args:
-            function_ref: A function :class:`~.function_ref.FunctionRef` representing
+            function_ref: A :class:`~.function_ref.FunctionRef` representing
                 a deployed Cape function.
             *args: Arguments to pass to the connected Cape function. If
                 ``use_serdio=False``, we expect a single argument of type ``bytes``.
