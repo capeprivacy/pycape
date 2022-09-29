@@ -82,7 +82,7 @@ async def deploy(
 
 async def token(
     function_id,
-    expiry=None,
+    expiry=Optional[None],
     function_checksum: Optional[str] = None,
 ) -> fref.FunctionRef:
     """Generate a function token (JSON Web Token) based on a function ID.
@@ -105,7 +105,11 @@ async def token(
         RuntimeError: if the Cape CLI cannot be found on the device.
     """
     if expiry:
-        cmd_token = f"cape token {function_id} --expires {expiry} -o json"
+        cmd_token = (
+            f"cape token {function_id} --function-checksum {function_checksum} "
+            f"--expiry {expiry} -o json"
+        )
+        # breakpoint()
     else:
         cmd_token = (
             f"cape token {function_id} --function-checksum {function_checksum} -o json"
