@@ -129,6 +129,7 @@ class Cape:
     async def encrypt(
         self,
         input: bytes,
+        function_ref: fref.FunctionRef,
         key: Optional[bytes] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
     ) -> bytes:
@@ -161,7 +162,7 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        cape_key = key or await self.key(key_path)
+        cape_key = key or await self.key(function_ref, key_path)
         ctxt = cape_encrypt.encrypt(input, cape_key)
         # cape-encrypted ctxt must be b64-encoded and tagged
         ctxt = base64.b64encode(ctxt)
@@ -256,6 +257,7 @@ class Cape:
     @_synchronizer
     async def key(
         self,
+        function_ref: fref.FunctionRef,
         key_path: Optional[Union[str, os.PathLike]] = None,
         pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
@@ -288,7 +290,7 @@ class Cape:
             with open(key_path, "rb") as f:
                 cape_key = f.read()
         else:
-            cape_key = await self._request_key(key_path, pcrs=pcrs)
+            cape_key = await self._request_key(function_ref, key_path, pcrs=pcrs)
         return cape_key
 
     @_synchronizer
@@ -420,15 +422,14 @@ class Cape:
         return result
 
     async def _request_key(
-        self, key_path: pathlib.Path, pcrs: Optional[Dict[str, List[str]]] = None
+        self, function_ref: fref.FunctionRef, key_path: pathlib.Path, pcrs: Optional[Dict[str, List[str]]] = None
     ) -> bytes:
         key_endpoint = f"{self._url}/v1/key"
-        auth_protocol = fref.get_auth_protocol(fref.FunctionAuthType.AUTH0)
         self._root_cert = self._root_cert or attest.download_root_cert()
         key_ctx = _EnclaveContext(
             key_endpoint,
-            auth_protocol=auth_protocol,
-            auth_token=self._auth_token,
+            auth_protocol=function_ref.auth_protocol,
+            auth_token=function_ref.token,
             root_cert=self._root_cert,
         )
         attestation_doc = await key_ctx.bootstrap(pcrs)
