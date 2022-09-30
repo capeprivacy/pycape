@@ -591,7 +591,7 @@ def _check_function_ref(function_ref):
         return function_ref
     else:
         raise TypeError(
-            f"`function_ref` a FunctionRef object found {type(function_ref)}."
+            f"`function_ref` arg must be a FunctionRef object, found {type(function_ref)}."
         )
 
 
