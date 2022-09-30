@@ -15,33 +15,11 @@ the Cape CLI's ``deploy`` command.
     cape = Cape()
     cape.connect(fref)
 """
-import enum
 import json
 import os
 import pathlib
 from typing import Optional
 from typing import Union
-
-
-class FunctionAuthType(enum.Enum):
-    """Enum representing the auth type for a function.
-
-    The auth type determines how :class:`~pycape.cape.Cape` will supply authentication
-    info for requests involving a particular function.
-    """
-
-    AUTH0 = 1
-    TOKEN = 2
-
-
-def get_auth_protocol(auth_type: FunctionAuthType):
-    if not isinstance(auth_type, FunctionAuthType):
-        raise TypeError(f"Expected FunctionAuthType, found {type(auth_type)}.")
-    if auth_type == FunctionAuthType.AUTH0:
-        return "cape.runtime"
-    elif auth_type == FunctionAuthType.TOKEN:
-        return "cape.function"
-    raise ValueError(f"Unrecognized FunctionAuthType variant: {auth_type}.")
 
 
 class FunctionRef:
@@ -69,13 +47,15 @@ class FunctionRef:
         id_ = id
         if not isinstance(id_, str):
             raise TypeError(f"Function id must be a string, found {type(id_)}.")
+        if not isinstance(token, str):
+            raise TypeError(f"Function token must be a string, found {type(token)}.")
+        if checksum is not None and not isinstance(checksum, str):
+            raise TypeError(
+                f"Function checksum must be a string, found {type(checksum)}."
+            )
         self._id = id_
         self._checksum = checksum
         self._token = token
-        if token is None:
-            self.set_auth_type(FunctionAuthType.AUTH0)
-        else:
-            self.set_auth_type(FunctionAuthType.TOKEN)
 
     @property
     def id(self):
@@ -88,14 +68,6 @@ class FunctionRef:
     @property
     def token(self):
         return self._token
-
-    @property
-    def auth_type(self):
-        return self._auth_type
-
-    @property
-    def auth_protocol(self):
-        return self._auth_protocol
 
     @classmethod
     def from_json(cls, token_path: Union[str, os.PathLike]):
@@ -112,7 +84,7 @@ class FunctionRef:
 
         Raises:
             ValueError: if the json token file doesn't exist or, the token file
-            doesn't contain a `function_id` or a `function_token`.
+                doesn't contain a `function_id` or a `function_token`.
         """
         if isinstance(token_path, str):
             token_path = pathlib.Path(token_path)
@@ -139,8 +111,3 @@ class FunctionRef:
         function_checksum = token_config.get("function_checksum")
 
         return cls(function_id, function_token, function_checksum)
-
-    def set_auth_type(self, auth_type: FunctionAuthType):
-        """Set the :class:`FunctionAuthType` for :attr:`token`."""
-        self._auth_type = auth_type
-        self._auth_protocol = get_auth_protocol(auth_type)
