@@ -271,6 +271,7 @@ class Cape:
                 If None, the default path is ``"$HOME/.config/cape/capekey.pub.der"``,
                 or alternatively whatever path is specified by expanding the env
                 variables ``CAPE_LOCAL_CONFIG_DIR / CAPE_LOCAL_CAPE_KEY_FILENAME``.
+            pcrs: A dictionary of PCR indexes to a list of potential values.
 
         Returns:
             Bytes containing the Cape key. The key is also cached on disk for later
