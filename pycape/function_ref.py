@@ -15,7 +15,6 @@ the Cape CLI's ``deploy`` command.
     cape = Cape()
     cape.connect(fref)
 """
-import enum
 import json
 import os
 import pathlib
@@ -51,7 +50,9 @@ class FunctionRef:
         if not isinstance(token, str):
             raise TypeError(f"Function token must be a string, found {type(token)}.")
         if checksum is not None and not isinstance(checksum, str):
-            raise TypeError(f"Function checksum must be a string, found {type(checksum)}.")
+            raise TypeError(
+                f"Function checksum must be a string, found {type(checksum)}."
+            )
         self._id = id_
         self._checksum = checksum
         self._token = token

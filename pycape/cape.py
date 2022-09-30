@@ -419,7 +419,10 @@ class Cape:
         return result
 
     async def _request_key(
-        self, token: str, key_path: pathlib.Path, pcrs: Optional[Dict[str, List[str]]] = None
+        self,
+        token: str,
+        key_path: pathlib.Path,
+        pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
         key_endpoint = f"{self._url}/v1/key"
         self._root_cert = self._root_cert or attest.download_root_cert()
