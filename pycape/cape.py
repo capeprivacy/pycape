@@ -350,7 +350,7 @@ class Cape:
         self._root_cert = self._root_cert or attest.download_root_cert()
         self._ctx = _EnclaveContext(
             endpoint=fn_endpoint,
-            auth_protocol=function_ref.auth_protocol,
+            auth_protocol="cape.function",
             auth_token=function_ref.token,
             root_cert=self._root_cert,
         )
