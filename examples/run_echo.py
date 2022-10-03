@@ -9,7 +9,7 @@ if __name__ == "__main__":
     function_json = os.environ.get("FUNCTION_JSON", "echo_token.json")
     function_json = pathlib.Path(__file__).parent.absolute() / function_json
 
-    function_ref = FunctionRef.from_json(token_file)
+    function_ref = FunctionRef.from_json(function_json)
     cape = Cape(url=url)
     input = "Welcome to Cape".encode()
     result = cape.run(function_ref, input)
