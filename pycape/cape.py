@@ -14,7 +14,7 @@ asynchronous contexts via asyncio.
 
     cape = Cape()
 
-    f = FunctionRef.from_json("function_token.json")
+    f = FunctionRef.from_json("function.json")
     cape.connect(f)
 
     c1 = cape.invoke(3, 4, use_serdio=True)
