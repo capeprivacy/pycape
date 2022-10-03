@@ -183,7 +183,7 @@ class Cape:
         **Usage** ::
 
             cape = Cape(url="wss://enclave.capeprivacy.com")
-            f = FunctionRef.from_json("function_token.json")
+            f = FunctionRef.from_json("function.json")
 
             with cape.function_context(f):
 
