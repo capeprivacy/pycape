@@ -508,7 +508,15 @@ class _EnclaveContext:
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
 
         _logger.debug("> Sending encrypted inputs")
-        await self._websocket.send(input_ciphertext)
+        try:
+            await self._websocket.send(input_ciphertext)
+        except websockets.exceptions.ConnectionClosedOK:
+            raise RuntimeError(
+                "Enclave websocket connection was closed, likely due to timeout error. "
+                "Please invoke your function more frequently to keep the connection "
+                "alive for more than 60 seconds."
+            )
+
         invoke_response = await self._websocket.recv()
         _logger.debug("< Received function results")
 
