@@ -31,14 +31,14 @@ The `echo_token.json` json file will contain your function ID, function token an
 After deploying the function, to run a function once, you can run the following example:
 ```
 export CAPE_HOST=<WSS_URL>
-export CAPE_TOKEN_FILE=echo_token.json
+export FUNCTION_JSON=echo_token.json
 python run_echo.py
 ```
 
 To run a function repeatedly, you can run the following example:
 ```
 export CAPE_HOST=<WSS_URL>
-export CAPE_TOKEN_FILE=echo_token.json
+export FUNCTION_JSON=echo_token.json
 python invoke_echo.py
 ```
 
@@ -87,6 +87,6 @@ cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > mean_
 ### Step 5: Use PyCape client to run the function in a Cape enclave
 Finally, run the function with the PyCape client:
 ```sh
-export CAPE_TOKEN_FILE=mean_token.json
+export FUNCTION_JSON=mean_token.json
 python examples/run_mean.py
 ```
