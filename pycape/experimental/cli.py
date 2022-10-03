@@ -95,7 +95,7 @@ async def token(
 
     Args:
         function_id: A function ID string representing a deployed Cape function.
-        expriry: Amount of time in seconds until the function token expires.
+        expiry: Amount of time in seconds until the function token expires.
 
     Returns:
         A :class:`~.function_ref.FunctionRef` representing the deployed Cape
