@@ -90,8 +90,9 @@ class Cape:
     @_synchronizer
     async def close(self):
         """Closes the current enclave connection."""
-        await self._ctx.close()
-        self._ctx = None
+        if self._ctx is not None:
+            await self._ctx.close()
+            self._ctx = None
 
     @_synchronizer
     async def connect(
@@ -495,14 +496,25 @@ class _EnclaveContext:
         return attestation_doc
 
     async def close(self):
-        await self._websocket.close()
+        if self._websocket is not None:
+            await self._websocket.close()
+            self._websocket = None
         self._public_key = None
 
     async def invoke(self, inputs: bytes) -> bytes:
         input_ciphertext = enclave_encrypt.encrypt(self._public_key, inputs)
 
         _logger.debug("> Sending encrypted inputs")
-        await self._websocket.send(input_ciphertext)
+        try:
+            await self._websocket.send(input_ciphertext)
+        except websockets.exceptions.ConnectionClosedOK:
+            await self.close()
+            raise RuntimeError(
+                "Enclave websocket connection was closed, likely due to timeout error. "
+                "Please invoke your function more frequently to keep the connection "
+                "alive for more than 60 seconds."
+            )
+
         invoke_response = await self._websocket.recv()
         _logger.debug("< Received function results")
 
