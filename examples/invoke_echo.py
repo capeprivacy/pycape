@@ -1,21 +1,16 @@
 import os
+import pathlib
 
 from pycape import Cape
 from pycape import FunctionRef
 
 if __name__ == "__main__":
-    token = os.environ.get("CAPE_TOKEN", None)
     url = os.environ.get("CAPE_HOST", "wss://enclave.capeprivacy.com")
-    function_id = os.environ.get("CAPE_FUNCTION_ID", "VNgMtygWv8wCwwjbbQ2kH6")
-    function_checksum = os.environ.get("CAPE_FUNCTION_CHECKSUM", None)
+    function_json = os.environ.get("FUNCTION_JSON", "echo_token.json")
+    function_json = pathlib.Path(__file__).parent.absolute() / function_json
 
-    if function_checksum is None:
-        function_ref = function_id
-    else:
-        function_ref = FunctionRef(function_id, function_checksum)
-
-    cape = Cape(url=url, access_token=token)
-
+    function_ref = FunctionRef.from_json(function_json)
+    cape = Cape(url=url)
     cape.connect(function_ref)
     result = cape.invoke("Hello Cape".encode())
     print(f"The result is: {result.decode()}")

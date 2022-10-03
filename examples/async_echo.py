@@ -9,7 +9,7 @@ from pycape.experimental import cli
 async def main(cape: pycape.Cape, deploy_path: os.PathLike, echo: str) -> str:
     function_ref = await cli.deploy(deploy_path)
     echo_arg = echo.encode()
-    echo_enc = await cape.encrypt(echo_arg)
+    echo_enc = await cape.encrypt(echo_arg, function_ref.token)
     async with cape.function_context(function_ref):
         result = await cape.invoke(echo_enc)
     return result.decode()
