@@ -36,19 +36,21 @@ def cape_handler(x_bytes):
 ### Deploying our first function
 To deploy this function, we can follow two steps.
 
-First, save the code into an `app.py` file in a folder called `mean`, similar to the [“Writing Functions” guide](https://docs.capeprivacy.com/functions/how-to). The result should look like [this example](https://github.com/capeprivacy/pycape/tree/main/examples/mean). 
+First, save the code into an `app.py` file in a folder called `mean`, similar to the [“Writing Functions” guide](https://docs.capeprivacy.com/tutorials/writing). The result should look like [this example](https://github.com/capeprivacy/pycape/tree/main/examples/mean). 
 
-Then deploy this folder by calling `cape deploy mean`, per the [“Deploying Functions” guide](https://docs.capeprivacy.com/functions/deploying).
+Then deploy this folder by calling `cape deploy mean`, per the [“Deploying Functions” guide](https://docs.capeprivacy.com/tutorials/deploying).
 
 ### Running our first function
 
-Once we’ve deployed the Cape function successfully, we’ll have a function ID and checksum that we can use to reference it elsewhere. We'll use this reference to call the function from PyCape as follows:
+Once we’ve deployed the Cape function successfully, we’ll have a function ID and checksum. The next step is to generate a [function token](https://docs.capeprivacy.com/tutorials/tokens) based on the function ID as follow using `cape token`:
+```
+cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > mean_token.json
+```
+The `mean_token.json` will contain the function ID, function token and function checksum. We can now use this json file to call the function from PyCape as follows:
 
 ```python
-cape = Cape()
-function_id = "4akLQwrqydyXYdyqn9qpSK"
-function_checksum = "8d3559c4d22df470be639aedbbb32c0857d3aca45c78e98be24c8a31fe051f75"
-function_ref = FunctionRef(function_id, function_checksum)
+cape = Cape(url="wss://enclave.capeprivacy.com")
+function_ref = FunctionRef.from_json("mean_token.json")
 x_bytes = json.dumps([1, 2, 3, 4]).encode()
 result_bytes = cape.run(function_ref, x_bytes)
 print("Mean of x is:", json.loads(result_bytes.decode()))
@@ -82,7 +84,7 @@ However, we’ve introduced a new problem. Serdio is not part of the Python stan
 
 ### Adding Serdio as a dependency
 
-We can add the Serdio dependency similarly to how we would [add any other third-party dependency](https://docs.capeprivacy.com/reference/functions#adding-3rd-party-dependencies). First, we add a `requirements.txt` file that specifies the version of Serdio we want to use. In this case, it should be equivalent to the version of PyCape we're using:
+We can add the Serdio dependency similarly to how we would [add any other third-party dependency](https://docs.capeprivacy.com/how-to/dependencies). First, we add a `requirements.txt` file that specifies the version of Serdio we want to use. In this case, it should be equivalent to the version of PyCape we're using:
 
 ```
 serdio~=1.0.0
@@ -97,16 +99,14 @@ pip install serdio --target mean/
 For more complicated Python dependencies that include C extension modules, this step will download and/or compile platform- and architecture-specific binaries. Therefore, running the installation step inside a Docker container like `python:3.9-slim-bullseye` is heavily recommended by the [third-party dependency guide](https://docs.capeprivacy.com/reference/functions#adding-3rd-party-dependencies).
 ```
 
-Finally, re-deploy this code with `cape deploy mean`, and make note of the function ID and checksum.
+Finally, re-deploy this code with `cape deploy mean`, and make note of the function ID, checksum, and generate the function token with `cape token`.
 
 ### Running Mean v2 with PyCape
 
 After re-deploying this code, we can call it from PyCape like we did before.
 ```python
-cape = Cape(url=url)
-function_id = "iHWCTH2hWZ9tUAhAnQpwWL"
-function_checksum = "8f0cf0cc7d4c6bdd6459d0be9cb090668f80f6a1313d3f4cfb97efb8ba80d6cb"
-function_ref = FunctionRef(function_id, function_checksum)
+cape = Cape(url="wss://enclave.capeprivacy.com")
+function_ref = FunctionRef.from_json("mean_token.json")
 x = [1, 2, 3, 4]
 result = cape.run(function_ref, x, use_serdio=True)
 print(f"The mean of x is: {result}")
@@ -120,10 +120,8 @@ If we want to invoke the same Cape function more than once in a Python applicati
 3. Close the connection with `Cape.close`
 
 ```python
-cape = Cape(url=url)
-function_id = "iHWCTH2hWZ9tUAhAnQpwWL"
-function_checksum = "8f0cf0cc7d4c6bdd6459d0be9cb090668f80f6a1313d3f4cfb97efb8ba80d6cb"
-function_ref = FunctionRef(function_id, function_checksum)
+cape = Cape(url="wss://enclave.capeprivacy.com")
+function_ref = FunctionRef.from_json("mean_token.json")
 cape.connect(function_ref)
 low_list = [1, 2, 3, 4]
 result = cape.invoke(low_list, use_serdio=True)
@@ -138,7 +136,6 @@ print(f"The mean is equal to: {result}")
 result = cape.invoke(low_list + high_list, use_serdio=True)
 print(f"The mean is equal to: {result}")
 # The mean is equal to: 4.5
-
 
 result = cape.invoke([9, 10, 11, 12], use_serdio=True)
 print(f"The mean is equal to: {result}")
