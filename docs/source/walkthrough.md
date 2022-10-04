@@ -49,7 +49,7 @@ cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > mean_
 The `mean_token.json` will contain the function ID, function token and function checksum. We can now use this json file to call the function from PyCape as follows:
 
 ```python
-cape = Cape(url="wss://enclave.capeprivacy.com")
+cape = Cape()
 function_ref = FunctionRef.from_json("mean_token.json")
 x_bytes = json.dumps([1, 2, 3, 4]).encode()
 result_bytes = cape.run(function_ref, x_bytes)
