@@ -105,7 +105,7 @@ Finally, re-deploy this code with `cape deploy mean`, and make note of the funct
 
 After re-deploying this code, we can call it from PyCape like we did before.
 ```python
-cape = Cape(url="wss://enclave.capeprivacy.com")
+cape = Cape()
 function_ref = FunctionRef.from_json("mean_token.json")
 x = [1, 2, 3, 4]
 result = cape.run(function_ref, x, use_serdio=True)
