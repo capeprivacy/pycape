@@ -120,7 +120,7 @@ If we want to invoke the same Cape function more than once in a Python applicati
 3. Close the connection with `Cape.close`
 
 ```python
-cape = Cape(url="wss://enclave.capeprivacy.com")
+cape = Cape()
 function_ref = FunctionRef.from_json("mean_token.json")
 cape.connect(function_ref)
 low_list = [1, 2, 3, 4]
