@@ -99,8 +99,8 @@ class FunctionRef:
                     function_config = json.load(f)
             else:
                 raise ValueError(
-                    "Couldn't parse the json string or couldn't find "
-                    f"the function json file with the provided path: {str(function_json)}"
+                    "Couldn't parse the json string or couldn't find the "
+                    f"function json file with the provided path: {str(function_json)}"
                 )
 
         function_id = function_config.get("function_id")
