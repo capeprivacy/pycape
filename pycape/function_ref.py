@@ -109,3 +109,21 @@ class FunctionRef:
         function_checksum = token_config.get("function_checksum")
 
         return cls(function_id, function_token, function_checksum)
+
+    def to_json(self, path: Optional[os.PathLike]):
+        """
+        Save function ID, token & checksum in a json file.
+
+        Args:
+            path: the file path to save function ID, token & checksum
+            as a json string.
+        """
+
+        fn_ref_dict = {
+            "function_id": self._id,
+            "function_token": self._token,
+            "function_checksum": self._checksum,
+        }
+
+        with open(path, "w") as f:
+            json.dump(fn_ref_dict, f)
