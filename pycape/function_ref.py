@@ -86,24 +86,27 @@ class FunctionRef:
             ValueError: if the json token file doesn't exist or, the token file
                 doesn't contain a `function_id` or a `function_token`.
         """
-
-        try:
-            if isinstance(function_json, pathlib.Path):
-                function_config = json.loads(str(function_json))
-            else:
+        if isinstance(function_json, pathlib.Path):
+            function_config = _load_json_file(
+                function_json,
+                "Couldn't find the function json file with the "
+                f"provided path: {str(function_json)}",
+            )
+        elif isinstance(function_json, str):
+            try:
                 function_config = json.loads(function_json)
-        except json.JSONDecodeError:
-            if isinstance(function_json, str):
-                function_json = pathlib.Path(function_json)
-
-            if function_json.exists():
-                with open(function_json, "r") as f:
-                    function_config = json.load(f)
-            else:
-                raise ValueError(
+            except json.JSONDecodeError:
+                function_config = _load_json_file(
+                    function_json,
                     "Couldn't parse the json string or couldn't find the "
-                    f"function json file with the provided path: {str(function_json)}"
+                    "function json file with the provided path: "
+                    f"{str(function_json)}",
                 )
+        else:
+            raise ValueError(
+                "The function_json argument expects a json string or "
+                f"a path to a json file, found: {function_json}"
+            )
 
         function_id = function_config.get("function_id")
         if function_id is None:
@@ -143,3 +146,15 @@ class FunctionRef:
         else:
             with open(path, "w") as f:
                 json.dump(fn_ref_dict, f)
+
+
+def _load_json_file(json_file, error_message):
+    if isinstance(json_file, str):
+        json_file = pathlib.Path(json_file)
+
+    if json_file.exists():
+        with open(json_file, "r") as f:
+            json_output = json.load(f)
+        return json_output
+    else:
+        raise ValueError(error_message)
