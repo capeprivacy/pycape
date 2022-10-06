@@ -124,7 +124,7 @@ class FunctionRef:
 
         Args:
             path: optional file path to save function ID, token & checksum
-            as a json string. Otherwise it will return a json string.
+                as a json string. Otherwise it will return a json string.
         """
 
         fn_ref_dict = {
