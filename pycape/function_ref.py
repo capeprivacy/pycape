@@ -122,7 +122,7 @@ class FunctionRef:
     def to_json(self, path: Optional[Union[str, os.PathLike]] = None) -> Optional[str]:
         """
         Save function ID, token & checksum in a json file or as a json string
-        if path is None.
+        if ``path`` is None.
 
         Args:
             path: optional file path to save function ID, token & checksum
