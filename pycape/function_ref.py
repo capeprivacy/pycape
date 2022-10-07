@@ -71,8 +71,7 @@ class FunctionRef:
 
     @classmethod
     def from_json(cls, function_json: Union[str, os.PathLike]) -> FunctionRef:
-        """
-        Load a json string or file containing a function ID, token & checksum.
+        """Load a json string or file containing a function ID, token & checksum.
 
         Args:
             function_json: a json string or a json file with a function ID, token
@@ -87,25 +86,21 @@ class FunctionRef:
                 doesn't contain a `function_id` or a `function_token`.
         """
         if isinstance(function_json, pathlib.Path):
-            function_config = _load_json_file(
-                function_json,
-                "Couldn't find the function json file with the "
-                f"provided path: {str(function_json)}",
-            )
+            function_config = _try_load_json_file(function_json)
+            if function_config is None:
+                raise ValueError(f"JSON file not found @ {str(function_json)}")
+
         elif isinstance(function_json, str):
-            try:
-                function_config = json.loads(function_json)
-            except json.JSONDecodeError:
-                function_config = _load_json_file(
-                    function_json,
-                    "Couldn't parse the json string or couldn't find the "
-                    "function json file with the provided path: "
-                    f"{str(function_json)}",
-                )
+            # try to treat function_json as filepath str
+            json_path = pathlib.Path(function_json)
+            function_config = _try_load_json_file(json_path)
+            # if file not found, treat function_json as json str
+            function_config = function_config or json.loads(function_json)
+
         else:
-            raise ValueError(
+            raise TypeError(
                 "The function_json argument expects a json string or "
-                f"a path to a json file, found: {function_json}"
+                f"a path to a json file, found: {type(function_json)}."
             )
 
         function_id = function_config.get("function_id")
@@ -123,16 +118,13 @@ class FunctionRef:
         return cls(function_id, function_token, function_checksum)
 
     def to_json(self, path: Optional[Union[str, os.PathLike]] = None) -> Optional[str]:
-        """
-        Save function ID, token & checksum in a json file or as a json string
-        if ``path`` is None.
+        """Write this :class:`~.function_ref.FunctionRef` to a JSON string or file.
 
         Args:
-            path: optional file path to save function ID, token & checksum
-                as a json string. Otherwise it will return a json string.
-
+            path: Optional file path to write JSON to.
         Returns:
-            A json string with function ID, token & checksum if ``path`` is None.
+            If ``path`` is None, a string with this :class:`~.function_ref.FunctionRef`
+            as a JSON struct.
         """
 
         fn_ref_dict = {
@@ -143,18 +135,13 @@ class FunctionRef:
 
         if path is None:
             return json.dumps(fn_ref_dict)
-        else:
-            with open(path, "w") as f:
-                json.dump(fn_ref_dict, f)
+
+        with open(path, "w") as f:
+            json.dump(fn_ref_dict, f)
 
 
-def _load_json_file(json_file, error_message):
-    if isinstance(json_file, str):
-        json_file = pathlib.Path(json_file)
-
+def _try_load_json_file(json_file: pathlib.Path):
     if json_file.exists():
         with open(json_file, "r") as f:
             json_output = json.load(f)
         return json_output
-    else:
-        raise ValueError(error_message)
