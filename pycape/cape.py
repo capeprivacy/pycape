@@ -286,10 +286,16 @@ class Cape:
         """
         if key_path is None:
             config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
-            key_path = config_dir / cape_config.LOCAL_CAPE_KEY_FILENAME
+            key_path = config_dir / token / cape_config.LOCAL_CAPE_KEY_FILENAME
         else:
             key_path = pathlib.Path(key_path)
-        cape_key = await self._request_key(token, key_path, pcrs=pcrs)
+
+        if key_path.exists():
+            with open(key_path, "rb") as f:
+                cape_key = f.read()
+        else:
+            cape_key = await self._request_key(token, key_path, pcrs=pcrs)
+
         return cape_key
 
     @_synchronizer
