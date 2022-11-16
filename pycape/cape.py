@@ -290,7 +290,7 @@ class Cape:
             key_path = (
                 config_dir
                 / "encryption_keys"
-                / token
+                / token[-200:]  # Shorten file name to avoid Errno 63 when saving file
                 / cape_config.LOCAL_CAPE_KEY_FILENAME
             )
         else:
