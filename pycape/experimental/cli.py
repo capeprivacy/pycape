@@ -31,7 +31,7 @@ async def deploy(
             a Cape function declared in an app.py script.
         url: The Cape platform's websocket URL, which is responsible for forwarding
             client requests to the proper enclave instances. If None, tries to load
-            value from the ``ENCLAVE_HOST`` environment variable. If no such
+            value from the ``CAPE_ENCLAVE_HOST`` environment variable. If no such
             variable value is supplied, defaults to ``"https://app.capeprivacy.com"``.
         token_expriry: Amount of time in seconds until the function token expires.
 
