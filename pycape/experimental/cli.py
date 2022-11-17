@@ -32,7 +32,7 @@ async def deploy(
         url: The Cape platform's websocket URL, which is responsible for forwarding
             client requests to the proper enclave instances. If None, tries to load
             value from the ``CAPE_ENCLAVE_HOST`` environment variable. If no such
-            variable value is supplied, defaults to ``"wss://enclave.capeprivacy.com"``.
+            variable value is supplied, defaults to ``"https://app.capeprivacy.com"``.
         token_expriry: Amount of time in seconds until the function token expires.
 
     Returns:

@@ -39,6 +39,7 @@ import os
 import pathlib
 import random
 import ssl
+import urllib
 from typing import Any
 from typing import Dict
 from typing import List
@@ -70,7 +71,7 @@ class Cape:
         url: The Cape platform's websocket URL, which is responsible for forwarding
             client requests to the proper enclave instances. If None, tries to load
             value from the ``CAPE_ENCLAVE_HOST`` environment variable. If no such
-            variable value is supplied, defaults to ``"wss://enclave.capeprivacy.com"``.
+            variable value is supplied, defaults to ``"https://app.capeprivacy.com"``.
         verbose: Boolean controlling verbose logging for the ``"pycape"`` logger.
             If True, sets log-level to ``DEBUG``.
     """
@@ -183,7 +184,7 @@ class Cape:
 
         **Usage** ::
 
-            cape = Cape(url="wss://enclave.capeprivacy.com")
+            cape = Cape(url="https://app.capeprivacy.com")
             f = FunctionRef.from_json("function.json")
 
             with cape.function_context(f):
@@ -289,7 +290,7 @@ class Cape:
             key_path = (
                 config_dir
                 / "encryption_keys"
-                / token
+                / token[-200:]  # Shorten file name to avoid Errno 63 when saving file
                 / cape_config.LOCAL_CAPE_KEY_FILENAME
             )
         else:
@@ -463,7 +464,7 @@ class _EnclaveContext:
     """A context managing a connection to a particular enclave instance."""
 
     def __init__(self, endpoint, auth_protocol, auth_token, root_cert):
-        self._endpoint = endpoint
+        self._endpoint = _transform_url(endpoint)
         self._auth_token = auth_token
         self._auth_protocol = auth_protocol
         self._root_cert = root_cert
@@ -618,3 +619,12 @@ async def _persist_cape_key(cape_key: str, key_path: pathlib.Path):
     key_path.parent.mkdir(parents=True, exist_ok=True)
     with open(key_path, "wb") as f:
         f.write(cape_key)
+
+
+def _transform_url(url):
+    url = urllib.parse.urlparse(url)
+    if url.scheme == "https":
+        return url.geturl().replace("https://", "wss://")
+    elif url.scheme == "http":
+        return url.geturl().replace("http://", "ws://")
+    return url.geturl()

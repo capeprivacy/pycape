@@ -3,7 +3,7 @@ import pathlib
 import pycape
 from pycape.experimental import cli
 
-CAPE_HOST = "wss://enclave.capeprivacy.com"
+CAPE_HOST = "https://app.capeprivacy.com"
 ECHO_DEPLOY_PATH = pathlib.Path(__file__).parent.absolute() / "echo"
 
 

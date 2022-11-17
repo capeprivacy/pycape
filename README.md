@@ -53,7 +53,7 @@ Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/r
 from pycape import Cape
 from pycape import FunctionRef
 
-client = Cape(url="wss://enclave.capeprivacy.com")
+client = Cape(url="https://app.capeprivacy.com")
 f = FunctionRef.from_json("echo_token.json")
 result = client.run(f, b"Hello!")
 print(result.decode())
@@ -70,7 +70,7 @@ Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/example
 from pycape import Cape
 from pycape import FunctionRef
 
-client = Cape(url="wss://enclave.capeprivacy.com")
+client = Cape(url="https://app.capeprivacy.com")
 f = FunctionRef.from_json("echo_token.json")
 
 client.connect(f)
