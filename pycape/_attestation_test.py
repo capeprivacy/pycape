@@ -1,13 +1,10 @@
 import base64
 import datetime
-import io
 import json
 import time
-import zipfile
 
 import cbor2
 import pytest
-import requests
 from cose.algorithms import Es384
 from cose.keys import EC2Key
 from cose.keys.curves import P384
@@ -51,6 +48,7 @@ cert_subject = x509.Name(
     ]
 )
 
+
 class TestAttestation:
     def test_parse_attestation(self):
         crv = P384
@@ -60,8 +58,12 @@ class TestAttestation:
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
         root_cert = create_root_cert(root_private_key, root_subject)
-        intermediate_cert = create_child_cert(root_cert, root_private_key, root_private_key, intermediate_subject, ca=True)
-        cert = create_child_cert(intermediate_cert, root_private_key, private_key, cert_subject, ca=False)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
         doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
@@ -82,8 +84,12 @@ class TestAttestation:
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
         root_cert = create_root_cert(root_private_key, root_subject)
-        intermediate_cert = create_child_cert(root_cert, root_private_key, root_private_key, intermediate_subject, ca=True)
-        cert = create_child_cert(intermediate_cert, root_private_key, private_key, cert_subject, ca=False)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
         doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
@@ -100,8 +106,12 @@ class TestAttestation:
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
         root_cert = create_root_cert(root_private_key, root_subject)
-        intermediate_cert = create_child_cert(root_cert, root_private_key, root_private_key, intermediate_subject, ca=True)
-        cert = create_child_cert(intermediate_cert, root_private_key, private_key, cert_subject)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject
+        )
 
         doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
@@ -113,19 +123,24 @@ class TestAttestation:
 
         attest.verify_cert_chain(root_cert_pem, doc["cabundle"], doc["certificate"])
 
-
     def test_verify_cert_chain_fails_if_bad_intermediate(self):
         crv = P384
         root_private_key = ec.generate_private_key(
             crv.curve_obj, backend=default_backend()
         )
-        intermediate_private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
+        intermediate_private_key = ec.generate_private_key(
+            crv.curve_obj, backend=default_backend()
+        )
 
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
         root_cert = create_root_cert(root_private_key, root_subject)
-        intermediate_cert = create_root_cert(intermediate_private_key, intermediate_subject)
-        cert = create_child_cert(intermediate_cert, root_private_key, private_key, cert_subject, ca=False)
+        intermediate_cert = create_root_cert(
+            intermediate_private_key, intermediate_subject
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
 
         doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
@@ -138,7 +153,6 @@ class TestAttestation:
         with pytest.raises(crypto.X509StoreContextError):
             attest.verify_cert_chain(root_cert_pem, doc["cabundle"], doc["certificate"])
 
-
     def test_verify_pcrs(self):
         crv = P384
         root_private_key = ec.generate_private_key(
@@ -147,8 +161,12 @@ class TestAttestation:
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
         root_cert = create_root_cert(root_private_key, root_subject)
-        intermediate_cert = create_child_cert(root_cert, root_private_key, root_private_key, intermediate_subject, ca=True)
-        cert = create_child_cert(intermediate_cert, root_private_key, private_key, cert_subject, ca=False)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
         doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
@@ -166,8 +184,12 @@ class TestAttestation:
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
         root_cert = create_root_cert(root_private_key, root_subject)
-        intermediate_cert = create_child_cert(root_cert, root_private_key, root_private_key, intermediate_subject, ca=True)
-        cert = create_child_cert(intermediate_cert, root_private_key, private_key, cert_subject, ca=False)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
         doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
@@ -249,7 +271,9 @@ def create_child_cert(parent_cert, parent_key, cert_key, subject, ca=False):
     )
 
     if ca:
-        builder = builder.add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        builder = builder.add_extension(
+            x509.BasicConstraints(ca=True, path_length=None), critical=True
+        )
 
     cert = builder.sign(parent_key, hashes.SHA256(), default_backend())
 
