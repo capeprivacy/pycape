@@ -63,12 +63,13 @@ def verify_cert_chain(root_cert, cabundle, cert):
 
     # Get the CA bundle from attestation document and store into X509Store
     # Except the first certificate, which is the root certificate
+    chain = []
     for _cert_binary in cabundle:
         _cert = crypto.load_certificate(crypto.FILETYPE_ASN1, _cert_binary)
-        store.add_cert(_cert)
+        chain.append(_cert)
 
     # Get the X509Store context
-    store_ctx = crypto.X509StoreContext(store, cert)
+    store_ctx = crypto.X509StoreContext(store, cert, chain=chain)
 
     # Validate the certificate
     # If the cert is invalid, it will raise exception
