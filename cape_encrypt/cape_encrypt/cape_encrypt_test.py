@@ -3,10 +3,12 @@ import json
 import unittest
 from unittest.mock import patch
 
+from absl.testing import parameterized
+
 from cape_encrypt import cape_encrypt
 
 
-class TestCapeEncrypt(unittest.TestCase):
+class TestCapeEncrypt(parameterized.TestCase):
     @patch("socket.socket")
     def test_encrypt(self, mock_socket):
         ciphertext = b"Cape:so_much_cipher"
@@ -28,17 +30,12 @@ class TestCapeEncrypt(unittest.TestCase):
         mock_socket.return_value.sendall.assert_called_with(want_req)
         self.assertEqual(result, ciphertext)
 
-    @patch("socket.socket")
-    def test_encrypt_invalid_input(self, mock_socket):
-        self.assertRaises(
-            TypeError, cape_encrypt.encrypt, "String"
-        )
+    @parameterized.parameters({"x": x} for x in ["String", None])
+    def test_encrypt_invalid_input(self, x):
+        self.assertRaises(TypeError, cape_encrypt.encrypt, x)
 
-    @patch("socket.socket")
-    def test_encrypt_empty_input(self, mock_socket):
-        self.assertRaises(
-            ValueError, cape_encrypt.encrypt, b""
-        )
+    def test_encrypt_empty_input(self):
+        self.assertRaises(ValueError, cape_encrypt.encrypt, b"")
 
     @patch("socket.socket")
     def test_encrypt_err(self, mock_socket):
@@ -81,30 +78,13 @@ class TestCapeEncrypt(unittest.TestCase):
         mock_socket.return_value.sendall.assert_called_with(want_req)
         self.assertEqual(result, plaintext)
 
-    @patch("socket.socket")
-    def test_decrypt_invalid_input(self, mock_socket):
-        self.assertRaises(
-            TypeError, cape_encrypt.decrypt, "String"
-        )
+    @parameterized.parameters({"x": x} for x in ["String", None])
+    def test_decrypt_invalid_type(self, x):
+        self.assertRaises(TypeError, cape_encrypt.decrypt, x)
 
-    @patch("socket.socket")
-    def test_decrypt_empty_input(self, mock_socket):
-        self.assertRaises(
-            ValueError, cape_encrypt.decrypt, b""
-        )
-
-    @patch("socket.socket")
-    def test_decrypt_empty_with_prefix(self, mock_socket):
-        self.assertRaises(
-            ValueError, cape_encrypt.decrypt, b"cape:"
-        )
-
-
-    @patch("socket.socket")
-    def test_decrypt_no_prefix(self, mock_socket):
-        self.assertRaises(
-            ValueError, cape_encrypt.decrypt, b"so_much_cipher"
-        )
+    @parameterized.parameters({"x": x} for x in [b"", b"cape:", b"so_much_cipher"])
+    def test_decrypt_invalid_input(self, x):
+        self.assertRaises(ValueError, cape_encrypt.decrypt, x)
 
     @patch("socket.socket")
     def test_decrypt_err(self, mock_socket):

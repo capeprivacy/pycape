@@ -63,7 +63,11 @@ def encrypt(plaintext: bytes) -> bytes:
         raise ValueError("input is empty")
 
     b64plaintext = base64.standard_b64encode(plaintext).decode("utf-8")
-    response = _call(json.dumps({"id": 1, "method": "CapeEncryptRPC.Encrypt", "params": [b64plaintext]}).encode())
+    response = _call(
+        json.dumps(
+            {"id": 1, "method": "CapeEncryptRPC.Encrypt", "params": [b64plaintext]}
+        ).encode()
+    )
     payload = json.loads(response)
     if payload["error"] is not None:
         raise ExecutionError(payload["error"])
@@ -95,7 +99,9 @@ def decrypt(ciphertext: bytes) -> bytes:
     if not isinstance(ciphertext, (bytes, bytearray)):
         raise TypeError("input is required to be valid bytes")
     if not bytes.startswith(ciphertext, prefix):
-        raise ValueError("input must be a valid Cape encrypted value prefixed with 'cape:'")
+        raise ValueError(
+            "input must be a valid Cape encrypted value prefixed with 'cape:'"
+        )
     if len(bytes.removeprefix(ciphertext, prefix)) == 0:
         raise ValueError("input is empty")
 
