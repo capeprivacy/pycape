@@ -19,6 +19,8 @@ jobs:
         with:
           python-version: "3.10"
           cache: 'pip'
+      - name: Install dev dependencies.
+        run: pip install -r requirements/dev.txt
       - name: Install cape_encrypt package.
         run: pip install ./cape_encrypt
       - name: Lint check the cape_encrypt package.
