@@ -43,9 +43,10 @@ test:
 .PHONY: test-ci
 test-ci: test
 	pytest serdio
+	pytest cape_encrypt
 
 .PHONY: ci-ready
-ci-ready: fmt lint test
+ci-ready: fmt lint test-ci
 
 # Releasing
 
@@ -85,9 +86,11 @@ docs-clean:
 docs-prep: install-docs install-release docs-clean
 	cp README.md docs/source/pycape-readme.md && \
 	cp serdio/README.md docs/source/serdio-readme.md && \
+	cp cape_encrypt/README.md docs/source/cape-encrypt-readme.md && \
 	cd docs && \
 	sphinx-apidoc -f -o source ../pycape "../pycape/*_test*" --separate && \
 	sphinx-apidoc -f -o source ../serdio "../serdio/*_test*" --separate && \
+	sphinx-apidoc -f -o source ../cape_encrypt "../cape_encrypt/*_test*" --separate && \
 	rm source/modules.rst && \
 	cd ..
 

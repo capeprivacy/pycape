@@ -6,20 +6,29 @@ Cape Enclave using the Cape Key associated with the function owner. Functions ca
 encrypt data generated during the execution of the function or have fine grained
 control over decrypting inputs.
 """
+import base64
 import json
 import socket
 
 
-def connect() -> socket.socket:
+class ExecutionError(Exception):
+    """Server reports an error."""
+
+
+class ConnectionError(Exception):
+    """An issue arose in the communication with the server."""
+
+
+def _connect() -> socket.socket:
     """Connect to unix socket on a Cape Enclave to request operations with the Cape
-    Key
+    Key.
     """
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.connect("../rpc.sock")
     return sock
 
 
-def encrypt(plaintext: str) -> str:
+def encrypt(plaintext: bytes) -> bytes:
     """Encrypt a plaintext with a Cape Key within a Cape Enclave.
 
     This function is intended only for use within a function deployed in a Cape
@@ -28,29 +37,35 @@ def encrypt(plaintext: str) -> str:
     associated with the Cape account that owns the function.
 
     Args:
-    plaintext: string to encrypt.
+        plaintext: bytes to encrypt.
 
     Returns:
-        String represeting the base64 encoded encryption of the ``plaintext``. The
+        Bytes representing the base64 encoded encryption of the ``plaintext``. The
         bytes are a concatenation of the AES-ciphertext of the ``plaintext``, an AES
         nonce, and the RSA-ciphertext of the AES key prefixed by ``Cape:``.
 
     Raises:
-        Exception: if an error is reported from the socket connection
+        ConnectionException: if an error is thrown from the socket connection
+        ExecutionException: if a server error is reported during the remote encryption
+        process
     """
-    sock = connect()
+    buffer_size = 10485760
+    b64plaintext = base64.standard_b64encode(plaintext).decode("utf-8")
+    sock = _connect()
     sock.sendall(
         json.dumps(
-            {"id": 1, "method": "CapeEncryptRPC.Encrypt", "params": [plaintext]}
+            {"id": 1, "method": "CapeEncryptRPC.Encrypt", "params": [b64plaintext]}
         ).encode()
     )
-    response = json.loads(sock.recv(4096))
+    response = json.loads(sock.recv(buffer_size))
     if response["error"] is not None:
-        raise Exception(response["error"])
-    return response["result"]
+        raise ExecutionError(response["error"])
+    if response["result"] == "":
+        raise ConnectionError("Unexpected connection error, invalid response")
+    return bytes(response["result"], "utf-8")
 
 
-def decrypt(b64ciphertext: str) -> str:
+def decrypt(ciphertext: bytes) -> bytes:
     """Decrypt a plaintext with a Cape Key within a Cape Enclave.
 
     This function is intended only for use within a function deployed in a Cape Enclave.
@@ -58,22 +73,31 @@ def decrypt(b64ciphertext: str) -> str:
     previously Cape Encrypted input.
 
     Args:
-    b64ciphertext: A base64 encoded string of a previously Cape Encrypted plaintext
+        b64ciphertext: Base64 encoded bytes of a previously Cape Encrypted plaintext,
+        prefixed with Cape:
 
     Returns:
-        String represeting the plaintext result of the decrypted base64 encoded
-        ciphertext
+        Bytes represeting the plaintext result of the decrypted ciphertext
 
     Raises:
-        Exception: if an error is reported from the socket connection
+        ConnectionException: if an error is thrown from the socket connection
+        ExecutionException: if a server error is reported during the remote encryption
+        process
     """
-    sock = connect()
+    buffer_size = 10485760
+    sock = _connect()
     sock.sendall(
         json.dumps(
-            {"id": 1, "method": "CapeEncryptRPC.Decrypt", "params": [b64ciphertext]}
+            {
+                "id": 1,
+                "method": "CapeEncryptRPC.Decrypt",
+                "params": [ciphertext.decode("utf-8")],
+            }
         ).encode()
     )
-    response = json.loads(sock.recv(4096))
+    response = json.loads(sock.recv(buffer_size))
     if response["error"] is not None:
-        raise Exception(response["error"])
-    return response["result"]
+        raise ExecutionError(response["error"])
+    if response["result"] == "":
+        raise ConnectionError("Unexpected connection error, invalid response")
+    return base64.standard_b64decode(response["result"])
