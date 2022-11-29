@@ -1,9 +1,7 @@
 import base64
 import json
 import unittest
-from unittest.mock import Mock
 
-from pycape import function_ref as fref
 from pycape.cape import _create_connection_request
 from pycape.cape import _generate_nonce
 from pycape.cape import _handle_expected_field
@@ -36,6 +34,7 @@ class TestCape(unittest.TestCase):
         response = json.dumps({"message": {"message": "conn"}})
         inner_msg = _parse_wss_response(response)
         self.assertEqual(inner_msg, base64.b64decode("conn"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,4 @@
-name: Serdio CI
+name: Cape Encrypt CI
 
 on:
   push:

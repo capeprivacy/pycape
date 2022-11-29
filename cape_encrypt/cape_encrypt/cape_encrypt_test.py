@@ -1,6 +1,5 @@
 import base64
 import json
-import unittest
 from unittest.mock import patch
 
 from absl.testing import parameterized
