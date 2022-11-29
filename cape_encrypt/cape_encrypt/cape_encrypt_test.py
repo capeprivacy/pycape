@@ -94,6 +94,13 @@ class TestCapeEncrypt(unittest.TestCase):
         )
 
     @patch("socket.socket")
+    def test_decrypt_empty_with_prefix(self, mock_socket):
+        self.assertRaises(
+            ValueError, cape_encrypt.decrypt, b"cape:"
+        )
+
+
+    @patch("socket.socket")
     def test_decrypt_no_prefix(self, mock_socket):
         self.assertRaises(
             ValueError, cape_encrypt.decrypt, b"so_much_cipher"

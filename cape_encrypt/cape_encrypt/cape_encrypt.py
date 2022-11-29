@@ -51,8 +51,10 @@ def encrypt(plaintext: bytes) -> bytes:
         nonce, and the RSA-ciphertext of the AES key prefixed by ``cape:``.
 
     Raises:
-        ConnectionException: if an error is thrown from the socket connection
-        ExecutionException: if a server error is reported during the remote encryption
+        TypeError: if the input is not of the correct type
+        ValueError: if the input is empty
+        ConnectionError: if an error is thrown from the socket connection
+        ExecutionError: if a server error is reported during the remote encryption
         process
     """
     if not isinstance(plaintext, (bytes, bytearray)):
@@ -83,14 +85,19 @@ def decrypt(ciphertext: bytes) -> bytes:
         Bytes represeting the plaintext result of the decrypted ciphertext
 
     Raises:
-        ConnectionException: if an error is thrown from the socket connection
-        ExecutionException: if a server error is reported during the remote encryption
+        TypeError: if the input is not of the correct type
+        ValueError: if the input is formatted incorrectly or empty
+        ConnectionError: if an error is thrown from the socket connection
+        ExecutionError: if a server error is reported during the remote encryption
         process
     """
+    prefix = b"cape:"
     if not isinstance(ciphertext, (bytes, bytearray)):
         raise TypeError("input is required to be valid bytes")
-    if not bytes.startswith(ciphertext, b"cape:"):
+    if not bytes.startswith(ciphertext, prefix):
         raise ValueError("input must be a valid Cape encrypted value prefixed with 'cape:'")
+    if len(bytes.removeprefix(ciphertext, prefix)) == 0:
+        raise ValueError("input is empty")
 
     response = _call(
         json.dumps(
