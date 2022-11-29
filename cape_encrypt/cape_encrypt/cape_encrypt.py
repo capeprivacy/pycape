@@ -19,13 +19,19 @@ class ConnectionError(Exception):
     """An issue arose in the communication with the server."""
 
 
-def _connect() -> socket.socket:
-    """Connect to unix socket on a Cape Enclave to request operations with the Cape
+def _call(req: str) -> bytes:
+    """RPC through unix domain socket to Cape Enclave to request operations with the Cape
     Key.
     """
+    buffer_size = 10485760
+
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.connect("../rpc.sock")
-    return sock
+    sock.sendall(req)
+    response = sock.recv(buffer_size)
+    if response == "":
+        raise ConnectionError("unexpected connection error, invalid response")
+    return response
 
 
 def encrypt(plaintext: bytes) -> bytes:
@@ -42,27 +48,24 @@ def encrypt(plaintext: bytes) -> bytes:
     Returns:
         Bytes representing the base64 encoded encryption of the ``plaintext``. The
         bytes are a concatenation of the AES-ciphertext of the ``plaintext``, an AES
-        nonce, and the RSA-ciphertext of the AES key prefixed by ``Cape:``.
+        nonce, and the RSA-ciphertext of the AES key prefixed by ``cape:``.
 
     Raises:
         ConnectionException: if an error is thrown from the socket connection
         ExecutionException: if a server error is reported during the remote encryption
         process
     """
-    buffer_size = 10485760
+    if not isinstance(plaintext, (bytes, bytearray)):
+        raise TypeError("input is required to be valid bytes")
+    if plaintext == b"":
+        raise ValueError("input is empty")
+
     b64plaintext = base64.standard_b64encode(plaintext).decode("utf-8")
-    sock = _connect()
-    sock.sendall(
-        json.dumps(
-            {"id": 1, "method": "CapeEncryptRPC.Encrypt", "params": [b64plaintext]}
-        ).encode()
-    )
-    response = json.loads(sock.recv(buffer_size))
-    if response["error"] is not None:
-        raise ExecutionError(response["error"])
-    if response["result"] == "":
-        raise ConnectionError("Unexpected connection error, invalid response")
-    return bytes(response["result"], "utf-8")
+    response = _call(json.dumps({"id": 1, "method": "CapeEncryptRPC.Encrypt", "params": [b64plaintext]}).encode())
+    payload = json.loads(response)
+    if payload["error"] is not None:
+        raise ExecutionError(payload["error"])
+    return bytes(payload["result"], "utf-8")
 
 
 def decrypt(ciphertext: bytes) -> bytes:
@@ -84,9 +87,12 @@ def decrypt(ciphertext: bytes) -> bytes:
         ExecutionException: if a server error is reported during the remote encryption
         process
     """
-    buffer_size = 10485760
-    sock = _connect()
-    sock.sendall(
+    if not isinstance(ciphertext, (bytes, bytearray)):
+        raise TypeError("input is required to be valid bytes")
+    if not bytes.startswith(ciphertext, b"cape:"):
+        raise ValueError("input must be a valid Cape encrypted value prefixed with 'cape:'")
+
+    response = _call(
         json.dumps(
             {
                 "id": 1,
@@ -95,9 +101,8 @@ def decrypt(ciphertext: bytes) -> bytes:
             }
         ).encode()
     )
-    response = json.loads(sock.recv(buffer_size))
-    if response["error"] is not None:
-        raise ExecutionError(response["error"])
-    if response["result"] == "":
-        raise ConnectionError("Unexpected connection error, invalid response")
-    return base64.standard_b64decode(response["result"])
+
+    payload = json.loads(response)
+    if payload["error"] is not None:
+        raise ExecutionError(payload["error"])
+    return base64.standard_b64decode(payload["result"])

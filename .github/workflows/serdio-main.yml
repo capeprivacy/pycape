@@ -23,7 +23,7 @@ jobs:
         run: pip install -r serdio/requirements.txt -r requirements/dev.txt
       - name: Install serdio package.
         run: pip install ./serdio
-      - name: Lint check the cape package.
+      - name: Lint check the serdio package.
         run: flake8 serdio
-      - name: Test cape.
+      - name: Test serdio.
         run: pytest serdio

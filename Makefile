@@ -39,14 +39,11 @@ lint:
 .PHONY: test
 test:
 	pytest pycape
-
-.PHONY: test-ci
-test-ci: test
 	pytest serdio
 	pytest cape_encrypt
 
 .PHONY: ci-ready
-ci-ready: fmt lint test-ci
+ci-ready: fmt lint test
 
 # Releasing
 

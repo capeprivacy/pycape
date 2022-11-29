@@ -29,6 +29,18 @@ class TestCapeEncrypt(unittest.TestCase):
         self.assertEqual(result, ciphertext)
 
     @patch("socket.socket")
+    def test_encrypt_invalid_input(self, mock_socket):
+        self.assertRaises(
+            TypeError, cape_encrypt.encrypt, "String"
+        )
+
+    @patch("socket.socket")
+    def test_encrypt_empty_input(self, mock_socket):
+        self.assertRaises(
+            ValueError, cape_encrypt.encrypt, b""
+        )
+
+    @patch("socket.socket")
     def test_encrypt_err(self, mock_socket):
         mock_socket.return_value.recv.return_value = json.dumps(
             {"error": "invalid key", "result": None}
@@ -39,9 +51,7 @@ class TestCapeEncrypt(unittest.TestCase):
 
     @patch("socket.socket")
     def test_encrypt_socket_err(self, mock_socket):
-        mock_socket.return_value.recv.return_value = json.dumps(
-            {"error": None, "result": ""}
-        )
+        mock_socket.return_value.recv.return_value = ""
 
         self.assertRaises(
             cape_encrypt.ConnectionError, cape_encrypt.encrypt, b"plaintext"
@@ -49,7 +59,7 @@ class TestCapeEncrypt(unittest.TestCase):
 
     @patch("socket.socket")
     def test_decrypt(self, mock_socket):
-        ciphertext = b"Cape:so_much_cipher"
+        ciphertext = b"cape:so_much_cipher"
         plaintext = b"plaintext"
 
         mock_socket.return_value.recv.return_value = json.dumps(
@@ -72,20 +82,36 @@ class TestCapeEncrypt(unittest.TestCase):
         self.assertEqual(result, plaintext)
 
     @patch("socket.socket")
+    def test_decrypt_invalid_input(self, mock_socket):
+        self.assertRaises(
+            TypeError, cape_encrypt.decrypt, "String"
+        )
+
+    @patch("socket.socket")
+    def test_decrypt_empty_input(self, mock_socket):
+        self.assertRaises(
+            ValueError, cape_encrypt.decrypt, b""
+        )
+
+    @patch("socket.socket")
+    def test_decrypt_no_prefix(self, mock_socket):
+        self.assertRaises(
+            ValueError, cape_encrypt.decrypt, b"so_much_cipher"
+        )
+
+    @patch("socket.socket")
     def test_decrypt_err(self, mock_socket):
         mock_socket.return_value.recv.return_value = json.dumps(
             {"error": "invalid key", "result": None}
         )
         self.assertRaises(
-            cape_encrypt.ExecutionError, cape_encrypt.decrypt, b"Cape:so_much_cipher"
+            cape_encrypt.ExecutionError, cape_encrypt.decrypt, b"cape:so_much_cipher"
         )
 
     @patch("socket.socket")
     def test_decrypt_socket_err(self, mock_socket):
-        mock_socket.return_value.recv.return_value = json.dumps(
-            {"error": None, "result": ""}
-        )
+        mock_socket.return_value.recv.return_value = ""
 
         self.assertRaises(
-            cape_encrypt.ConnectionError, cape_encrypt.decrypt, b"Cape:so_much_cipher"
+            cape_encrypt.ConnectionError, cape_encrypt.decrypt, b"cape:so_much_cipher"
         )
