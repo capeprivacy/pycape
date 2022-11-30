@@ -1,0 +1,29 @@
+name: Cape Encrypt CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'cape_encrypt/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'cape_encrypt/**'
+
+jobs:
+  cape-encrypt-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: 'pip'
+      - name: Install dev dependencies.
+        run: pip install -r requirements/dev.txt
+      - name: Install cape_encrypt package.
+        run: pip install ./cape_encrypt
+      - name: Lint check the cape_encrypt package.
+        run: flake8 cape_encrypt
+      - name: Test cape_encrypt.
+        run: pytest cape_encrypt
