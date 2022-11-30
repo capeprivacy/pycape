@@ -11,7 +11,7 @@ on:
       - 'cape_encrypt/**'
 
 jobs:
-  serdio-check:
+  cape-encrypt-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
