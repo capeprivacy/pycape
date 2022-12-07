@@ -24,7 +24,7 @@ bump-prep:
 
 .PHONY: bump-patch
 bump-patch: bump-prep
-	bumpver patch --verbose
+	bump2version patch --verbose
 
 .PHONY: bump-minor
 bump-minor: bump-prep
