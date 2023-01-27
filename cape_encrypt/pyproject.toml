@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "cape_encrypt"
 description = "Encryption aid for functions running in Cape Enclaves"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.0"
 requires-python = ">=3.7"
 authors = [
     {email = "contact@capeprivacy.com", name = "Cape Privacy"}
