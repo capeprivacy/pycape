@@ -473,8 +473,13 @@ class Cape:
         pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
         user_key_endpoint = f"{self._url}/v1/user/{username}/key"
-        response = requests.get(user_key_endpoint)
-        adoc_blob = response.json()["attestation_document"]
+        response = requests.get(user_key_endpoint).json()
+        adoc_blob = response.get("attestation_document", None)
+        if adoc_blob is None:
+            raise RuntimeError(
+                f"Bad response from '/v1/user/{username}/key' route, expected "
+                f"attestation_document key-value: {response}."
+            )
         root_cert = self._root_cert or attest.download_root_cert()
         attestation_doc = attest.parse_attestation(
             base64.b64decode(adoc_blob), root_cert
