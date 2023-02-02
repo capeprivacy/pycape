@@ -1,7 +1,7 @@
 from pycape.cape import Cape
 from pycape.function_ref import FunctionRef
 
-__version__ = "2.1.0"
+__version__ = "2.1.1-rc"
 
 __all__ = [
     "Cape",
