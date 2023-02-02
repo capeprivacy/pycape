@@ -147,8 +147,8 @@ class Cape:
 
         Args:
             input: Input bytes to encrypt.
-            username: A Github username corresponding to a Cape user who's public key you
-                want to use for the encryption. See :meth:`~Cape.key` for details.
+            username: A Github username corresponding to a Cape user who's public key
+                you want to use for the encryption. See :meth:`~Cape.key` for details.
             token: A Cape token scoped for retrieving a user's Cape public key.
                 See :meth:`~Cape.key` for details.
             key: Optional bytes for the Cape key. If None, will delegate to calling
@@ -277,10 +277,10 @@ class Cape:
         or ``key_path``.
 
         Args:
-            username: An optional string representing the Github username of a Cape user.
-                The resulting public key will be associated with their account, and data
-                encrypted with this key will be available inside functions that user has
-                deployed.
+            username: An optional string representing the Github username of a Cape
+                user. The resulting public key will be associated with their account,
+                and data encrypted with this key will be available inside functions
+                that user has deployed.
             token: An optional string representing a Cape authentication token. Usually
                 retrieved from a :class:`~.function_ref.FunctionRef` via
                 :attr:`FunctionRef.token`
@@ -305,12 +305,12 @@ class Cape:
         if username is None and token is None and key_path is None:
             raise ValueError(
                 "Must supply one of [`username`, `token`, `key_path`] arguments, but "
-                "found `None` for all."
+                "found `None` for all of them."
             )
         if username is not None and token is not None:
             raise ValueError(
-                "Provided both `username` and `token` arguments, but these are mutually "
-                "exclusive."
+                "Provided both `username` and `token` arguments, but these are "
+                "mutually exclusive."
             )
 
         if key_path is None:

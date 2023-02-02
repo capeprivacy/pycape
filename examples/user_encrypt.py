@@ -16,7 +16,8 @@ result = cape.run(function_ref, encrypted_data)
 print(result.decode())
 
 # 2 - pass username directly to cape.encrypt
-encrypted_data = cape.encrypt(b"quickly encrypt my data for capedocs", username="capedocs")
+encrypted_data = cape.encrypt(
+    b"quickly encrypt my data for capedocs", username="capedocs"
+)
 result = cape.run(function_ref, encrypted_data)
 print(result.decode())
-
