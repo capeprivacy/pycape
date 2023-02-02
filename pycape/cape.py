@@ -129,6 +129,7 @@ class Cape:
     async def encrypt(
         self,
         input: bytes,
+        *,
         username: Optional[str] = None,
         token: Optional[str] = None,
         key: Optional[bytes] = None,
@@ -264,6 +265,7 @@ class Cape:
     @_synchronizer
     async def key(
         self,
+        *,
         username: Optional[str] = None,
         token: Optional[str] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
