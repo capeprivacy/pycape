@@ -139,7 +139,6 @@ class Cape:
         input: bytes,
         *,
         username: Optional[str] = None,
-        token: Optional[str] = None,
         key: Optional[bytes] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
     ) -> bytes:
@@ -156,14 +155,12 @@ class Cape:
         Args:
             input: Input bytes to encrypt.
             username: A Github username corresponding to a Cape user who's public key
-                you want to use for the encryption. See :meth:`~Cape.key` for details.
-            token: A Cape token scoped for retrieving a user's Cape public key.
-                See :meth:`~Cape.key` for details.
+                you want to use for the encryption. See :meth:`Cape.key` for details.
             key: Optional bytes for the Cape key. If None, will delegate to calling
                 :meth:`Cape.key` w/ the given ``key_path`` to retrieve the user's Cape
                 key.
-            key_path: Optional path to a locally-cached Cape key. Used to call
-                :meth:`Cape.key` when an explicit ``key`` argument is not provided.
+            key_path: Optional path to a locally-cached Cape key. See :meth:`Cape.key`
+                for details.
 
         Returns:
             Tagged ciphertext representing a base64-encoded Cape encryption of the
@@ -176,9 +173,7 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        cape_key = key or await self.key(
-            username=username, token=token, key_path=key_path
-        )
+        cape_key = key or await self.key(username=username, key_path=key_path)
         ctxt = cape_encrypt.encrypt(input, cape_key)
         # cape-encrypted ctxt must be b64-encoded and tagged
         ctxt = base64.b64encode(ctxt)
@@ -332,23 +327,19 @@ class Cape:
         self,
         *,
         username: Optional[str] = None,
-        token: Optional[str] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
         pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
-        The caller must provide one of the following arguments: ``username``, ``token``,
-        or ``key_path``.
+        If no username or key_path is provided, will try to load the currently logged-in
+        CLI user's key from a local cache.
 
         Args:
             username: An optional string representing the Github username of a Cape
                 user. The resulting public key will be associated with their account,
                 and data encrypted with this key will be available inside functions
                 that user has deployed.
-            token: An optional string representing a Cape authentication token. Usually
-                retrieved from a :class:`~.function_ref.FunctionRef` via
-                :attr:`FunctionRef.token`
             key_path: The path to the Cape key file. If the file already exists, the key
                 will be read from disk and returned. Otherwise, a Cape key will be
                 requested from the Cape platform and written to this location.
@@ -367,36 +358,36 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        if username is not None and token is not None:
-            raise ValueError(
-                "Provided both `username` and `token` arguments, but these are "
-                "mutually exclusive."
-            )
+        if username is not None and key_path is not None:
+            raise ValueError("User provided both 'username' and 'key_path' arguments.")
 
-        if key_path is None:
+        if key_path is not None:
+            key_path = pathlib.Path(key_path)
+        else:
             config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
             if username is not None:
+                # look for locally-cached user key
                 key_qualifier = config_dir / "encryption_keys" / username
-            elif token is not None:
-                key_qualifier = config_dir / "encryption_keys" / token
             else:
                 # try to load the current CLI user's capekey
                 key_qualifier = config_dir
             key_path = key_qualifier / cape_config.LOCAL_CAPE_KEY_FILENAME
-        else:
-            key_path = pathlib.Path(key_path)
 
         if key_path.exists():
             with open(key_path, "rb") as f:
                 cape_key = f.read()
-        else:
-            if username is not None:
-                cape_key = await self._request_key_with_username(username, pcrs=pcrs)
-            else:
-                cape_key = await self._request_key_with_token(token, pcrs=pcrs)
-            await _persist_cape_key(cape_key, key_path)
+            return cape_key
 
-        return cape_key
+        if username is not None:
+            cape_key = await self._request_key_with_username(username, pcrs=pcrs)
+            await _persist_cape_key(cape_key, key_path)
+            return cape_key
+
+        raise ValueError(
+            "Cannot find a Cape key in the local cache. Either specify a username or "
+            "log into the Cape CLI and run `cape key` to locally cache your own "
+            "account's Cape key."
+        )
 
     @_synchronizer
     async def run(
