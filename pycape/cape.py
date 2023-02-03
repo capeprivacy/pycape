@@ -56,6 +56,7 @@ from pycape import _config as cape_config
 from pycape import _enclave_encrypt as enclave_encrypt
 from pycape import cape_encrypt
 from pycape import function_ref as fref
+from pycape import token as tkn
 
 logging.basicConfig(format="%(message)s")
 _logger = logging.getLogger("pycape")
@@ -99,7 +100,8 @@ class Cape:
     @_synchronizer
     async def connect(
         self,
-        function_ref: fref.FunctionRef,
+        function_ref: Union[str, os.PathLike, fref.FunctionRef],
+        token: Union[str, os.PathLike, tkn.Token],
         pcrs: Optional[Dict[str, List[str]]] = None,
     ):
         """Connects to the enclave hosting the function denoted by ``function_ref``.
@@ -111,9 +113,14 @@ class Cape:
         :meth:`~Cape.close` once all invocations have finished.
 
         Args:
-            function_ref: A function ID string or :class:`~.function_ref.FunctionRef`
-                representing a deployed Cape function.
-            pcrs: A dictionary of PCR indexes to a list of potential values.
+            function_ref: Reference to a Cape deployed function. Must be convertible to
+                a :class:`~function_ref.FunctionRef`. See :meth:`Cape.function` for
+                a description of recognized values.
+            token: Personal Access Token scoped for the given Cape function. Must be
+                convertible to :class:`~token.Token`, see :meth:`Cape.token` for a
+                description of recognized values.
+            pcrs: An optional dictionary of PCR indexes to a list of expected or allowed
+                PCRs.
 
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
@@ -122,8 +129,9 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        function_ref = _check_function_ref(function_ref)
-        await self._request_connection(function_ref, pcrs)
+        function_ref = self.function(function_ref)
+        token = self.token(token)
+        await self._request_connection(function_ref, token, pcrs)
 
     @_synchronizer
     async def encrypt(
@@ -176,11 +184,67 @@ class Cape:
         ctxt = base64.b64encode(ctxt)
         return b"cape:" + ctxt
 
+    def function(
+        self,
+        identifier: Union[str, os.PathLike, fref.FunctionRef],
+        *,
+        checksum: Optional[str] = None,
+    ) -> fref.FunctionRef:
+        """Convenience function for creating a :class:`~.function_ref.FunctionRef`.
+
+        The ``identifier`` parameter is interepreted according to the following
+        priority:
+
+        - Filepath to a :class:`~.function_ref.FunctionRef` JSON. See
+          :meth:`~.function_ref.FunctionRef.from_json` for expected JSON structure.
+        - String representing a function ID
+        - String of the form "{username}/{fn_name}" representing a function name.
+        - A :class:`~function_ref.FunctionRef`. If its checksum is missing and a
+          ``checksum`` argument is given, it will be added to the returned value.
+
+        Args:
+            identifier: A string identifier that can be converted into a
+                :class:`~.function_ref.FunctionRef`. See above for options.
+            checksum: keyword-only argument for the function checksum. Ignored if
+                ``identifier`` points to a JSON.
+        """
+        if isinstance(identifier, pathlib.Path):
+            return fref.FunctionRef.from_json(identifier)
+
+        if isinstance(identifier, str):
+            identifier_as_path = pathlib.Path(identifier)
+            if identifier_as_path.exists():
+                return fref.FunctionRef.from_json(identifier_as_path)
+            # not a path, try to interpret as function name
+            if len(identifier.split("/")) == 2:
+                return fref.FunctionRef(id=None, name=identifier, checksum=checksum)
+            # not a function name, try to interpret as function id
+            elif len(identifier) == 22:
+                return fref.FunctionRef(id=identifier, name=None, checksum=checksum)
+
+        if isinstance(identifier, fref.FunctionRef):
+            if checksum is None:
+                return identifier
+            elif identifier.checksum is None:
+                return fref.FunctionRef(
+                    id=identifier.id, name=identifier.full_name, checksum=checksum
+                )
+            else:
+                if checksum == identifier.checksum:
+                    return identifier
+                raise ValueError(
+                    "Checksum mismatch: given `checksum` argument conflicts with "
+                    "given FunctionRef's checksum."
+                )
+
+        raise ValueError("Unrecognized form of `identifier` argument: {identifier}.")
+
     @_synchronizer
     @_synchronizer.asynccontextmanager
     async def function_context(
         self,
-        function_ref: fref.FunctionRef,
+        function_ref: Union[str, os.PathLike, fref.FunctionRef],
+        token: Union[str, os.PathLike, tkn.Token],
         pcrs: Optional[Dict[str, List[str]]] = None,
     ):
         """Creates a context manager for a given ``function_ref``'s enclave connection.
@@ -193,8 +257,9 @@ class Cape:
 
             cape = Cape(url="https://app.capeprivacy.com")
             f = FunctionRef.from_json("function.json")
+            t = Token.from_disk("capedocs.token")
 
-            with cape.function_context(f):
+            with cape.function_context(f, t):
 
                 c1 = cape.invoke(3, 4, use_serdio=True)
                 print(c1)  # 5
@@ -216,7 +281,7 @@ class Cape:
                 connection request.
         """
         try:
-            yield await self.connect(function_ref, pcrs)
+            yield await self.connect(function_ref, token, pcrs)
         finally:
             await self.close()
 
@@ -342,7 +407,8 @@ class Cape:
     @_synchronizer
     async def run(
         self,
-        function_ref: fref.FunctionRef,
+        function_ref: Union[str, os.PathLike, fref.FunctionRef],
+        token: Union[str, os.PathLike, tkn.Token],
         *args: Any,
         pcrs: Optional[Dict[str, List[str]]] = None,
         serde_hooks=None,
@@ -357,8 +423,9 @@ class Cape:
         preferred when the caller doesn't need to invoke a Cape function more than once.
 
         Args:
-            function_ref: A :class:`~.function_ref.FunctionRef` representing
-                a deployed Cape function.
+            function_ref: A value convertible to a :class:`~.function_ref.FunctionRef`,
+                representing a deployed Cape function. See :meth:`Cape.function` for
+                recognized values.
             *args: Arguments to pass to the connected Cape function. If
                 ``use_serdio=False``, we expect a single argument of type ``bytes``.
                 Otherwise, these arguments should match the positional arguments
@@ -384,23 +451,55 @@ class Cape:
             RuntimeError: if serialized inputs could not be HPKE-encrypted, or if
                 websocket response is malformed.
         """
-        function_ref = _check_function_ref(function_ref)
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
-        async with self.function_context(function_ref, pcrs):
+        async with self.function_context(function_ref, token, pcrs):
             result = await self.invoke(
                 *args, serde_hooks=serde_hooks, use_serdio=use_serdio, **kwargs
             )
         return result
 
-    async def _request_connection(self, function_ref, pcrs=None):
-        fn_endpoint = f"{self._url}/v1/run/{function_ref.id}"
+    def token(self, token: Union[str, os.PathLike, tkn.Token]) -> tkn.Token:
+        """Create or load a :class:`~token.Token`.
+
+        Args:
+            token: Filepath to a token file, or the raw token string itself.
+
+        Returns:
+            A :class:`~token.Token` that can be used to access users' deployed Cape
+            functions.
+
+        Raises:
+            TypeError: if the ``token`` argument type is unrecognized.
+        """
+        token_out = None
+        if isinstance(token, pathlib.Path):
+            tokenfile = token
+            return tkn.Token.from_disk(tokenfile)
+
+        if isinstance(token, str):
+            # str could be a filename
+            if len(token) <= 255:
+                token_as_path = pathlib.Path(token)
+                token_out = _try_load_token_file(token_as_path)
+            return token_out or tkn.Token(token)
+
+        if isinstance(token, tkn.Token):
+            return token
+
+        raise TypeError(f"Expected token to be PathLike or str, found {type(token)}")
+
+    async def _request_connection(self, function_ref, token, pcrs=None):
+        if function_ref.id is not None:
+            fn_endpoint = f"{self._url}/v1/run/{function_ref.id}"
+        elif function_ref.full_name is not None:
+            fn_endpoint = f"{self._url}/v1/run/{function_ref.user}/{function_ref.name}"
 
         self._root_cert = self._root_cert or attest.download_root_cert()
         self._ctx = _EnclaveContext(
             endpoint=fn_endpoint,
-            auth_protocol="cape.function",
-            auth_token=function_ref.token,
+            auth_protocol="cape.runtime",
+            auth_token=token.raw,
             root_cert=self._root_cert,
         )
         attestation_doc = await self._ctx.bootstrap(pcrs)
@@ -648,25 +747,6 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
     return v
 
 
-def _check_function_ref(function_ref):
-    """
-    Check if the FunctionRef object contains a function ID and token.
-    """
-    if isinstance(function_ref, fref.FunctionRef):
-        if function_ref.id is None:
-            raise ValueError("The function ID in the provided FunctionRef is empty.")
-
-        if function_ref.token is None:
-            raise ValueError("The function token in the provided FunctionRef is empty.")
-
-        return function_ref
-    else:
-        raise TypeError(
-            "`function_ref` arg must be a FunctionRef object, "
-            f" found {type(function_ref)}."
-        )
-
-
 def _maybe_get_single_input(args, kwargs):
     single_arg = len(args) == 1 and len(kwargs) == 0
     single_kwarg = len(args) == 0 and len(kwargs) == 1
@@ -689,3 +769,10 @@ def _transform_url(url):
     elif url.scheme == "http":
         return url.geturl().replace("http://", "ws://")
     return url.geturl()
+
+
+def _try_load_token_file(token_file: pathlib.Path):
+    if token_file.exists():
+        with open(token_file, "r") as f:
+            token_output = f.read()
+        return token_output
