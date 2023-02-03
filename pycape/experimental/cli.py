@@ -25,10 +25,10 @@ async def deploy(
 
     This method calls `cape deploy` and `cape token` from the Cape CLI to deploy
     a Cape function then returns a `~.function_ref.FunctionRef` representing
-    the deployed function. This `~.function_ref.FunctionRef` will hold a function ID,
-    a function token and a function checksum. Note that the ``deploy_path`` has to
-    point to a directory or a zip file containing a Cape function declared in an app.py
-    file and the size of its content  is currently limited to 1GB.
+    the deployed function. This `~.function_ref.FunctionRef` will hold a function ID or
+    function name, and a function checksum. Note that the ``deploy_path`` has to point
+    to a directory or a zip file containing a Cape function declared in an app.py file
+    and the size of its content is currently limited to 1GB.
 
     Args:
         deploy_path: A path pointing to a directory or a zip file containing

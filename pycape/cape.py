@@ -2,11 +2,11 @@
 
 The :class:`Cape` client uses websockets to connect to Cape enclaves that are hosting a
 user's deployed functions. Before being able to run functions from the Cape client,
-users must have gone through the process of developing a Cape function in Python and
-deploying it from the CLI and generating a function token.
+users must have gone through the process of developing a Cape function in Python,
+deploying it from the CLI, and generating a personal access token.
 
-The majority of the :class:`Cape` client interface can be used in either synchronous or
-asynchronous contexts via asyncio.
+All public async methods in the :class:`Cape` client interface can be used in either
+synchronous or asynchronous contexts via asyncio.
 
 **Usage**
 

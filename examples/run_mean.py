@@ -2,17 +2,21 @@ import os
 import pathlib
 
 from pycape import Cape
-from pycape import FunctionRef
+
+function_json = pathlib.Path(__file__).parent.absolute() / "mean.json"
+token_file = pathlib.Path(__file__).parent.absolute() / "capedocs.token"
+
+function_id_env = os.environ.get("FUNCTION_ID")
+token_env = os.environ.get("TOKEN")
+
+cape = Cape()
+function_ref = cape.function(function_json)
+token = cape.token(token_file)
 
 if __name__ == "__main__":
-    url = os.environ.get("CAPE_HOST", "https://app.capeprivacy.com")
-    function_json = os.environ.get("FUNCTION_JSON", "mean_token.json")
-    function_json = pathlib.Path(__file__).parent.absolute() / function_json
-
-    function_ref = FunctionRef.from_json(function_json)
-    cape = Cape(url=url)
-
     x = [1, 2, 3, 4]
-    result = cape.run(function_ref, x, use_serdio=True)
+    print(f"Running function '{function_ref.full_name}' on {x}...")
 
-    print(f"The mean of x is: {result}")
+    result = cape.run(function_ref, token, x, use_serdio=True)
+
+    print(f"The mean of {x} is: {result}")

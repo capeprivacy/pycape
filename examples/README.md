@@ -7,38 +7,41 @@ To run a function, you need to first deploy a function and generate a [function 
 By default, Cape functions expect bytes as input and return bytes as output. For this first example, we run an echo function which expects bytes and return bytes as output.
 
 To automatically deploy and run an example function that performs `echo`, run:
-```
-python3 deploy_run_echo.py
+```console
+$ python3 deploy_run_echo.py
 ```
 
 Alternatively, you can use the Cape CLI directly via `cape deploy` and `cape token` as follows. 
-You can deploy the echo function as follow:
-```
-$ cape deploy echo
 
+You can deploy the echo function as follow:
+```console
+$ cape deploy echo --name echo
 Deploying function to Cape ...
 Success! Deployed function to Cape.
 Function ID ➜  <FUNCTION_ID>
 Function Checksum ➜  <FUNCTION_CHECKSUM>
 ```
 
-Then generate a function token by running:
+The function ID will allow you to reference the deployment at runtime, whereas the function checksum will allow you to verify that the function running in the enclave has not been tampered with.
+
+You can also reference this function with your Github username and the function name, e.g. `github_user/echo`.
+
+Next, generate a personal access token for your account by running:
+
+```console
+$ cape token create --name echo --expiry 300s
+Success! Your token: eyJhbGciOiJSU0FTU0FfUFNTX1NIQV8yNTYiLCJ0eXAiOiJKV12ifQ.eyJhdWQiOlsiY2FwZS1hcGkiXSwiaWF0IjoxNjc1NDQ5MjUyLCJpc3MiOiJjYXBlLXByaXZhY3kiLCJqdGkiOiJZTTlBejhjdU5RQmtod05weXRYaWZxIiwibmJmIjoxNjc1NDQ5MjUyLCJzdWIiOiJnaXRodWJ8MTE0Njk2NjIyto0.L8zoZDex1TKP0kchvPwWQp87CTxRk4_J2gPIDnn18cfxaR--B7IoKmigYHA6p3QqGqwXvwbSBu6hb7HeS58ju0m7xLy8hVCrOJ-SBSFzaSLqjQN2cNdguz58sHhoriPIygM-72GVW7KtKEV7hUlKSyjfWlzHsGafFEo_1R6iLt6elLecYwqSd4pzTNlCtLpcFYSSQ7_ZhSn4jBdrfJKyAtYjR8lasonT9k2hwccVNH_5cWF9ZkiTcm1Y7K1noM_p2mtaPhGGFLtzh73o92DbTXm0LXdTxYWvvOC8T6Iz2_DOI80eOAWJMVfAtQl1g7pYDD86ZesB6AG2rEmhkUgRoQ
 ```
-cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > echo_token.json
-```
-The `echo_token.json` json file will contain your function ID, function token and function checksum. This file will be later used to instantiate a `FunctionRef` object referencing your deployed function. Using a json file avoids you having to copy paste function ID, function token and function checksum from your terminal to the python script calling the function.
+
+Anyone who has a copy of this personal access token will be able to call your function by name or by id.
 
 After deploying the function, to run a function once, you can run the following example:
 ```
-export CAPE_HOST=<HTTPS_URL>
-export FUNCTION_JSON=echo_token.json
 python run_echo.py
 ```
 
 To run a function repeatedly, you can run the following example:
 ```
-export CAPE_HOST=<HTTPS_URL>
-export FUNCTION_JSON=echo_token.json
 python invoke_echo.py
 ```
 
@@ -49,44 +52,45 @@ To facilate serialization and deserialization of the input and output, we use Se
 As an example, we will compute the mean of a list of numbers. All commands should be run from the root directory of the repo.
 
 ### Step 0: Define vars for Cape endpoint and deployment folder
-```sh
-mkdir examples/mean/build
-export TARGET=examples/mean/build
-export CAPE_HOST=<HTTPS_URL>
+```console
+$ mkdir -p examples/mean/build
+$ export TARGET=examples/mean/build
 ```
 
 ###  Step 1: Install Serdio to build target
-```sh
-pip install ./serdio --target $TARGET
+```console
+$ pip install ./serdio --target $TARGET
 ```
 Depending on your OS and Python version, you may have to run this in a manylinux-compliant Docker image with Python 3.9 (e.g. `python:3.9-slim-bullseye`).
-```sh
-docker run -v `pwd`:/build -w /build --rm -it python:3.9-slim-bullseye pip install serdio --target /build/$TARGET
+```console
+$ docker run -v `pwd`:/build -w /build --rm -it python:3.9-slim-bullseye pip install serdio --target /build/$TARGET
 ```
 
 ### Step 2: Add application code to build target
-```sh
-cp examples/mean/app.py $TARGET
+```console
+$ cp examples/mean/app.py $TARGET
 ```
 
 ### Step 3: Deploy function with dependencies
-```sh
-pushd examples/mean && cape deploy build --url $CAPE_HOST && popd
-
+```console
+$ pushd examples/mean && cape deploy build --name mean && popd
 Deploying function to Cape ...
 Success! Deployed function to Cape.
 Function ID ➜  <FUNCTION_ID>
 Function Checksum ➜  <FUNCTION_CHECKSUM>
+$ export FUNCTION_ID = <FUNCTION_ID>
 ```
 
-### Step 4: Generate a function token
-```
-cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > mean_token.json
+### Step 4: Generate a personal access token for your account
+This allows PyCape to authenticate run requests for functions you've deployed.
+```console
+$ cape token create --name mean
+Success! Your token: eyJhbGciOiJSU0FTU0FfUFNTX1NIQV8yNTYiLCJ0eXAiOiJKV12ifQ.eyJhdWQiOlsiY2FwZS1hcGkiXSwiaWF0IjoxNjc1NDQ5MjUyLCJpc3MiOiJjYXBlLXByaXZhY3kiLCJqdGkiOiJZTTlBejhjdU5RQmtod05weXRYaWZxIiwibmJmIjoxNjc1NDQ5MjUyLCJzdWIiOiJnaXRodWJ8MTE0Njk2NjIyto0.L8zoZDex1TKP0kchvPwWQp87CTxRk4_J2gPIDnn18cfxaR--B7IoKmigYHA6p3QqGqwXvwbSBu6hb7HeS58ju0m7xLy8hVCrOJ-SBSFzaSLqjQN2cNdguz58sHhoriPIygM-72GVW7KtKEV7hUlKSyjfWlzHsGafFEo_1R6iLt6elLecYwqSd4pzTNlCtLpcFYSSQ7_ZhSn4jBdrfJKyAtYjR8lasonT9k2hwccVNH_5cWF9ZkiTcm1Y7K1noM_p2mtaPhGGFLtzh73o92DbTXm0LXdTxYWvvOC8T6Iz2_DOI80eOAWJMVfAtQl1g7pYDD86ZesB6AG2rEmhkUgRoQ
+$ export TOKEN=<copied from above>
 ```
 
 ### Step 5: Use PyCape client to run the function in a Cape enclave
 Finally, run the function with the PyCape client:
-```sh
-export FUNCTION_JSON=mean_token.json
-python examples/run_mean.py
+```console
+$ python examples/run_mean.py
 ```

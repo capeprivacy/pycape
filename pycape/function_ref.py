@@ -81,6 +81,15 @@ class FunctionRef:
             )
         self._checksum = checksum
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(\n"
+            f"  name={self.full_name},\n"
+            f"  id={self.id},\n"
+            f"  checksum={self.checksum},\n"
+            f")"
+        )
+
     @property
     def id(self):
         return self._id
