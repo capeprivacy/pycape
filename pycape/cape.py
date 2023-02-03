@@ -367,11 +367,6 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        if username is None and token is None and key_path is None:
-            raise ValueError(
-                "Must supply one of [`username`, `token`, `key_path`] arguments, but "
-                "found `None` for all of them."
-            )
         if username is not None and token is not None:
             raise ValueError(
                 "Provided both `username` and `token` arguments, but these are "
@@ -380,15 +375,14 @@ class Cape:
 
         if key_path is None:
             config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
-            key_qualifier = (
-                username or token[-200:]
-            )  # Shorten file name to avoid Errno 63 when saving file
-            key_path = (
-                config_dir
-                / "encryption_keys"
-                / key_qualifier
-                / cape_config.LOCAL_CAPE_KEY_FILENAME
-            )
+            if username is not None:
+                key_qualifier = config_dir / "encryption_keys" / username
+            elif token is not None:
+                key_qualifier = config_dir / "encryption_keys" / token
+            else:
+                # try to load the current CLI user's capekey
+                key_qualifier = config_dir
+            key_path = key_qualifier / cape_config.LOCAL_CAPE_KEY_FILENAME
         else:
             key_path = pathlib.Path(key_path)
 

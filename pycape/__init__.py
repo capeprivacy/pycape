@@ -7,4 +7,5 @@ __version__ = "2.1.1-rc"
 __all__ = [
     "Cape",
     "FunctionRef",
+    "Token",
 ]

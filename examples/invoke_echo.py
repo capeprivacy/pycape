@@ -1,8 +1,6 @@
-import os
 import pathlib
 
 from pycape import Cape
-from pycape import FunctionRef
 
 token_file = pathlib.Path(__file__).parent.absolute() / "capedocs.token"
 
