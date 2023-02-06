@@ -45,6 +45,7 @@ Then deploy this folder by calling `cape deploy mean`, per the [“Deploying Fun
 Once we’ve deployed the Cape function successfully, we’ll have a function ID and checksum. The next step is to generate a [personal access token](https://docs.capeprivacy.com/tutorials/tokens) for your account:
 ```console
 $ cape token create --name walkthrough --expiry 300s
+Success! Your token: eyJhtGckO12...(token omitted)
 ```
 You can save the token in the output to a file called `walkthrough.token`. We can now read from this token file when running the function from PyCape
 

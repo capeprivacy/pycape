@@ -30,7 +30,7 @@ Next, generate a personal access token for your account by running:
 
 ```console
 $ cape token create --name echo --expiry 300s
-Success! Your token: eyJhbGciOiJSU0FTU0FfUFNTX1NIQV8yNTYiLCJ0eXAiOiJKV12ifQ.eyJhdWQiOlsiY2FwZS1hcGkiXSwiaWF0IjoxNjc1NDQ5MjUyLCJpc3MiOiJjYXBlLXByaXZhY3kiLCJqdGkiOiJZTTlBejhjdU5RQmtod05weXRYaWZxIiwibmJmIjoxNjc1NDQ5MjUyLCJzdWIiOiJnaXRodWJ8MTE0Njk2NjIyto0.L8zoZDex1TKP0kchvPwWQp87CTxRk4_J2gPIDnn18cfxaR--B7IoKmigYHA6p3QqGqwXvwbSBu6hb7HeS58ju0m7xLy8hVCrOJ-SBSFzaSLqjQN2cNdguz58sHhoriPIygM-72GVW7KtKEV7hUlKSyjfWlzHsGafFEo_1R6iLt6elLecYwqSd4pzTNlCtLpcFYSSQ7_ZhSn4jBdrfJKyAtYjR8lasonT9k2hwccVNH_5cWF9ZkiTcm1Y7K1noM_p2mtaPhGGFLtzh73o92DbTXm0LXdTxYWvvOC8T6Iz2_DOI80eOAWJMVfAtQl1g7pYDD86ZesB6AG2rEmhkUgRoQ
+Success! Your token: eyJhtGckO12...(token omitted)
 ```
 
 Anyone who has a copy of this personal access token will be able to call your function by name or by id.
@@ -85,7 +85,7 @@ $ export FUNCTION_ID = <FUNCTION_ID>
 This allows PyCape to authenticate run requests for functions you've deployed.
 ```console
 $ cape token create --name mean
-Success! Your token: eyJhbGciOiJSU0FTU0FfUFNTX1NIQV8yNTYiLCJ0eXAiOiJKV12ifQ.eyJhdWQiOlsiY2FwZS1hcGkiXSwiaWF0IjoxNjc1NDQ5MjUyLCJpc3MiOiJjYXBlLXByaXZhY3kiLCJqdGkiOiJZTTlBejhjdU5RQmtod05weXRYaWZxIiwibmJmIjoxNjc1NDQ5MjUyLCJzdWIiOiJnaXRodWJ8MTE0Njk2NjIyto0.L8zoZDex1TKP0kchvPwWQp87CTxRk4_J2gPIDnn18cfxaR--B7IoKmigYHA6p3QqGqwXvwbSBu6hb7HeS58ju0m7xLy8hVCrOJ-SBSFzaSLqjQN2cNdguz58sHhoriPIygM-72GVW7KtKEV7hUlKSyjfWlzHsGafFEo_1R6iLt6elLecYwqSd4pzTNlCtLpcFYSSQ7_ZhSn4jBdrfJKyAtYjR8lasonT9k2hwccVNH_5cWF9ZkiTcm1Y7K1noM_p2mtaPhGGFLtzh73o92DbTXm0LXdTxYWvvOC8T6Iz2_DOI80eOAWJMVfAtQl1g7pYDD86ZesB6AG2rEmhkUgRoQ
+Success! Your token: eyJhtGckO12...(token omitted)
 $ export TOKEN=<copied from above>
 ```
 
