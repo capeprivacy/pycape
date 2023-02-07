@@ -39,7 +39,7 @@ make install-release
 
 ## Usage
 
-To run a function, you need to first deploy a function and generate a [function token](https://docs.capeprivacy.com/tutorials/tokens). You can deploy a function with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape deploy`. `cape deploy` will return a function ID and a checksum. Then this function ID will be used to generate a function token with `cape token`. When generating the function token, we recommend to include the function checksum, so Cape can perform additional validation that the function you are calling corresponds to the function you have deployed. You can checkout the [examples repository](https://github.com/capeprivacy/pycape/blob/main/examples/) to see the process end to end. 
+To run a function, you need to first deploy a function and generate a [personal access token](https://docs.capeprivacy.com/reference/user-tokens). You can deploy a function with the [Cape CLI](https://github.com/capeprivacy/cli) by running `cape deploy`. `cape deploy` will return a function ID and a checksum. Non-CLI users can still consume the deployed function from the SDK as long as they have a copy of the deployer's personal access token. You can checkout the [examples repository](https://github.com/capeprivacy/pycape/blob/main/examples/) to see the process end to end.
 
 ### `run`
 
@@ -51,11 +51,13 @@ Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/r
 
 ```python
 from pycape import Cape
-from pycape import FunctionRef
 
-client = Cape(url="https://app.capeprivacy.com")
-f = FunctionRef.from_json("echo_token.json")
-result = client.run(f, b"Hello!")
+cape = Cape(url="https://app.capeprivacy.com")
+token: str = "eyJhbGci..." # full token omitted for brevity
+
+f = cape.function("pycape-dev/echo")
+t = cape.token(token)
+result = client.run(f, t, b"Hello!")
 print(result.decode())
 # Hello!
 ```
@@ -68,23 +70,25 @@ Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/example
 
 ```python
 from pycape import Cape
-from pycape import FunctionRef
 
-client = Cape(url="https://app.capeprivacy.com")
-f = FunctionRef.from_json("echo_token.json")
+cape = Cape(url="https://app.capeprivacy.com")
+token: str = "eyJhbGci..." # full token omitted for brevity
 
-client.connect(f)
-result = client.invoke(b"Hello Alice!")
+f = cape.function("pycape-dev/echo")
+t = cape.token(token)
+
+cape.connect(f, t)
+result = cape.invoke(b"Hello Alice!")
 print(result.decode())
 # Hello Alice!
-result = client.invoke(b"Hello Bob!")
+result = cape.invoke(b"Hello Bob!")
 print(result.decode())
 # Hello Bob!
-result = client.invoke(b"Hello Carole!")
+result = cape.invoke(b"Hello Carole!")
 print(result.decode())
 # Hello Carole!
 
-client.close()
+cape.close()
 ```
 
 Please note that there is a 60-second inactivity timeout on the enclave connection. You may need to monitor the connection status and reconnect if there is a significant wait between inputs.

@@ -1,12 +1,16 @@
 import json
 import os
 import pathlib
+import random
+import re
+import string
 import subprocess
 from typing import Optional
 from typing import Union
 
 from pycape import _config as cape_config
 from pycape import function_ref as fref
+from pycape import token as tkn
 from pycape.cape import _synchronizer
 
 
@@ -14,7 +18,6 @@ from pycape.cape import _synchronizer
 async def deploy(
     deploy_path: Union[str, os.PathLike],
     url: Optional[str] = None,
-    token_expiry: Optional[str] = None,
     public: bool = False,
 ) -> fref.FunctionRef:
     """Deploy a directory or a zip file containing a Cape function declared in
@@ -22,10 +25,10 @@ async def deploy(
 
     This method calls `cape deploy` and `cape token` from the Cape CLI to deploy
     a Cape function then returns a `~.function_ref.FunctionRef` representing
-    the deployed function. This `~.function_ref.FunctionRef` will hold a function ID,
-    a function token and a function checksum. Note that the ``deploy_path`` has to
-    point to a directory or a zip file containing a Cape function declared in an app.py
-    file and the size of its content  is currently limited to 1GB.
+    the deployed function. This `~.function_ref.FunctionRef` will hold a function ID or
+    function name, and a function checksum. Note that the ``deploy_path`` has to point
+    to a directory or a zip file containing a Cape function declared in an app.py file
+    and the size of its content is currently limited to 1GB.
 
     Args:
         deploy_path: A path pointing to a directory or a zip file containing
@@ -34,7 +37,8 @@ async def deploy(
             client requests to the proper enclave instances. If None, tries to load
             value from the ``CAPE_ENCLAVE_HOST`` environment variable. If no such
             variable value is supplied, defaults to ``"https://app.capeprivacy.com"``.
-        token_expriry: Amount of time in seconds until the function token expires.
+        public: Boolean determining if the function should be publicly accessible or
+            not.
 
     Returns:
         A :class:`~.function_ref.FunctionRef` representing the deployed Cape
@@ -42,8 +46,8 @@ async def deploy(
 
     Raises:
         RuntimeError: if the websocket response or the enclave attestation doc is
-            malformed, or if the function path is not pointing to a directory
-            or a zip file or if folder size exceeds 1GB, or if the Cape CLI cannot
+            malformed, if the function path is not pointing to a directory
+            or a zip file, if folder size exceeds 1GB, or if the Cape CLI cannot
             be found on the device.
     """
     url = url or cape_config.ENCLAVE_HOST
@@ -59,7 +63,7 @@ async def deploy(
     err_deploy = err_deploy.split("\n")
     error_output = None
 
-    # Parse err_token to get potential errors
+    # Parse err_deploy to get potential errors
     for msg in err_deploy:
         if "Error" in msg:
             error_output = msg
@@ -76,69 +80,78 @@ async def deploy(
             f"Function ID not found in 'cape.deploy' response: \n{err_deploy}"
         )
 
-    function_reference = await token(
-        function_id, expiry=token_expiry, function_checksum=function_checksum
-    )
-
-    return function_reference
+    return fref.FunctionRef(id=function_id, checksum=function_checksum)
 
 
+@_synchronizer
 async def token(
-    function_id,
-    expiry=Optional[None],
-    function_checksum: Optional[str] = None,
-) -> fref.FunctionRef:
-    """Generate a function token (JSON Web Token) based on a function ID.
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    expiry: Optional[str] = None,
+) -> tkn.Token:
+    """Generate a Personal Access Token.
 
-    This method calls `cape token` from the Cape CLI to generate a function token
-    based on a function ID. Tokens can be created statically (long expiration and
-    bundled with your application) or created dynamically (short-lived) and have
-    an owner specified expiration. This function token is required in addition
-    to the function ID when calling a Cape function.
+    This method calls `cape token` from the Cape CLI to generate a Personal Access
+    Token. Tokens can be created statically (long expiration and bundled with your
+    application) or created dynamically (short-lived) and have an owner-specified
+    expiration. This PAT is required along with the function name or function ID when
+    calling a Cape function.
 
     Args:
-        function_id: A function ID string representing a deployed Cape function.
-        expiry: Amount of time in seconds until the function token expires.
+        name: Optional name for the token.
+        description: Optional description for the token.
+        expiry: Amount of time in seconds until the function token expires. Defaults to
+            1h.
 
     Returns:
-        A :class:`~.function_ref.FunctionRef` representing the deployed Cape
-        function.
+        A :class:`~.token.Token` representing the PAT.
 
-        Raises:
-        RuntimeError: if the Cape CLI cannot be found on the device.
+    Raises:
+        RuntimeError: if the Cape CLI cannot be found on the device, if the CLI failed
+            to generate the token, or if PyCape failed to parse the token from the CLI's
+            output.
     """
+    if name is None:
+        token_suffix = "".join(random.choices(string.ascii_lowercase, k=8))
+        name = f"pycape-deploy-{token_suffix}"
+
+    if description is None:
+        description = "An ephemeral token generated by pycape.experimental.cli."
+
+    cmd_token = f"cape token create -n {name} -d {description}"
+
     if expiry:
-        cmd_token = (
-            f"cape token {function_id} --function-checksum {function_checksum} "
-            f"--expiry {expiry} -o json"
-        )
-    else:
-        cmd_token = (
-            f"cape token {function_id} --function-checksum {function_checksum} -o json"
-        )
+        cmd_token += f" -e {expiry}"
 
     out_token, err_token = _call_cape_cli(cmd_token)
     err_token = err_token.decode()
     out_token = out_token.decode()
 
-    err_deploy = err_token.split("\n")
+    err_lines = err_token.split("\n")
     error_output = None
     # Parse err_token to get potential errors
-    for i in err_deploy:
+    for i in err_lines:
         if "Error" in i:
             error_output = i
             error_msg = error_output.partition("Error:")[2]
             raise RuntimeError(f"Cape token error - {error_msg}")
 
     # Parse out_token to get function token
-    function_token = json.loads(out_token.split("\n")[0]).get("function_token")
+    token_match = re.match("Success! Your token: (.*)", out_token)
+    if token_match is None:
+        raise RuntimeError(
+            "Cape token error - could not parse token output: "
+            f"\n{out_token}\n{err_lines}"
+        )
+    function_token = token_match.group(1)
 
     if function_token is None:
         raise RuntimeError(
-            f"Function token not found in 'cape.token' response: \n{err_deploy}"
+            "Function token not found in 'cape.token' response: "
+            f"\n{out_token}\n{err_lines}"
         )
 
-    return fref.FunctionRef(function_id, function_token, function_checksum)
+    return tkn.Token(function_token)
 
 
 def _check_if_cape_cli_available():
