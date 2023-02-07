@@ -48,14 +48,14 @@ def encrypt(plaintext: bytes) -> bytes:
     Returns:
         Bytes representing the base64 encoded encryption of the ``plaintext``. The
         bytes are a concatenation of the AES-ciphertext of the ``plaintext``, an AES
-        nonce, and the RSA-ciphertext of the AES key prefixed by ``cape:``.
+        nonce, and the RSA-ciphertext of the AES key prefixed by ``b"cape:"``
 
     Raises:
         TypeError: if the input is not of the correct type
         ValueError: if the input is empty
         ConnectionError: if an error is thrown from the socket connection
         ExecutionError: if a server error is reported during the remote encryption
-        process
+            process
     """
     if not isinstance(plaintext, (bytes, bytearray)):
         raise TypeError("input is required to be valid bytes")
@@ -83,7 +83,7 @@ def decrypt(ciphertext: bytes) -> bytes:
 
     Args:
         b64ciphertext: Base64 encoded bytes of a previously Cape Encrypted plaintext,
-        prefixed with Cape:
+            prefixed with ``b"cape:"``
 
     Returns:
         Bytes represeting the plaintext result of the decrypted ciphertext
@@ -93,7 +93,7 @@ def decrypt(ciphertext: bytes) -> bytes:
         ValueError: if the input is formatted incorrectly or empty
         ConnectionError: if an error is thrown from the socket connection
         ExecutionError: if a server error is reported during the remote encryption
-        process
+            process
     """
     prefix = b"cape:"
     if not isinstance(ciphertext, (bytes, bytearray)):
