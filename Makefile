@@ -69,6 +69,9 @@ bump-major: bump-prep
 .PHONY: install-docs
 install-docs:
 	pip install -U sphinx myst-parser sphinx-book-theme sphinx-copybutton sphinx-autodoc-typehints
+	pip install -U sphinx-book-theme~=0.3
+	pip install -U sphinx~=5.0
+	pip install ./cape_encrypt/
 
 .PHONY: docs-clean
 docs-clean:
