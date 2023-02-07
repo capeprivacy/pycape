@@ -251,8 +251,8 @@ class Cape:
         **Usage** ::
 
             cape = Cape(url="https://app.capeprivacy.com")
-            f = FunctionRef.from_json("function.json")
-            t = Token.from_disk("capedocs.token")
+            f = cape.function("function.json)
+            t = cape.token("pycape-dev.token")
 
             with cape.function_context(f, t):
 

@@ -53,10 +53,10 @@ Example [run_echo.py](https://github.com/capeprivacy/pycape/blob/main/examples/r
 from pycape import Cape
 
 cape = Cape(url="https://app.capeprivacy.com")
-capedocs_token: str = "eyJhbGci..." # full token omitted for brevity
+token: str = "eyJhbGci..." # full token omitted for brevity
 
-f = cape.function("capedocs/echo")
-t = cape.token(capedocs_token)
+f = cape.function("pycape-dev/echo")
+t = cape.token(token)
 result = client.run(f, t, b"Hello!")
 print(result.decode())
 # Hello!
@@ -70,13 +70,12 @@ Example [invoke_echo.py](https://github.com/capeprivacy/pycape/blob/main/example
 
 ```python
 from pycape import Cape
-from pycape import FunctionRef
 
 cape = Cape(url="https://app.capeprivacy.com")
-capedocs_token: str = "eyJhbGci..." # full token omitted for brevity
+token: str = "eyJhbGci..." # full token omitted for brevity
 
-f = cape.function("capedocs/echo")
-t = cape.token(capedocs_token)
+f = cape.function("pycape-dev/echo")
+t = cape.token(token)
 
 cape.connect(f, t)
 result = cape.invoke(b"Hello Alice!")

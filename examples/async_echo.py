@@ -5,8 +5,7 @@ import pycape
 
 parent_dir = pathlib.Path(__file__).parent.absolute()
 echo_func_file = parent_dir / "echo.json"
-token_file = parent_dir / "capedocs.token"
-function_owner = "capedocs"
+token_file = parent_dir / "user.token"
 
 
 async def main(
@@ -22,7 +21,7 @@ async def main(
 if __name__ == "__main__":
 
     cape = pycape.Cape()
-    fref = cape.function(echo_func_file)
+    function_ref = cape.function(echo_func_file)
     token = cape.token(token_file)
-    echo = asyncio.run(main(cape, fref, token, "Welcome to Cape."))
+    echo = asyncio.run(main(cape, function_ref, token, "Welcome to Cape."))
     print(echo)
