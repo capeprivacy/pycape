@@ -15,6 +15,7 @@ async def deploy(
     deploy_path: Union[str, os.PathLike],
     url: Optional[str] = None,
     token_expiry: Optional[str] = None,
+    public: bool = False,
 ) -> fref.FunctionRef:
     """Deploy a directory or a zip file containing a Cape function declared in
     an app.py script.
@@ -32,7 +33,7 @@ async def deploy(
         url: The Cape platform's websocket URL, which is responsible for forwarding
             client requests to the proper enclave instances. If None, tries to load
             value from the ``CAPE_ENCLAVE_HOST`` environment variable. If no such
-            variable value is supplied, defaults to ``"wss://enclave.capeprivacy.com"``.
+            variable value is supplied, defaults to ``"https://app.capeprivacy.com"``.
         token_expriry: Amount of time in seconds until the function token expires.
 
     Returns:
@@ -49,6 +50,8 @@ async def deploy(
     deploy_path = pathlib.Path(deploy_path)
 
     cmd_deploy = f"cape deploy {deploy_path} -u {url} -o json"
+    if public:
+        cmd_deploy += " --public"
     out_deploy, err_deploy = _call_cape_cli(cmd_deploy)
     err_deploy = err_deploy.decode()
     out_deploy = out_deploy.decode()

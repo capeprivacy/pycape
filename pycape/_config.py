@@ -7,7 +7,7 @@ import pycape._config as modself
 # by an identical env variable prefixed w/ "CAPE_*", e.g. CAPE_DEV_DISABLE_SSL=True
 _CAPE_ENVVAR_DEFAULTS = {
     "DEV_DISABLE_SSL": False,
-    "ENCLAVE_HOST": "wss://enclave.capeprivacy.com",
+    "ENCLAVE_HOST": "https://app.capeprivacy.com",
     "LOCAL_AUTH_FILENAME": "auth",
     "LOCAL_CAPE_KEY_FILENAME": "capekey.pub.der",
     "LOCAL_CONFIG_DIR": str(pathlib.Path.home() / ".config" / "cape"),

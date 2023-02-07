@@ -1,13 +1,10 @@
 import base64
 import datetime
-import io
 import json
 import time
-import zipfile
 
 import cbor2
 import pytest
-import requests
 from cose.algorithms import Es384
 from cose.keys import EC2Key
 from cose.keys.curves import P384
@@ -18,8 +15,38 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import NameOID
+from OpenSSL import crypto
 
 from pycape import _attestation as attest
+
+root_subject = issuer = x509.Name(
+    [
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Texas"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "Austin"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "My Company"),
+        x509.NameAttribute(NameOID.COMMON_NAME, "My CA"),
+    ]
+)
+
+intermediate_subject = issuer = x509.Name(
+    [
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "JP"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Tokyo"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "Tokyo"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Cool Comp"),
+        x509.NameAttribute(NameOID.COMMON_NAME, "COOL"),
+    ]
+)
+
+cert_subject = x509.Name(
+    [
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "CA"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Nova Scotia"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "Halifax"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "New Org Name!"),
+    ]
+)
 
 
 class TestAttestation:
@@ -30,8 +57,14 @@ class TestAttestation:
         )
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
-        root_cert, cert = create_certs(root_private_key, private_key)
-        doc_bytes = create_attestation_doc(root_cert, cert)
+        root_cert = create_root_cert(root_private_key, root_subject)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
+        doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         attestation_doc = attest.parse_attestation(
@@ -50,8 +83,14 @@ class TestAttestation:
         )
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
-        root_cert, cert = create_certs(root_private_key, private_key)
-        doc_bytes = create_attestation_doc(root_cert, cert)
+        root_cert = create_root_cert(root_private_key, root_subject)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
+        doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         payload = cbor2.loads(attestation)
@@ -66,21 +105,53 @@ class TestAttestation:
         )
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
-        root_cert, cert = create_certs(root_private_key, private_key)
-        doc_bytes = create_attestation_doc(root_cert, cert)
+        root_cert = create_root_cert(root_private_key, root_subject)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject
+        )
+
+        doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         payload = cbor2.loads(attestation)
         doc = cbor2.loads(payload[2])
 
-        url = "https://aws-nitro-enclaves.amazonaws.com/AWS_NitroEnclaves_Root-G1.zip"
-        r = requests.get(url)
+        root_cert_pem = root_cert.public_bytes(Encoding.PEM)
 
-        f = zipfile.ZipFile(io.BytesIO(r.content))
-        with f.open("root.pem") as p:
-            root_cert = p.read()
+        attest.verify_cert_chain(root_cert_pem, doc["cabundle"], doc["certificate"])
 
-        attest.verify_cert_chain(root_cert, doc["cabundle"], doc["certificate"])
+    def test_verify_cert_chain_fails_if_bad_intermediate(self):
+        crv = P384
+        root_private_key = ec.generate_private_key(
+            crv.curve_obj, backend=default_backend()
+        )
+        intermediate_private_key = ec.generate_private_key(
+            crv.curve_obj, backend=default_backend()
+        )
+
+        private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
+
+        root_cert = create_root_cert(root_private_key, root_subject)
+        intermediate_cert = create_root_cert(
+            intermediate_private_key, intermediate_subject
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
+
+        doc_bytes = create_attestation_doc(intermediate_cert, cert)
+        attestation = create_cose_1_sign_msg(doc_bytes, private_key)
+
+        payload = cbor2.loads(attestation)
+        doc = cbor2.loads(payload[2])
+
+        root_cert_pem = root_cert.public_bytes(Encoding.PEM)
+
+        with pytest.raises(crypto.X509StoreContextError):
+            attest.verify_cert_chain(root_cert_pem, doc["cabundle"], doc["certificate"])
 
     def test_verify_pcrs(self):
         crv = P384
@@ -89,8 +160,14 @@ class TestAttestation:
         )
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
-        root_cert, cert = create_certs(root_private_key, private_key)
-        doc_bytes = create_attestation_doc(root_cert, cert)
+        root_cert = create_root_cert(root_private_key, root_subject)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
+        doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         attestation_doc = attest.parse_attestation(
@@ -106,8 +183,14 @@ class TestAttestation:
         )
         private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
 
-        root_cert, cert = create_certs(root_private_key, private_key)
-        doc_bytes = create_attestation_doc(root_cert, cert)
+        root_cert = create_root_cert(root_private_key, root_subject)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
+        doc_bytes = create_attestation_doc(intermediate_cert, cert)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         attestation_doc = attest.parse_attestation(
@@ -140,9 +223,9 @@ def create_cose_1_sign_msg(payload, private_key):
     return msg.encode(tag=False)
 
 
-def create_attestation_doc(root_cert, cert):
+def create_attestation_doc(intermediate_cert, cert):
     cert = cert.public_bytes(Encoding.DER)
-    root_cert = root_cert.public_bytes(Encoding.DER)
+    intermediate_cert = intermediate_cert.public_bytes(Encoding.DER)
     user_data = json.dumps({"func_hash": "stuff"})
     public_key = base64.b64decode("d4Y4fxNr/hga+d86m2Lw+SXu+QO6Uuk3yrtrS9CoVgI=")
     obj = {
@@ -151,7 +234,7 @@ def create_attestation_doc(root_cert, cert):
         "digest": "abcd",
         "pcrs": {0: b"pcrpcrpcr"},
         "certificate": cert,
-        "cabundle": [root_cert],
+        "cabundle": [intermediate_cert],
         "public_key": public_key,
         "user_data": user_data,
     }
@@ -159,16 +242,8 @@ def create_attestation_doc(root_cert, cert):
     return cbor2.encoder.dumps(obj)
 
 
-def create_certs(root_key, cert_key):
-    subject = issuer = x509.Name(
-        [
-            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Texas"),
-            x509.NameAttribute(NameOID.LOCALITY_NAME, "Austin"),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "My Company"),
-            x509.NameAttribute(NameOID.COMMON_NAME, "My CA"),
-        ]
-    )
+def create_root_cert(root_key, subject):
+    issuer = subject
     root_cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -181,27 +256,25 @@ def create_certs(root_key, cert_key):
         .sign(root_key, hashes.SHA256(), default_backend())
     )
 
-    new_subject = x509.Name(
-        [
-            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Texas"),
-            x509.NameAttribute(NameOID.LOCALITY_NAME, "Austin"),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "New Org Name!"),
-        ]
-    )
-    cert = (
+    return root_cert
+
+
+def create_child_cert(parent_cert, parent_key, cert_key, subject, ca=False):
+    builder = (
         x509.CertificateBuilder()
-        .subject_name(new_subject)
-        .issuer_name(root_cert.issuer)
+        .subject_name(subject)
+        .issuer_name(parent_cert.issuer)
         .public_key(cert_key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(datetime.datetime.utcnow())
         .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=30))
-        .add_extension(
-            x509.SubjectAlternativeName([x509.DNSName("somedomain.com")]),
-            critical=False,
-        )
-        .sign(root_key, hashes.SHA256(), default_backend())
     )
 
-    return root_cert, cert
+    if ca:
+        builder = builder.add_extension(
+            x509.BasicConstraints(ca=True, path_length=None), critical=True
+        )
+
+    cert = builder.sign(parent_key, hashes.SHA256(), default_backend())
+
+    return cert

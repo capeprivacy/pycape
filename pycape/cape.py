@@ -39,12 +39,14 @@ import os
 import pathlib
 import random
 import ssl
+import urllib
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
 
+import requests
 import synchronicity
 import websockets
 
@@ -70,7 +72,7 @@ class Cape:
         url: The Cape platform's websocket URL, which is responsible for forwarding
             client requests to the proper enclave instances. If None, tries to load
             value from the ``CAPE_ENCLAVE_HOST`` environment variable. If no such
-            variable value is supplied, defaults to ``"wss://enclave.capeprivacy.com"``.
+            variable value is supplied, defaults to ``"https://app.capeprivacy.com"``.
         verbose: Boolean controlling verbose logging for the ``"pycape"`` logger.
             If True, sets log-level to ``DEBUG``.
     """
@@ -127,7 +129,9 @@ class Cape:
     async def encrypt(
         self,
         input: bytes,
-        token: str,
+        *,
+        username: Optional[str] = None,
+        token: Optional[str] = None,
         key: Optional[bytes] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
     ) -> bytes:
@@ -143,6 +147,8 @@ class Cape:
 
         Args:
             input: Input bytes to encrypt.
+            username: A Github username corresponding to a Cape user who's public key
+                you want to use for the encryption. See :meth:`~Cape.key` for details.
             token: A Cape token scoped for retrieving a user's Cape public key.
                 See :meth:`~Cape.key` for details.
             key: Optional bytes for the Cape key. If None, will delegate to calling
@@ -162,7 +168,9 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        cape_key = key or await self.key(token, key_path)
+        cape_key = key or await self.key(
+            username=username, token=token, key_path=key_path
+        )
         ctxt = cape_encrypt.encrypt(input, cape_key)
         # cape-encrypted ctxt must be b64-encoded and tagged
         ctxt = base64.b64encode(ctxt)
@@ -183,7 +191,7 @@ class Cape:
 
         **Usage** ::
 
-            cape = Cape(url="wss://enclave.capeprivacy.com")
+            cape = Cape(url="https://app.capeprivacy.com")
             f = FunctionRef.from_json("function.json")
 
             with cape.function_context(f):
@@ -257,15 +265,25 @@ class Cape:
     @_synchronizer
     async def key(
         self,
-        token: str,
+        *,
+        username: Optional[str] = None,
+        token: Optional[str] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
         pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
+        The caller must provide one of the following arguments: ``username``, ``token``,
+        or ``key_path``.
+
         Args:
-            token: A string representing a Cape authentication token. Usually retrieved
-                from a :class:`~.function_ref.FunctionRef` via :attr:`FunctionRef.token`
+            username: An optional string representing the Github username of a Cape
+                user. The resulting public key will be associated with their account,
+                and data encrypted with this key will be available inside functions
+                that user has deployed.
+            token: An optional string representing a Cape authentication token. Usually
+                retrieved from a :class:`~.function_ref.FunctionRef` via
+                :attr:`FunctionRef.token`
             key_path: The path to the Cape key file. If the file already exists, the key
                 will be read from disk and returned. Otherwise, a Cape key will be
                 requested from the Cape platform and written to this location.
@@ -284,12 +302,41 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
+        if username is None and token is None and key_path is None:
+            raise ValueError(
+                "Must supply one of [`username`, `token`, `key_path`] arguments, but "
+                "found `None` for all of them."
+            )
+        if username is not None and token is not None:
+            raise ValueError(
+                "Provided both `username` and `token` arguments, but these are "
+                "mutually exclusive."
+            )
+
         if key_path is None:
             config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
-            key_path = config_dir / cape_config.LOCAL_CAPE_KEY_FILENAME
+            key_qualifier = (
+                username or token[-200:]
+            )  # Shorten file name to avoid Errno 63 when saving file
+            key_path = (
+                config_dir
+                / "encryption_keys"
+                / key_qualifier
+                / cape_config.LOCAL_CAPE_KEY_FILENAME
+            )
         else:
             key_path = pathlib.Path(key_path)
-        cape_key = await self._request_key(token, key_path, pcrs=pcrs)
+
+        if key_path.exists():
+            with open(key_path, "rb") as f:
+                cape_key = f.read()
+        else:
+            if username is not None:
+                cape_key = await self._request_key_with_username(username, pcrs=pcrs)
+            else:
+                cape_key = await self._request_key_with_token(token, pcrs=pcrs)
+            await _persist_cape_key(cape_key, key_path)
+
         return cape_key
 
     @_synchronizer
@@ -420,10 +467,33 @@ class Cape:
 
         return result
 
-    async def _request_key(
+    async def _request_key_with_username(
+        self,
+        username: str,
+        pcrs: Optional[Dict[str, List[str]]] = None,
+    ) -> bytes:
+        user_key_endpoint = f"{self._url}/v1/user/{username}/key"
+        response = requests.get(user_key_endpoint)
+        adoc_blob = response.json()["attestation_document"]
+        root_cert = self._root_cert or attest.download_root_cert()
+        attestation_doc = attest.parse_attestation(
+            base64.b64decode(adoc_blob), root_cert
+        )
+        if pcrs is not None:
+            attest.verify_pcrs(pcrs, attestation_doc)
+
+        user_data = attestation_doc.get("user_data")
+        user_data_dict = json.loads(user_data)
+        cape_key = user_data_dict.get("key")
+        if cape_key is None:
+            raise RuntimeError(
+                "Enclave response did not include a Cape key in attestation user data."
+            )
+        return base64.b64decode(cape_key)
+
+    async def _request_key_with_token(
         self,
         token: str,
-        key_path: pathlib.Path,
         pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
         key_endpoint = f"{self._url}/v1/key"
@@ -443,16 +513,14 @@ class Cape:
             raise RuntimeError(
                 "Enclave response did not include a Cape key in attestation user data."
             )
-        cape_key = base64.b64decode(cape_key)
-        await _persist_cape_key(cape_key, key_path)
-        return cape_key
+        return base64.b64decode(cape_key)
 
 
 class _EnclaveContext:
     """A context managing a connection to a particular enclave instance."""
 
     def __init__(self, endpoint, auth_protocol, auth_token, root_cert):
-        self._endpoint = endpoint
+        self._endpoint = _transform_url(endpoint)
         self._auth_token = auth_token
         self._auth_protocol = auth_protocol
         self._root_cert = root_cert
@@ -607,3 +675,12 @@ async def _persist_cape_key(cape_key: str, key_path: pathlib.Path):
     key_path.parent.mkdir(parents=True, exist_ok=True)
     with open(key_path, "wb") as f:
         f.write(cape_key)
+
+
+def _transform_url(url):
+    url = urllib.parse.urlparse(url)
+    if url.scheme == "https":
+        return url.geturl().replace("https://", "wss://")
+    elif url.scheme == "http":
+        return url.geturl().replace("http://", "ws://")
+    return url.geturl()

@@ -22,7 +22,7 @@ jobs:
       - name: Lint PyCape.
         run: make lint
       - name: Test PyCape.
-        run: make test
+        run: pytest pycape
 
   release-notes:
     permissions:

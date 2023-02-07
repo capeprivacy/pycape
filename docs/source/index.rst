@@ -13,6 +13,7 @@ Welcome to PyCape's documentation!
    pycape-readme
    walkthrough
    serdio-readme
+   cape-encrypt-readme
 
 .. toctree::
    :maxdepth: 2
@@ -20,6 +21,7 @@ Welcome to PyCape's documentation!
 
    pycape
    serdio
+   cape_encrypt
 
 
 Indices and tables

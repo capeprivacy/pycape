@@ -30,14 +30,14 @@ The `echo_token.json` json file will contain your function ID, function token an
 
 After deploying the function, to run a function once, you can run the following example:
 ```
-export CAPE_HOST=<WSS_URL>
+export CAPE_HOST=<HTTPS_URL>
 export FUNCTION_JSON=echo_token.json
 python run_echo.py
 ```
 
 To run a function repeatedly, you can run the following example:
 ```
-export CAPE_HOST=<WSS_URL>
+export CAPE_HOST=<HTTPS_URL>
 export FUNCTION_JSON=echo_token.json
 python invoke_echo.py
 ```
@@ -52,7 +52,7 @@ As an example, we will compute the mean of a list of numbers. All commands shoul
 ```sh
 mkdir examples/mean/build
 export TARGET=examples/mean/build
-export CAPE_HOST=<WSS_URL>
+export CAPE_HOST=<HTTPS_URL>
 ```
 
 ###  Step 1: Install Serdio to build target

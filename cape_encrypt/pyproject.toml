@@ -3,12 +3,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "serdio"
-description = "Automatic serialization of function inputs and outputs using MessagePack."
+name = "cape_encrypt"
+description = "Encryption aid for functions running in Cape Enclaves"
 readme = "README.md"
-version = "2.1.0"
+version = "0.1.1"
 requires-python = ">=3.7"
-dependencies = ["msgpack"]
 authors = [
     {email = "contact@capeprivacy.com", name = "Cape Privacy"}
 ]
