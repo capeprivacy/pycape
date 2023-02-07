@@ -4,5 +4,6 @@ file:./serdio
 websockets
 pyOpenSSL
 cose
+certifi>=2022.12.07
 requests
 synchronicity
