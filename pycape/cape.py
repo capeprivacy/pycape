@@ -14,8 +14,9 @@ synchronous or asynchronous contexts via asyncio.
 
     cape = Cape()
 
-    f = FunctionRef.from_json("function.json")
-    cape.connect(f)
+    f = cape.function("user/pythagorean")  # refer to function by name
+    t = cape.token("user.token")           # load function owner's PAT
+    cape.connect(f, t)
 
     c1 = cape.invoke(3, 4, use_serdio=True)
     print(c1)  # 5
@@ -27,7 +28,7 @@ synchronous or asynchronous contexts via asyncio.
 
     # similar invocation, but async
     c3 = asyncio.run(
-        cape.run("9712r5dynf57l1rcns2", 8, 15, use_serdio=True)
+        cape.run(f, t, 8, 15, use_serdio=True)
     )
     print(c3)  # 17
 
