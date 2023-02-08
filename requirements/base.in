@@ -5,5 +5,6 @@ websockets
 pyOpenSSL
 cose
 certifi>=2022.12.07
+cryptography>=39.0.1
 requests
 synchronicity

@@ -26,8 +26,9 @@ charset-normalizer==2.1.0
     # via requests
 cose==0.9.dev8
     # via -r requirements/base.in
-cryptography==38.0.3
+cryptography==39.0.1
     # via
+    #   -r requirements/base.in
     #   cose
     #   pyopenssl
 ecdsa==0.18.0
