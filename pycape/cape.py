@@ -2,11 +2,11 @@
 
 The :class:`Cape` client uses websockets to connect to Cape enclaves that are hosting a
 user's deployed functions. Before being able to run functions from the Cape client,
-users must have gone through the process of developing a Cape function in Python and
-deploying it from the CLI and generating a function token.
+users must have gone through the process of developing a Cape function in Python,
+deploying it from the CLI, and generating a personal access token.
 
-The majority of the :class:`Cape` client interface can be used in either synchronous or
-asynchronous contexts via asyncio.
+All public async methods in the :class:`Cape` client interface can be used in either
+synchronous or asynchronous contexts via asyncio.
 
 **Usage**
 
@@ -56,6 +56,7 @@ from pycape import _config as cape_config
 from pycape import _enclave_encrypt as enclave_encrypt
 from pycape import cape_encrypt
 from pycape import function_ref as fref
+from pycape import token as tkn
 
 logging.basicConfig(format="%(message)s")
 _logger = logging.getLogger("pycape")
@@ -99,7 +100,8 @@ class Cape:
     @_synchronizer
     async def connect(
         self,
-        function_ref: fref.FunctionRef,
+        function_ref: Union[str, os.PathLike, fref.FunctionRef],
+        token: Union[str, os.PathLike, tkn.Token],
         pcrs: Optional[Dict[str, List[str]]] = None,
     ):
         """Connects to the enclave hosting the function denoted by ``function_ref``.
@@ -111,9 +113,14 @@ class Cape:
         :meth:`~Cape.close` once all invocations have finished.
 
         Args:
-            function_ref: A function ID string or :class:`~.function_ref.FunctionRef`
-                representing a deployed Cape function.
-            pcrs: A dictionary of PCR indexes to a list of potential values.
+            function_ref: Reference to a Cape deployed function. Must be convertible to
+                a :class:`~function_ref.FunctionRef`. See :meth:`Cape.function` for
+                a description of recognized values.
+            token: Personal Access Token scoped for the given Cape function. Must be
+                convertible to :class:`~token.Token`, see :meth:`Cape.token` for a
+                description of recognized values.
+            pcrs: An optional dictionary of PCR indexes to a list of expected or allowed
+                PCRs.
 
         Raises:
             RuntimeError: if the websocket response or the enclave attestation doc is
@@ -122,8 +129,9 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        function_ref = _check_function_ref(function_ref)
-        await self._request_connection(function_ref, pcrs)
+        function_ref = self.function(function_ref)
+        token = self.token(token)
+        await self._request_connection(function_ref, token, pcrs)
 
     @_synchronizer
     async def encrypt(
@@ -131,7 +139,6 @@ class Cape:
         input: bytes,
         *,
         username: Optional[str] = None,
-        token: Optional[str] = None,
         key: Optional[bytes] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
     ) -> bytes:
@@ -148,14 +155,12 @@ class Cape:
         Args:
             input: Input bytes to encrypt.
             username: A Github username corresponding to a Cape user who's public key
-                you want to use for the encryption. See :meth:`~Cape.key` for details.
-            token: A Cape token scoped for retrieving a user's Cape public key.
-                See :meth:`~Cape.key` for details.
+                you want to use for the encryption. See :meth:`Cape.key` for details.
             key: Optional bytes for the Cape key. If None, will delegate to calling
                 :meth:`Cape.key` w/ the given ``key_path`` to retrieve the user's Cape
                 key.
-            key_path: Optional path to a locally-cached Cape key. Used to call
-                :meth:`Cape.key` when an explicit ``key`` argument is not provided.
+            key_path: Optional path to a locally-cached Cape key. See :meth:`Cape.key`
+                for details.
 
         Returns:
             Tagged ciphertext representing a base64-encoded Cape encryption of the
@@ -168,19 +173,73 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        cape_key = key or await self.key(
-            username=username, token=token, key_path=key_path
-        )
+        cape_key = key or await self.key(username=username, key_path=key_path)
         ctxt = cape_encrypt.encrypt(input, cape_key)
         # cape-encrypted ctxt must be b64-encoded and tagged
         ctxt = base64.b64encode(ctxt)
         return b"cape:" + ctxt
 
+    def function(
+        self,
+        identifier: Union[str, os.PathLike, fref.FunctionRef],
+        *,
+        checksum: Optional[str] = None,
+    ) -> fref.FunctionRef:
+        """Convenience function for creating a :class:`~.function_ref.FunctionRef`.
+
+        The ``identifier`` parameter is interepreted according to the following
+        priority:
+
+        - Filepath to a :class:`~.function_ref.FunctionRef` JSON. See
+          :meth:`~.function_ref.FunctionRef.from_json` for expected JSON structure.
+        - String representing a function ID
+        - String of the form "{username}/{fn_name}" representing a function name.
+        - A :class:`~function_ref.FunctionRef`. If its checksum is missing and a
+          ``checksum`` argument is given, it will be added to the returned value.
+
+        Args:
+            identifier: A string identifier that can be converted into a
+                :class:`~.function_ref.FunctionRef`. See above for options.
+            checksum: keyword-only argument for the function checksum. Ignored if
+                ``identifier`` points to a JSON.
+        """
+        if isinstance(identifier, pathlib.Path):
+            return fref.FunctionRef.from_json(identifier)
+
+        if isinstance(identifier, str):
+            identifier_as_path = pathlib.Path(identifier)
+            if identifier_as_path.exists():
+                return fref.FunctionRef.from_json(identifier_as_path)
+            # not a path, try to interpret as function name
+            if len(identifier.split("/")) == 2:
+                return fref.FunctionRef(id=None, name=identifier, checksum=checksum)
+            # not a function name, try to interpret as function id
+            elif len(identifier) == 22:
+                return fref.FunctionRef(id=identifier, name=None, checksum=checksum)
+
+        if isinstance(identifier, fref.FunctionRef):
+            if checksum is None:
+                return identifier
+            elif identifier.checksum is None:
+                return fref.FunctionRef(
+                    id=identifier.id, name=identifier.full_name, checksum=checksum
+                )
+            else:
+                if checksum == identifier.checksum:
+                    return identifier
+                raise ValueError(
+                    "Checksum mismatch: given `checksum` argument conflicts with "
+                    "given FunctionRef's checksum."
+                )
+
+        raise ValueError("Unrecognized form of `identifier` argument: {identifier}.")
+
     @_synchronizer
     @_synchronizer.asynccontextmanager
     async def function_context(
         self,
-        function_ref: fref.FunctionRef,
+        function_ref: Union[str, os.PathLike, fref.FunctionRef],
+        token: Union[str, os.PathLike, tkn.Token],
         pcrs: Optional[Dict[str, List[str]]] = None,
     ):
         """Creates a context manager for a given ``function_ref``'s enclave connection.
@@ -192,9 +251,10 @@ class Cape:
         **Usage** ::
 
             cape = Cape(url="https://app.capeprivacy.com")
-            f = FunctionRef.from_json("function.json")
+            f = cape.function("function.json)
+            t = cape.token("pycape-dev.token")
 
-            with cape.function_context(f):
+            with cape.function_context(f, t):
 
                 c1 = cape.invoke(3, 4, use_serdio=True)
                 print(c1)  # 5
@@ -216,7 +276,7 @@ class Cape:
                 connection request.
         """
         try:
-            yield await self.connect(function_ref, pcrs)
+            yield await self.connect(function_ref, token, pcrs)
         finally:
             await self.close()
 
@@ -267,23 +327,19 @@ class Cape:
         self,
         *,
         username: Optional[str] = None,
-        token: Optional[str] = None,
         key_path: Optional[Union[str, os.PathLike]] = None,
         pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
         """Load a Cape key from disk or download and persist an enclave-generated one.
 
-        The caller must provide one of the following arguments: ``username``, ``token``,
-        or ``key_path``.
+        If no username or key_path is provided, will try to load the currently logged-in
+        CLI user's key from a local cache.
 
         Args:
             username: An optional string representing the Github username of a Cape
                 user. The resulting public key will be associated with their account,
                 and data encrypted with this key will be available inside functions
                 that user has deployed.
-            token: An optional string representing a Cape authentication token. Usually
-                retrieved from a :class:`~.function_ref.FunctionRef` via
-                :attr:`FunctionRef.token`
             key_path: The path to the Cape key file. If the file already exists, the key
                 will be read from disk and returned. Otherwise, a Cape key will be
                 requested from the Cape platform and written to this location.
@@ -302,47 +358,42 @@ class Cape:
             Exception: if the enclave threw an error while trying to fulfill the
                 connection request.
         """
-        if username is None and token is None and key_path is None:
-            raise ValueError(
-                "Must supply one of [`username`, `token`, `key_path`] arguments, but "
-                "found `None` for all of them."
-            )
-        if username is not None and token is not None:
-            raise ValueError(
-                "Provided both `username` and `token` arguments, but these are "
-                "mutually exclusive."
-            )
+        if username is not None and key_path is not None:
+            raise ValueError("User provided both 'username' and 'key_path' arguments.")
 
-        if key_path is None:
-            config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
-            key_qualifier = (
-                username or token[-200:]
-            )  # Shorten file name to avoid Errno 63 when saving file
-            key_path = (
-                config_dir
-                / "encryption_keys"
-                / key_qualifier
-                / cape_config.LOCAL_CAPE_KEY_FILENAME
-            )
-        else:
+        if key_path is not None:
             key_path = pathlib.Path(key_path)
+        else:
+            config_dir = pathlib.Path(cape_config.LOCAL_CONFIG_DIR)
+            if username is not None:
+                # look for locally-cached user key
+                key_qualifier = config_dir / "encryption_keys" / username
+            else:
+                # try to load the current CLI user's capekey
+                key_qualifier = config_dir
+            key_path = key_qualifier / cape_config.LOCAL_CAPE_KEY_FILENAME
 
         if key_path.exists():
             with open(key_path, "rb") as f:
                 cape_key = f.read()
-        else:
-            if username is not None:
-                cape_key = await self._request_key_with_username(username, pcrs=pcrs)
-            else:
-                cape_key = await self._request_key_with_token(token, pcrs=pcrs)
-            await _persist_cape_key(cape_key, key_path)
+            return cape_key
 
-        return cape_key
+        if username is not None:
+            cape_key = await self._request_key_with_username(username, pcrs=pcrs)
+            await _persist_cape_key(cape_key, key_path)
+            return cape_key
+
+        raise ValueError(
+            "Cannot find a Cape key in the local cache. Either specify a username or "
+            "log into the Cape CLI and run `cape key` to locally cache your own "
+            "account's Cape key."
+        )
 
     @_synchronizer
     async def run(
         self,
-        function_ref: fref.FunctionRef,
+        function_ref: Union[str, os.PathLike, fref.FunctionRef],
+        token: Union[str, os.PathLike, tkn.Token],
         *args: Any,
         pcrs: Optional[Dict[str, List[str]]] = None,
         serde_hooks=None,
@@ -357,8 +408,9 @@ class Cape:
         preferred when the caller doesn't need to invoke a Cape function more than once.
 
         Args:
-            function_ref: A :class:`~.function_ref.FunctionRef` representing
-                a deployed Cape function.
+            function_ref: A value convertible to a :class:`~.function_ref.FunctionRef`,
+                representing a deployed Cape function. See :meth:`Cape.function` for
+                recognized values.
             *args: Arguments to pass to the connected Cape function. If
                 ``use_serdio=False``, we expect a single argument of type ``bytes``.
                 Otherwise, these arguments should match the positional arguments
@@ -384,23 +436,55 @@ class Cape:
             RuntimeError: if serialized inputs could not be HPKE-encrypted, or if
                 websocket response is malformed.
         """
-        function_ref = _check_function_ref(function_ref)
         if serde_hooks is not None:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
-        async with self.function_context(function_ref, pcrs):
+        async with self.function_context(function_ref, token, pcrs):
             result = await self.invoke(
                 *args, serde_hooks=serde_hooks, use_serdio=use_serdio, **kwargs
             )
         return result
 
-    async def _request_connection(self, function_ref, pcrs=None):
-        fn_endpoint = f"{self._url}/v1/run/{function_ref.id}"
+    def token(self, token: Union[str, os.PathLike, tkn.Token]) -> tkn.Token:
+        """Create or load a :class:`~token.Token`.
+
+        Args:
+            token: Filepath to a token file, or the raw token string itself.
+
+        Returns:
+            A :class:`~token.Token` that can be used to access users' deployed Cape
+            functions.
+
+        Raises:
+            TypeError: if the ``token`` argument type is unrecognized.
+        """
+        token_out = None
+        if isinstance(token, pathlib.Path):
+            tokenfile = token
+            return tkn.Token.from_disk(tokenfile)
+
+        if isinstance(token, str):
+            # str could be a filename
+            if len(token) <= 255:
+                token_as_path = pathlib.Path(token)
+                token_out = _try_load_token_file(token_as_path)
+            return token_out or tkn.Token(token)
+
+        if isinstance(token, tkn.Token):
+            return token
+
+        raise TypeError(f"Expected token to be PathLike or str, found {type(token)}")
+
+    async def _request_connection(self, function_ref, token, pcrs=None):
+        if function_ref.id is not None:
+            fn_endpoint = f"{self._url}/v1/run/{function_ref.id}"
+        elif function_ref.full_name is not None:
+            fn_endpoint = f"{self._url}/v1/run/{function_ref.user}/{function_ref.name}"
 
         self._root_cert = self._root_cert or attest.download_root_cert()
         self._ctx = _EnclaveContext(
             endpoint=fn_endpoint,
-            auth_protocol="cape.function",
-            auth_token=function_ref.token,
+            auth_protocol="cape.runtime",
+            auth_token=token.raw,
             root_cert=self._root_cert,
         )
         attestation_doc = await self._ctx.bootstrap(pcrs)
@@ -473,8 +557,13 @@ class Cape:
         pcrs: Optional[Dict[str, List[str]]] = None,
     ) -> bytes:
         user_key_endpoint = f"{self._url}/v1/user/{username}/key"
-        response = requests.get(user_key_endpoint)
-        adoc_blob = response.json()["attestation_document"]
+        response = requests.get(user_key_endpoint).json()
+        adoc_blob = response.get("attestation_document", None)
+        if adoc_blob is None:
+            raise RuntimeError(
+                f"Bad response from '/v1/user/{username}/key' route, expected "
+                f"attestation_document key-value: {response}."
+            )
         root_cert = self._root_cert or attest.download_root_cert()
         attestation_doc = attest.parse_attestation(
             base64.b64decode(adoc_blob), root_cert
@@ -643,25 +732,6 @@ def _handle_expected_field(dictionary, field, *, fallback_err=None):
     return v
 
 
-def _check_function_ref(function_ref):
-    """
-    Check if the FunctionRef object contains a function ID and token.
-    """
-    if isinstance(function_ref, fref.FunctionRef):
-        if function_ref.id is None:
-            raise ValueError("The function ID in the provided FunctionRef is empty.")
-
-        if function_ref.token is None:
-            raise ValueError("The function token in the provided FunctionRef is empty.")
-
-        return function_ref
-    else:
-        raise TypeError(
-            "`function_ref` arg must be a FunctionRef object, "
-            f" found {type(function_ref)}."
-        )
-
-
 def _maybe_get_single_input(args, kwargs):
     single_arg = len(args) == 1 and len(kwargs) == 0
     single_kwarg = len(args) == 0 and len(kwargs) == 1
@@ -684,3 +754,10 @@ def _transform_url(url):
     elif url.scheme == "http":
         return url.geturl().replace("http://", "ws://")
     return url.geturl()
+
+
+def _try_load_token_file(token_file: pathlib.Path):
+    if token_file.exists():
+        with open(token_file, "r") as f:
+            token_output = f.read()
+        return token_output

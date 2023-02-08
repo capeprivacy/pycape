@@ -2,7 +2,8 @@ cbor2
 hybrid_pke~=1.0
 file:./serdio
 websockets
-pyOpenSSL
+pyOpenSSL>=22.1.0
 cose
+certifi>=2022.12.07
 requests
 synchronicity

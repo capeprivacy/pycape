@@ -42,17 +42,24 @@ Then deploy this folder by calling `cape deploy mean`, per the [“Deploying Fun
 
 ### Running our first function
 
-Once we’ve deployed the Cape function successfully, we’ll have a function ID and checksum. The next step is to generate a [function token](https://docs.capeprivacy.com/tutorials/tokens) based on the function ID as follow using `cape token`:
+Once we’ve deployed the Cape function successfully, we’ll have a function ID and checksum. The next step is to generate a [personal access token](https://docs.capeprivacy.com/tutorials/tokens) for your account:
+```console
+$ cape token create --name walkthrough --expiry 300s
+Success! Your token: eyJhtGckO12...(token omitted)
 ```
-cape token <FUNCTION_ID> --function-checksum <FUNCTION_CHECKSUM> -o json > mean_token.json
-```
-The `mean_token.json` will contain the function ID, function token and function checksum. We can now use this json file to call the function from PyCape as follows:
+You can save the token in the output to a file called `walkthrough.token`. We can now read from this token file when running the function from PyCape
 
 ```python
+function_id: str = "<REPLACE THIS WITH FUNCTION ID FROM DEPLOY OUTPUT>"
+function_checksum: str = "<REPLACE WITH CHECKSUM FROM DEPLOY OUTPUT>"
+token_file = "walkthrough.token"
+
 cape = Cape()
-function_ref = FunctionRef.from_json("mean_token.json")
+f = cape.function(function_id, checksum=function_checksum)
+t = cape.token(token_file)
+
 x_bytes = json.dumps([1, 2, 3, 4]).encode()
-result_bytes = cape.run(function_ref, x_bytes)
+result_bytes = cape.run(f, t, x_bytes)
 print("Mean of x is:", json.loads(result_bytes.decode()))
 # Mean of x is: 2.5
 ```
@@ -105,10 +112,11 @@ Finally, re-deploy this code with `cape deploy mean`, and make note of the funct
 
 After re-deploying this code, we can call it from PyCape like we did before.
 ```python
-cape = Cape()
-function_ref = FunctionRef.from_json("mean_token.json")
+f = cape.function(function_id, checksum=function_checksum)
+t = cape.token(token_file)
+
 x = [1, 2, 3, 4]
-result = cape.run(function_ref, x, use_serdio=True)
+result = cape.run(f, t, x, use_serdio=True)
 print(f"The mean of x is: {result}")
 # Mean of x is: 2.5
 ```
@@ -120,9 +128,10 @@ If we want to invoke the same Cape function more than once in a Python applicati
 3. Close the connection with `Cape.close`
 
 ```python
-cape = Cape()
-function_ref = FunctionRef.from_json("mean_token.json")
-cape.connect(function_ref)
+f = cape.function(function_id, checksum=function_checksum)
+t = cape.token(token_file)
+
+cape.connect(f, t)
 low_list = [1, 2, 3, 4]
 result = cape.invoke(low_list, use_serdio=True)
 print(f"The mean is equal to: {result}")
