@@ -14,9 +14,10 @@ a ``FunctionRef``.
     fid = "asdf231lkg1324afdg"
     fchecksum = str(b"2l1h21jhgb2k1jh3".hex())
     fref = FunctionRef(fid, fchecksum)
+    token = pycape.Token("eY12shd...")
 
     cape = Cape()
-    cape.connect(fref)
+    cape.connect(fref, token)
 """
 from __future__ import annotations
 

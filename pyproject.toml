@@ -9,7 +9,7 @@ exclude = ["serdio*", "cape_encrypt*"]
 name = "pycape" 
 description = "The Cape Privacy Python SDK"
 readme = "README.md"
-version = "2.1.1-rc"
+version = "3.0.1-rc"
 requires-python = ">=3.7"
 dependencies = [
     "cbor2", 
@@ -36,7 +36,7 @@ classifiers = [
 urls = {repository = "https://github.com/capeprivacy/pycape"}
 
 [tool.bumpver]
-current_version = "2.1.1-rc"
+current_version = "3.0.1-rc"
 version_pattern = "MAJOR.MINOR.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
