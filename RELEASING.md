@@ -42,7 +42,7 @@ NOTE that if you have to start over at any point after this step, you will have 
 ## 3. Examine the commits
 The above changes are automatically committed, so you'll want to be sure that the commits happened the way you expected them to. You can do this by checking the version numbers in the `pyproject.toml` of both Serdio and PyCape, as well as checking your `git log` to make sure the right commit has been tagged. The `git log` should look something like this:
 
-```
+```console
 commit <OMITTED> (HEAD -> main)
 Author: <OMITTED> <<OMITTED>@capeprivacy.com>
 Date:   <OMITTED>
@@ -59,7 +59,7 @@ Date:   <OMITTED>
 You can verify that the commits have been propely signed with `git log --show-signature`.
 
 If you don't have automatic GPG-signing set up, you should use your GPG key to sign these commits retroactively with:
-```sh
+```console
 git rebase origin/main -x 'git commit -n -S --no-edit --amend'
 ```
 
@@ -67,7 +67,7 @@ BEFORE you follow the next step, it's worth fetching from `origin` and checking 
 
 ## 4. Push the release commits to `origin`
 Finally, push the last two commits to main with:
-```sh
+```console
 git push origin main
 ```
 Now, WAIT for the latest commit on main to pass its CI workflow. If for some reason the CI status check fails, you will need to investigate why and resolve it. If resolution requires any new commits, you will have to wait for the relevant PRs to be merged into `main`, and then restart this release process from the newer version of `main`.
@@ -77,8 +77,8 @@ Finally, once you've verified that CI is passing for the release commits, you wi
 
 Seriously, this is your last chance to avoid disaster. NEVER PUSH A TAG IF ITS COMMITS HAVEN'T PASSED THE CI WORKFLOWS IN GITHUB ACTIONS.
 
-```sh
-git push origin 1.1.0
+```console
+$ git push origin 1.1.0
 ```
 
 This will trigger the PyCape and Serdio release workflows in the repo's Github Actions. These workflows will build wheels for PyCape and Serdio, test the wheels, upload them to the latest draft Github Release, and finally push them to PyPI for public consumption.
@@ -88,7 +88,17 @@ If something went wrong, you will have to diagnose and fix it here. This might r
 
 NEVER PUBLISH A GITHUB RELEASE FROM A TAG THAT HAS FAILED ITS RELEASE WORKFLOWS
 
-## 7. Publish the Github Release
+## 7. Update pydocs by merging tag into `staging/docs`
+Our Netlify pydocs site (https://pydocs.capeprivacy.com) is set to publish from the `staging/docs` branch on Github. Since we want this site to host documentation for the latest released version of PyCape, you will need to merge the latest tag into this branch. You can do so with the following:
+```console
+$ git checkout staging/docs
+$ git merge --ff 1.1.0
+$ git push origin staging/docs
+```
+Once the Netlify deploy succeeds, you can check https://pydocs.capeprivacy.com to ensure it has the latest release changes.
+
+
+## 8. Publish the Github Release
 Finally, navigate to the `Releases` section of the repo (you can find it on the right sidebar of the repo's homepage). The latest one should be a "draft" release. Open the draft release, and update it to match the version bump you just went through. This includes:
 1. Make sure the tag (drop-down menu in top-left) is set to `1.1.0`.
 2. Modify the release title to match your semantic version bump. By default it's the next patch version, so you'll probably only have to change it if you are doing a minor or major bump.
