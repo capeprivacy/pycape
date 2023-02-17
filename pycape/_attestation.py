@@ -32,7 +32,7 @@ def download_root_cert():
     return root_cert
 
 
-def parse_attestation(attestation, root_cert=None):
+def parse_attestation(attestation, root_cert):
     logger.debug("* Parsing attestation document...")
 
     payload = cbor2.loads(attestation)

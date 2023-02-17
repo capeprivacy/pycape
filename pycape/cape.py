@@ -565,7 +565,7 @@ class Cape:
                 f"Bad response from '/v1/user/{username}/key' route, expected "
                 f"attestation_document key-value: {response}."
             )
-        attestation_doc = attest.parse_attestation(base64.b64decode(adoc_blob))
+        attestation_doc = attest.parse_attestation(base64.b64decode(adoc_blob), None)
         if pcrs is not None:
             attest.verify_pcrs(pcrs, attestation_doc)
 
