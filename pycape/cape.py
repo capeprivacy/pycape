@@ -565,7 +565,17 @@ class Cape:
                 f"Bad response from '/v1/user/{username}/key' route, expected "
                 f"attestation_document key-value: {response}."
             )
-        attestation_doc = attest.parse_attestation(base64.b64decode(adoc_blob), None)
+
+        self._root_cert = self._root_cert or attest.download_root_cert()
+
+        doc_bytes = base64.b64decode(adoc_blob)
+        attestation_doc = attest.load_attestation_document(doc_bytes)
+
+        not_before = attest.get_certificate_not_before(attestation_doc["certificate"])
+
+        attestation_doc = attest.parse_attestation(
+            doc_bytes, self._root_cert, checkDate=not_before
+        )
         if pcrs is not None:
             attest.verify_pcrs(pcrs, attestation_doc)
 
