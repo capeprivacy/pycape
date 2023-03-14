@@ -64,11 +64,16 @@ class TestAttestation:
         cert = create_child_cert(
             intermediate_cert, root_private_key, private_key, cert_subject, ca=False
         )
-        doc_bytes = create_attestation_doc(intermediate_cert, cert)
+
+        nonce = b"abcd1234"
+
+        doc_bytes = create_attestation_doc(intermediate_cert, cert, nonce)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         attestation_doc = attest.parse_attestation(
-            attestation, root_cert.public_bytes(Encoding.PEM)
+            attestation,
+            root_cert.public_bytes(Encoding.PEM),
+            nonce=nonce,
         )
         public_key = attestation_doc["public_key"]
         user_data = attestation_doc.get("user_data")
@@ -90,7 +95,9 @@ class TestAttestation:
         cert = create_child_cert(
             intermediate_cert, root_private_key, private_key, cert_subject, ca=False
         )
-        doc_bytes = create_attestation_doc(intermediate_cert, cert)
+
+        nonce = b"abcd1234"
+        doc_bytes = create_attestation_doc(intermediate_cert, cert, nonce=nonce)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         payload = cbor2.loads(attestation)
@@ -113,7 +120,8 @@ class TestAttestation:
             intermediate_cert, root_private_key, private_key, cert_subject
         )
 
-        doc_bytes = create_attestation_doc(intermediate_cert, cert)
+        nonce = b"abcd1234"
+        doc_bytes = create_attestation_doc(intermediate_cert, cert, nonce)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         payload = cbor2.loads(attestation)
@@ -142,7 +150,8 @@ class TestAttestation:
             intermediate_cert, root_private_key, private_key, cert_subject, ca=False
         )
 
-        doc_bytes = create_attestation_doc(intermediate_cert, cert)
+        nonce = b"abcd1234"
+        doc_bytes = create_attestation_doc(intermediate_cert, cert, nonce)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         payload = cbor2.loads(attestation)
@@ -167,11 +176,15 @@ class TestAttestation:
         cert = create_child_cert(
             intermediate_cert, root_private_key, private_key, cert_subject, ca=False
         )
-        doc_bytes = create_attestation_doc(intermediate_cert, cert)
+
+        nonce = b"abcd1234"
+        doc_bytes = create_attestation_doc(intermediate_cert, cert, nonce)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         attestation_doc = attest.parse_attestation(
-            attestation, root_cert.public_bytes(Encoding.PEM)
+            attestation,
+            root_cert.public_bytes(Encoding.PEM),
+            nonce=nonce,
         )
 
         attest.verify_pcrs({"0": [b"pcrpcrpcr".hex()]}, attestation_doc)
@@ -190,15 +203,45 @@ class TestAttestation:
         cert = create_child_cert(
             intermediate_cert, root_private_key, private_key, cert_subject, ca=False
         )
-        doc_bytes = create_attestation_doc(intermediate_cert, cert)
+
+        nonce = b"abcd1234"
+        doc_bytes = create_attestation_doc(intermediate_cert, cert, nonce)
         attestation = create_cose_1_sign_msg(doc_bytes, private_key)
 
         attestation_doc = attest.parse_attestation(
-            attestation, root_cert.public_bytes(Encoding.PEM)
+            attestation,
+            root_cert.public_bytes(Encoding.PEM),
+            nonce=nonce,
         )
 
         with pytest.raises(Exception):
             attest.verify_pcrs({"0": [b"pcrpcr".hex()]}, attestation_doc)
+
+    def test_noncefail(self):
+        crv = P384
+        root_private_key = ec.generate_private_key(
+            crv.curve_obj, backend=default_backend()
+        )
+        private_key = ec.generate_private_key(crv.curve_obj, backend=default_backend())
+
+        root_cert = create_root_cert(root_private_key, root_subject)
+        intermediate_cert = create_child_cert(
+            root_cert, root_private_key, root_private_key, intermediate_subject, ca=True
+        )
+        cert = create_child_cert(
+            intermediate_cert, root_private_key, private_key, cert_subject, ca=False
+        )
+
+        nonce = b"abcd1234"
+        doc_bytes = create_attestation_doc(intermediate_cert, cert, nonce)
+        attestation = create_cose_1_sign_msg(doc_bytes, private_key)
+
+        with pytest.raises(RuntimeError):
+            attest.parse_attestation(
+                attestation,
+                root_cert.public_bytes(Encoding.PEM),
+                nonce="fake",
+            )
 
 
 def create_cose_1_sign_msg(payload, private_key):
@@ -223,7 +266,7 @@ def create_cose_1_sign_msg(payload, private_key):
     return msg.encode(tag=False)
 
 
-def create_attestation_doc(intermediate_cert, cert):
+def create_attestation_doc(intermediate_cert, cert, nonce):
     cert = cert.public_bytes(Encoding.DER)
     intermediate_cert = intermediate_cert.public_bytes(Encoding.DER)
     user_data = json.dumps({"func_hash": "stuff"})
@@ -237,6 +280,7 @@ def create_attestation_doc(intermediate_cert, cert):
         "cabundle": [intermediate_cert],
         "public_key": public_key,
         "user_data": user_data,
+        "nonce": nonce,
     }
 
     return cbor2.encoder.dumps(obj)
