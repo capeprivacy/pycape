@@ -33,13 +33,18 @@ def download_root_cert():
     return root_cert
 
 
-def parse_attestation(attestation, root_cert, checkDate=None):
+def parse_attestation(attestation, root_cert, nonce=None, checkDate=None):
     logger.debug("* Parsing attestation document...")
 
     doc = load_attestation_document(attestation)
 
     doc_cert = doc["certificate"]
     cabundle = doc["cabundle"]
+    doc_nonce = doc["nonce"]
+
+    if nonce is not None and nonce != doc_nonce:
+        raise RuntimeError("error validating nonce")
+
     logger.debug("* Attestation document parsed.")
 
     verify_attestation_signature(attestation, doc_cert)
