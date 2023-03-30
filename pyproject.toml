@@ -19,7 +19,7 @@ dependencies = [
     "cose",
     "requests",
     "serdio",
-    "synchronicity",
+    "synchronicity < 0.3.0",
 ]
 authors = [
     {email = "contact@capeprivacy.com", name = "Cape Privacy"}
