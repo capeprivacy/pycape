@@ -2,6 +2,7 @@ import io
 import logging
 import math
 import zipfile
+from datetime import datetime
 from typing import Dict
 from typing import List
 
@@ -32,33 +33,37 @@ def download_root_cert():
     return root_cert
 
 
-def parse_attestation(attestation, root_cert):
+def parse_attestation(attestation, root_cert, nonce=None, checkDate=None):
     logger.debug("* Parsing attestation document...")
 
-    payload = cbor2.loads(attestation)
-    doc = cbor2.loads(payload[2])
-    _check_wellformed_attestation(
-        doc,
-        expected_keys=["certificate", "cabundle", "public_key"],
-    )
+    doc = load_attestation_document(attestation)
+
     doc_cert = doc["certificate"]
     cabundle = doc["cabundle"]
+    doc_nonce = doc["nonce"]
+
+    if nonce is not None and nonce != doc_nonce:
+        raise RuntimeError("error validating nonce")
+
     logger.debug("* Attestation document parsed.")
 
     verify_attestation_signature(attestation, doc_cert)
 
     if root_cert is not None:
-        verify_cert_chain(root_cert, cabundle, doc_cert)
+        verify_cert_chain(root_cert, cabundle, doc_cert, checkDate)
 
     return doc
 
 
-def verify_cert_chain(root_cert, cabundle, cert):
+def verify_cert_chain(root_cert, cabundle, cert, checkDate=None):
     logger.debug("* Verifying attestation certificate chain...")
     cert = crypto.load_certificate(crypto.FILETYPE_ASN1, cert)
 
     # Create an X509Store object for the CA bundles
     store = crypto.X509Store()
+
+    if checkDate is not None:
+        store.set_time(checkDate)
 
     # Create the CA cert object from PEM string, and store into X509Store
     _cert = crypto.load_certificate(crypto.FILETYPE_PEM, root_cert)
@@ -134,3 +139,24 @@ def verify_pcrs(pcrs: Dict[str, List[str]], doc):
 
         if not found:
             raise Exception(f"PCR {key} {h} does not match {val}")
+
+
+def load_attestation_document(attestation):
+    payload = cbor2.loads(attestation)
+    doc = cbor2.loads(payload[2])
+    _check_wellformed_attestation(
+        doc,
+        expected_keys=["certificate", "cabundle", "public_key"],
+    )
+
+    return doc
+
+
+def get_certificate_not_before(certificate):
+    _cert = crypto.load_certificate(crypto.FILETYPE_ASN1, certificate)
+
+    not_before = _cert.get_notBefore()
+    if not_before is None:
+        raise Exception("expected a not before value on certificate")
+
+    return datetime.strptime(not_before.decode(), "%Y%m%d%H%M%SZ")

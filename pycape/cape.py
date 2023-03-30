@@ -565,7 +565,17 @@ class Cape:
                 f"Bad response from '/v1/user/{username}/key' route, expected "
                 f"attestation_document key-value: {response}."
             )
-        attestation_doc = attest.parse_attestation(base64.b64decode(adoc_blob), None)
+
+        self._root_cert = self._root_cert or attest.download_root_cert()
+
+        doc_bytes = base64.b64decode(adoc_blob)
+        attestation_doc = attest.load_attestation_document(doc_bytes)
+
+        not_before = attest.get_certificate_not_before(attestation_doc["certificate"])
+
+        attestation_doc = attest.parse_attestation(
+            doc_bytes, self._root_cert, checkDate=not_before
+        )
         if pcrs is not None:
             attest.verify_pcrs(pcrs, attestation_doc)
 
@@ -621,8 +631,7 @@ class _EnclaveContext:
         self._websocket = None
         self._public_key = None
 
-    async def authenticate(self):
-        nonce = _generate_nonce()
+    async def authenticate(self, nonce):
         request = _create_connection_request(nonce)
         _logger.debug("\n> Sending authentication request...")
         await self._websocket.send(request)
@@ -641,8 +650,11 @@ class _EnclaveContext:
         )
         _logger.debug("* Websocket connection established")
 
-        auth_response = await self.authenticate()
-        attestation_doc = attest.parse_attestation(auth_response, self._root_cert)
+        nonce = _generate_nonce()
+        auth_response = await self.authenticate(nonce)
+        attestation_doc = attest.parse_attestation(
+            auth_response, self._root_cert, nonce=nonce
+        )
         self._public_key = attestation_doc["public_key"]
 
         if pcrs is not None:
@@ -676,21 +688,20 @@ class _EnclaveContext:
         return _parse_wss_response(invoke_response)
 
 
-# TODO What should be the length?
-def _generate_nonce(length=8):
+def _generate_nonce(length=16):
     """
     Generates a string of digits between 0 and 9 of a given length
     """
     nonce = "".join([str(random.randint(0, 9)) for i in range(length)])
     _logger.debug(f"* Generated nonce: {nonce}")
-    return nonce
+    return nonce.encode()
 
 
 def _create_connection_request(nonce):
     """
     Returns a json string with nonce
     """
-    request = {"message": {"nonce": nonce}}
+    request = {"message": {"nonce": base64.b64encode(nonce).decode()}}
     return json.dumps(request)
 
 

@@ -12,13 +12,16 @@ class TestCape(unittest.TestCase):
     def test_generate_nonce(self):
         length = 8
         nonce = _generate_nonce(length=length)
-        self.assertTrue(isinstance(nonce, str))
+        self.assertTrue(isinstance(nonce, bytes))
         self.assertTrue(len(nonce), length)
 
     def test_create_connection_request(self):
-        nonce = "90444145"
+        nonce = b"90444145"
         conn_req = _create_connection_request(nonce)
-        self.assertEqual(conn_req, json.dumps({"message": {"nonce": "90444145"}}))
+        self.assertEqual(
+            conn_req,
+            json.dumps({"message": {"nonce": base64.b64encode(b"90444145").decode()}}),
+        )
 
     def test_handle_expected_field(self):
         response = '{"message": "connected"}'
