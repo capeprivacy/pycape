@@ -205,10 +205,10 @@ class _EnclaveContext:
         if msg.msg_type != WSMessageType.ATTESTATION:
             raise Exception(f"expected {WSMessageType.ATTESTATION} not {msg.msg_type}")
 
-        if "doc" in msg.data:
+        if "attestation_document" in msg.data:
             # TODO bring back nonce
             attestation_doc = attest.parse_attestation(
-                msg.data["doc"], self._root_cert
+                msg.data["attestation_document"], self._root_cert
             )
             self._public_key = attestation_doc["public_key"]
 
