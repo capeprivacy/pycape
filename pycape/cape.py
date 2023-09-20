@@ -129,7 +129,7 @@ class Cape:
         await self._connect("/v1/ws/chat/completions", token, pcrs=pcrs)
 
         data = crypto.envelope_encrypt(
-            self.ctx.public_key.encode(),
+            self.ctx.public_key,
             {"request": {"messages": messages, "stream": stream}, "user_key": "TODO"},
         )
         data = base64.b64encode(data).decode()
@@ -188,7 +188,7 @@ class _EnclaveContext:
 
         # state to be explicitly created/destroyed by callers via bootstrap/close
         self._websocket = None
-        self._public_key : Optional[str] = None
+        self._public_key : Optional[bytes] = None
 
     async def bootstrap(self, pcrs: Optional[Dict[str, List[str]]] = None):
         _logger.debug(f"* Dialing {self._endpoint}")
@@ -218,7 +218,7 @@ class _EnclaveContext:
 
             return attestation_doc
 
-        self._public_key = msg.data["public_key"]
+        self._public_key = msg.data["public_key"].encode()
 
     @property
     def websocket(self) -> client.WebSocketClientProtocol:
@@ -228,7 +228,7 @@ class _EnclaveContext:
         return self._websocket
 
     @property
-    def public_key(self) -> str:
+    def public_key(self) -> bytes:
         if self._public_key is None:
             raise Exception("must call bootstrap first")
 
