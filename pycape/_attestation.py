@@ -3,7 +3,7 @@ import logging
 import math
 import zipfile
 from datetime import datetime
-from typing import Dict
+from typing import Any, Dict
 from typing import List
 
 import cbor2
@@ -141,7 +141,7 @@ def verify_pcrs(pcrs: Dict[str, List[str]], doc):
             raise Exception(f"PCR {key} {h} does not match {val}")
 
 
-def load_attestation_document(attestation):
+def load_attestation_document(attestation) -> Dict[str, Any]:
     payload = cbor2.loads(attestation)
     doc = cbor2.loads(payload[2])
     _check_wellformed_attestation(

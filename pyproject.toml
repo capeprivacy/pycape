@@ -5,26 +5,13 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 exclude = ["serdio*", "cape_encrypt*"]
 
-[project]
-name = "pycape" 
+[tool.poetry]
+name = "pycape"
 description = "The Cape Privacy Python SDK"
 readme = "README.md"
 version = "3.1.1-rc"
-requires-python = ">=3.7"
-dependencies = [
-    "cbor2", 
-    "hybrid_pke",
-    "websockets",
-    "pyOpenSSL",
-    "cose",
-    "requests",
-    "serdio",
-    "synchronicity < 0.3.0",
-]
-authors = [
-    {email = "contact@capeprivacy.com", name = "Cape Privacy"}
-]
-license = { file = "LICENSE" }
+authors = ["Cape Privacy <contact@capeprivacy.com>"]
+license = "LICENSE"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
@@ -34,6 +21,17 @@ classifiers = [
     "Topic :: Security :: Cryptography",
 ]
 urls = {repository = "https://github.com/capeprivacy/pycape"}
+
+[tool.poetry.dependencies]
+python = ">=3.7.9"
+synchronicity = "^0.5.3"
+cbor2 = "^5.4.6"
+requests = "^2.31.0"
+websockets = "^11.0.3"
+pyopenssl = "^23.2.0"
+serdio = "^3.1.1"
+cose = "^0.9.dev8"
+pydantic = "^2.3.0"
 
 [tool.bumpver]
 current_version = "3.1.1-rc"
