@@ -169,6 +169,7 @@ class Cape:
 
 
 class WSMessageType(str, Enum):
+    NONCE       = "nonce"
     ATTESTATION = "attestation"
     STREAM_CHUNK = "stream_chunk"
     CHAT_COMPLETIONS_REQUEST = "chat_completion_request"
@@ -199,6 +200,12 @@ class _EnclaveContext:
         )
         _logger.debug("* Websocket connection established")
 
+        _logger.debug("* Sending nonce...")
+
+        nonce = os.urandom(12)
+        nonce_msg = WSMessage(msg_type=WSMessageType.NONCE, data={"nonce": base64.b64encode(nonce).decode()})
+        await self._websocket.send(nonce_msg.model_dump_json())
+
         _logger.debug("* Waiting for attestation document...")
         msg = await self._websocket.recv()
         msg = WSMessage.model_validate_json(msg)
@@ -209,7 +216,7 @@ class _EnclaveContext:
             # TODO bring back nonce
             doc = base64.b64decode(msg.data["attestation_document"].encode())
             attestation_doc = attest.parse_attestation(
-                doc, self._root_cert
+                doc, self._root_cert, nonce=nonce
             )
             self._public_key = attestation_doc["public_key"]
 
