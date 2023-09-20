@@ -207,8 +207,9 @@ class _EnclaveContext:
 
         if "attestation_document" in msg.data:
             # TODO bring back nonce
+            doc = base64.b64decode(msg.data["attestation_document"].encode())
             attestation_doc = attest.parse_attestation(
-                msg.data["attestation_document"], self._root_cert
+                doc, self._root_cert
             )
             self._public_key = attestation_doc["public_key"]
 
