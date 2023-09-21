@@ -1,11 +1,9 @@
 import base64
-from enum import Enum
 import logging
 import os
 import pathlib
-import random
-import ssl
 import urllib
+from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import List
@@ -13,17 +11,18 @@ from typing import Optional
 from typing import Union
 
 import synchronicity
+from pydantic import BaseModel
 from websockets import client
 
 from pycape import _attestation as attest
 from pycape import _config as cape_config
 from pycape import token as tkn
-from pydantic import BaseModel
 from pycape.llms import crypto
 
 logging.basicConfig(format="%(message)s")
 _logger = logging.getLogger("pycape")
 _synchronizer = synchronicity.Synchronizer(multiwrap_warning=True)
+
 
 @_synchronizer.create_blocking
 class Cape:
@@ -56,7 +55,6 @@ class Cape:
             await self._ctx.close()
             self._ctx = None
 
-
     def token(self, token: Union[str, os.PathLike, tkn.Token]) -> tkn.Token:
         """Create or load a :class:`~token.Token`.
 
@@ -87,7 +85,14 @@ class Cape:
 
         raise TypeError(f"Expected token to be PathLike or str, found {type(token)}")
 
-    async def chat_completions(self, messages: Union[str, List[Dict[str, Any]]], token: str, stream=True, model="llama", pcrs=None):
+    async def chat_completions(
+        self,
+        messages: Union[str, List[Dict[str, Any]]],
+        token: str,
+        stream=True,
+        model="llama",
+        pcrs=None,
+    ):
         await self._connect("/v1/ws/chat/completions", token, pcrs=pcrs)
 
         aes_key = os.urandom(32)
@@ -109,7 +114,9 @@ class Cape:
         async for msg in self.ctx.websocket:
             msg = WSMessage.model_validate_json(msg)
             if msg.msg_type != WSMessageType.STREAM_CHUNK:
-                raise Exception(f"expected {WSMessageType.STREAM_CHUNK} not {msg.msg_type}")
+                raise Exception(
+                    f"expected {WSMessageType.STREAM_CHUNK} not {msg.msg_type}"
+                )
 
             dec = crypto.aes_decrypt(
                 base64.b64decode(msg.data["data"].encode()), aes_key
@@ -138,7 +145,7 @@ class Cape:
 
 
 class WSMessageType(str, Enum):
-    NONCE       = "nonce"
+    NONCE = "nonce"
     ATTESTATION = "attestation"
     STREAM_CHUNK = "stream_chunk"
     CHAT_COMPLETIONS_REQUEST = "chat_completion_request"
@@ -147,6 +154,7 @@ class WSMessageType(str, Enum):
 class WSMessage(BaseModel):
     msg_type: WSMessageType
     data: Any
+
 
 class _Context:
     """A context managing a connection to a particular enclave instance."""
@@ -158,7 +166,7 @@ class _Context:
 
         # state to be explicitly created/destroyed by callers via bootstrap/close
         self._websocket = None
-        self._public_key : Optional[bytes] = None
+        self._public_key: Optional[bytes] = None
 
     async def bootstrap(self, pcrs: Optional[Dict[str, List[str]]] = None):
         _logger.debug(f"* Dialing {self._endpoint}")
@@ -172,7 +180,10 @@ class _Context:
         _logger.debug("* Sending nonce...")
 
         nonce = os.urandom(12)
-        nonce_msg = WSMessage(msg_type=WSMessageType.NONCE, data={"nonce": base64.b64encode(nonce).decode()})
+        nonce_msg = WSMessage(
+            msg_type=WSMessageType.NONCE,
+            data={"nonce": base64.b64encode(nonce).decode()},
+        )
         await self._websocket.send(nonce_msg.model_dump_json())
 
         _logger.debug("* Waiting for attestation document...")

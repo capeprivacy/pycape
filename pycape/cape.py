@@ -34,6 +34,7 @@ synchronous or asynchronous contexts via asyncio.
 
 """
 import base64
+import contextlib
 import json
 import logging
 import os
@@ -50,7 +51,6 @@ from typing import Union
 import requests
 import synchronicity
 import websockets
-import contextlib
 
 import serdio
 from pycape import _attestation as attest
