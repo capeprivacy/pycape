@@ -6,11 +6,19 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.ciphers import aead
 from cryptography.hazmat.primitives.asymmetric import padding
 
+NONCE_SIZE = 12
+
+
+def aes_decrypt(ctxt: bytes, data_key: bytes) -> bytes:
+    nonce, ctxt = ctxt[:NONCE_SIZE], ctxt[NONCE_SIZE:]
+    encryptor = aead.AESGCM(data_key)
+    ptxt = encryptor.decrypt(nonce, ctxt, None)
+    return ptxt
 
 
 def aes_encrypt(aes_key: bytes, ptxt: bytes):
     encryptor = aead.AESGCM(aes_key)
-    nonce = os.urandom(12)  # AESGCM nonce size is 12
+    nonce = os.urandom(NONCE_SIZE)  # AESGCM nonce size is 12
     ctxt = encryptor.encrypt(nonce, ptxt, None)
     return nonce + ctxt
 

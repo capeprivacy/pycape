@@ -128,9 +128,12 @@ class Cape:
     async def chat_completions(self, messages: Union[str, List[Dict[str, Any]]], token: str, stream=True, model="llama", pcrs=None):
         await self._connect("/v1/ws/chat/completions", token, pcrs=pcrs)
 
+        aes_key = os.urandom(32)
+        user_key = base64.b64encode(aes_key).decode()
+
         data = crypto.envelope_encrypt(
             self.ctx.public_key,
-            {"request": {"messages": messages, "stream": stream}, "user_key": "TODO"},
+            {"request": {"messages": messages, "stream": stream}, "user_key": user_key},
         )
         data = base64.b64encode(data).decode()
 
@@ -146,7 +149,11 @@ class Cape:
             if msg.msg_type != WSMessageType.STREAM_CHUNK:
                 raise Exception(f"expected {WSMessageType.STREAM_CHUNK} not {msg.msg_type}")
 
-            yield msg.data
+            dec = crypto.aes_decrypt(
+                base64.b64decode(msg.data["data"].encode()), aes_key
+            )
+
+            yield dec.decode()
 
     @property
     def ctx(self):
@@ -213,7 +220,6 @@ class _EnclaveContext:
             raise Exception(f"expected {WSMessageType.ATTESTATION} not {msg.msg_type}")
 
         if "attestation_document" in msg.data:
-            # TODO bring back nonce
             doc = base64.b64decode(msg.data["attestation_document"].encode())
             attestation_doc = attest.parse_attestation(
                 doc, self._root_cert, nonce=nonce
