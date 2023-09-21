@@ -50,6 +50,7 @@ from typing import Union
 import requests
 import synchronicity
 import websockets
+import contextlib
 
 import serdio
 from pycape import _attestation as attest
@@ -64,6 +65,7 @@ _logger = logging.getLogger("pycape")
 _synchronizer = synchronicity.Synchronizer(multiwrap_warning=True)
 
 
+@_synchronizer.create_blocking
 class Cape:
     """A websocket client for interacting with enclaves hosting Cape functions.
 
@@ -91,14 +93,12 @@ class Cape:
         if verbose:
             _logger.setLevel(logging.DEBUG)
 
-    @_synchronizer
     async def close(self):
         """Closes the current enclave connection."""
         if self._ctx is not None:
             await self._ctx.close()
             self._ctx = None
 
-    @_synchronizer
     async def connect(
         self,
         function_ref: Union[str, os.PathLike, fref.FunctionRef],
@@ -134,7 +134,6 @@ class Cape:
         token = self.token(token)
         await self._request_connection(function_ref, token, pcrs)
 
-    @_synchronizer
     async def encrypt(
         self,
         input: bytes,
@@ -235,8 +234,7 @@ class Cape:
 
         raise ValueError("Unrecognized form of `identifier` argument: {identifier}.")
 
-    @_synchronizer
-    @_synchronizer.asynccontextmanager
+    @contextlib.asynccontextmanager
     async def function_context(
         self,
         function_ref: Union[str, os.PathLike, fref.FunctionRef],
@@ -281,7 +279,6 @@ class Cape:
         finally:
             await self.close()
 
-    @_synchronizer
     async def invoke(
         self, *args: Any, serde_hooks=None, use_serdio: bool = False, **kwargs: Any
     ) -> Any:
@@ -323,7 +320,6 @@ class Cape:
             serde_hooks = serdio.bundle_serde_hooks(serde_hooks)
         return await self._request_invocation(serde_hooks, use_serdio, *args, **kwargs)
 
-    @_synchronizer
     async def key(
         self,
         *,
@@ -390,7 +386,6 @@ class Cape:
             "account's Cape key."
         )
 
-    @_synchronizer
     async def run(
         self,
         function_ref: Union[str, os.PathLike, fref.FunctionRef],

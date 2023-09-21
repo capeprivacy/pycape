@@ -6,4 +6,6 @@ pyOpenSSL>=22.1.0
 cose
 certifi>=2022.12.07
 requests
-synchronicity
+synchronicity>=0.5.3
+websockets
+pydantic
