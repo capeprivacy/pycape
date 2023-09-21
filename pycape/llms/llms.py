@@ -1,38 +1,3 @@
-"""The Cape Python client.
-
-The :class:`Cape` client uses websockets to connect to Cape enclaves that are hosting a
-user's deployed functions. Before being able to run functions from the Cape client,
-users must have gone through the process of developing a Cape function in Python,
-deploying it from the CLI, and generating a personal access token.
-
-All public async methods in the :class:`Cape` client interface can be used in either
-synchronous or asynchronous contexts via asyncio.
-
-**Usage**
-
-::
-
-    cape = Cape()
-
-    f = cape.function("user/pythagorean")  # refer to function by name
-    t = cape.token("user.token")           # load function owner's PAT
-    cape.connect(f, t)
-
-    c1 = cape.invoke(3, 4, use_serdio=True)
-    print(c1)  # 5
-
-    c2 = cape.invoke(5, 12, use_serdio=True)
-    print(c2)  # 13
-
-    cape.close()  # release the enclave connection
-
-    # similar invocation, but async
-    c3 = asyncio.run(
-        cape.run(f, t, 8, 15, use_serdio=True)
-    )
-    print(c3)  # 17
-
-"""
 import base64
 from enum import Enum
 import logging
@@ -62,10 +27,7 @@ _synchronizer = synchronicity.Synchronizer(multiwrap_warning=True)
 
 @_synchronizer.create_blocking
 class Cape:
-    """A websocket client for interacting with enclaves hosting Cape functions.
-
-    This is the main interface for interacting with Cape functions from Python.
-    See module-level documentation :mod:`pycape.cape` for usage example.
+    """A websocket client for interacting with LLMs.
 
     Args:
         url: The Cape platform's websocket URL, which is responsible for forwarding
