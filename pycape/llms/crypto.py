@@ -25,7 +25,7 @@ def aes_encrypt(ptxt: bytes, key: bytes):
     return nonce + ctxt
 
 
-def envelope_encrypt(public_key: bytes, data: Dict[str, Any]):
+def envelope_encrypt(public_key: bytes, data: Dict[str, Any]) -> bytes:
     aes_key = os.urandom(32)
     s = json.dumps(data)
 
