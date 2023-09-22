@@ -93,7 +93,7 @@ class Cape:
         model="llama",
         pcrs=None,
     ):
-        await self._connect("/v1/ws/chat/completions", token, pcrs=pcrs)
+        await self._connect("/v1/cape/ws/chat/completions", token, pcrs=pcrs)
 
         aes_key = os.urandom(32)
         user_key = base64.b64encode(aes_key).decode()
@@ -122,7 +122,10 @@ class Cape:
                 base64.b64decode(msg.data["data"].encode()), aes_key
             )
 
-            yield dec.decode()
+            content = dec.decode()
+            yield content
+            if "DONE" in content:
+                await self.ctx.close()
 
     @property
     def ctx(self):
