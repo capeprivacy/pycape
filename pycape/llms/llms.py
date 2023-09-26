@@ -113,10 +113,15 @@ class Cape:
 
         async for msg in self.ctx.websocket:
             msg = WSMessage.model_validate_json(msg)
-            if msg.msg_type != WSMessageType.STREAM_CHUNK:
+            if msg.msg_type not in [WSMessageType.STREAM_CHUNK, WSMessageType.USAGE]:
                 raise Exception(
-                    f"expected {WSMessageType.STREAM_CHUNK} not {msg.msg_type}"
+                    f"expected {WSMessageType.STREAM_CHUNK} or "
+                    f"{WSMessageType.USAGE} not {msg.msg_type}"
                 )
+
+            if msg.msg_type == WSMessageType.USAGE:
+                yield msg.data
+                continue
 
             dec = crypto.aes_decrypt(
                 base64.b64decode(msg.data["data"].encode()), aes_key
@@ -155,10 +160,15 @@ class Cape:
 
         async for msg in self.ctx.websocket:
             msg = WSMessage.model_validate_json(msg)
-            if msg.msg_type != WSMessageType.STREAM_CHUNK:
+            if msg.msg_type not in [WSMessageType.STREAM_CHUNK, WSMessageType.USAGE]:
                 raise Exception(
-                    f"expected {WSMessageType.STREAM_CHUNK} not {msg.msg_type}"
+                    f"expected {WSMessageType.STREAM_CHUNK} or "
+                    f"{WSMessageType.USAGE} not {msg.msg_type}"
                 )
+
+            if msg.msg_type == WSMessageType.USAGE:
+                yield msg.data
+                continue
 
             dec = crypto.aes_decrypt(
                 base64.b64decode(msg.data["data"].encode()), aes_key
@@ -195,6 +205,7 @@ class WSMessageType(str, Enum):
     STREAM_CHUNK = "stream_chunk"
     CHAT_COMPLETIONS_REQUEST = "chat_completion_request"
     COMPLETIONS_REQUEST = "completions_request"
+    USAGE = "usage"
 
 
 class WSMessage(BaseModel):
