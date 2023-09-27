@@ -23,7 +23,7 @@ for msg in c.chat_completions(
 
 
 for msg in c.completions(
-    "<s>[INST] <<SYS>>You are a helpful Assistant.<</SYS>>
+    "<s>[INST] <<SYS>>You are a helpful Assistant.<</SYS>>"
     "\n\nWhat is the Capital of France? [/INST]",
     token,
     max_tokens=16,

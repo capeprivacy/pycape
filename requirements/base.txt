@@ -53,7 +53,7 @@ pydantic-core==2.6.3
     # via pydantic
 pyopenssl==23.2.0
     # via -r requirements/base.in
-requests==2.28.1
+requests==2.31.0
     # via -r requirements/base.in
 file:./serdio
     # via -r requirements/base.in

@@ -5,7 +5,7 @@ websockets
 pyOpenSSL>=23.2.0
 cose
 certifi>=2023.7.22
-requests
+requests>=2.31.0
 synchronicity>=0.5.3
 websockets
 pydantic
