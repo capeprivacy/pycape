@@ -89,7 +89,8 @@ class Cape:
         self,
         prompt: str,
         token: str,
-        stream=True,
+        max_tokens=16,
+        temperature=0.8,
         model="llama",
         pcrs=None,
     ):
@@ -100,7 +101,15 @@ class Cape:
 
         data = crypto.envelope_encrypt(
             self.ctx.public_key,
-            {"request": {"prompt": prompt, "stream": stream}, "user_key": user_key},
+            {
+                "request": {
+                    "prompt": prompt,
+                    "stream": True,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                },
+                "user_key": user_key,
+            },
         )
         data = base64.b64encode(data).decode()
 
@@ -136,7 +145,8 @@ class Cape:
         self,
         messages: Union[str, List[Dict[str, Any]]],
         token: str,
-        stream=True,
+        max_tokens=16,
+        temperature=0.8,
         model="llama",
         pcrs=None,
     ):
@@ -147,7 +157,15 @@ class Cape:
 
         data = crypto.envelope_encrypt(
             self.ctx.public_key,
-            {"request": {"messages": messages, "stream": stream}, "user_key": user_key},
+            {
+                "request": {
+                    "messages": messages,
+                    "stream": True,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                },
+                "user_key": user_key,
+            },
         )
         data = base64.b64encode(data).decode()
 
@@ -261,6 +279,7 @@ class _Context:
 
             return attestation_doc
 
+        _logger.warning("received public key, no attestation performed...")
         self._public_key = msg.data["public_key"].encode()
 
     @property
