@@ -20,3 +20,13 @@ for msg in c.chat_completions(
     temperature=0.8,
 ):
     print(msg)
+
+
+for msg in c.completions(
+    "<s>[INST] <<SYS>>You are a helpful Assistant.<</SYS>>
+    "\n\nWhat is the Capital of France? [/INST]",
+    token,
+    max_tokens=16,
+    temperature=0.8,
+):
+    print(msg)
