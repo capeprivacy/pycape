@@ -23,7 +23,9 @@ for msg in c.chat_completions(
 
 
 for msg in c.completions(
-    "<|im_start|>system\nYou are a helpful Assistant.<|im_end|>\n<|im_start|>user\nWhat is the Capital of France?<|im_end|>\n<|im_start|>assistant",
+    "<|im_start|>system\nYou are a helpful Assistant."
+    "<|im_end|>\n<|im_start|>user\nWhat is the Capital "
+    "of France?<|im_end|>\n<|im_start|>assistant",
     token,
     max_tokens=16,
     temperature=0.8,
