@@ -148,7 +148,7 @@ class Cape:
         max_tokens=16,
         temperature=0.8,
         model="llama",
-        pcrs=None,
+        pcrs: Optional[Dict[str, List[str]]]=None,
     ):
         await self._connect("/v1/cape/ws/chat/completions", token, pcrs=pcrs)
 
@@ -204,7 +204,7 @@ class Cape:
 
         return self._ctx
 
-    async def _connect(self, endpoint, token, pcrs=None):
+    async def _connect(self, endpoint, token, pcrs:Optional[Dict[str, List[str]]]=None):
         endpoint = self._url + endpoint
         self._root_cert = self._root_cert or attest.download_root_cert()
         self._ctx = _Context(
